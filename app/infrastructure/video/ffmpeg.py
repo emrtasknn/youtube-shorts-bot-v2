@@ -1,27 +1,42 @@
 from __future__ import annotations
 
 import asyncio
+import json
+from pathlib import Path
 
 from app.application.ports.video_engine import (
     VideoRenderRequest,
     VideoRenderResult,
+    VideoSceneInput,
 )
+from app.application.services.subtitles import write_ass
 
 
 class FFmpegCommandBuilder:
     def __init__(self, executable: str = "ffmpeg") -> None:
         self._executable = executable
 
-    def build(self, request: VideoRenderRequest) -> list[str]:
+    def build(
+        self,
+        request: VideoRenderRequest,
+        *,
+        scene_durations: tuple[float, ...] | None = None,
+        subtitle_path: Path | None = None,
+    ) -> list[str]:
         if not request.scenes:
             raise ValueError("At least one video scene is required")
         if request.width <= 0 or request.height <= 0:
             raise ValueError("Video dimensions must be positive")
         if request.fps <= 0:
             raise ValueError("Video FPS must be positive")
+        durations = scene_durations or tuple(
+            scene.duration_seconds for scene in request.scenes
+        )
+        if len(durations) != len(request.scenes):
+            raise ValueError("Scene duration count must match scene count")
 
-        for scene in request.scenes:
-            if scene.duration_seconds <= 0:
+        for scene, duration in zip(request.scenes, durations, strict=True):
+            if duration <= 0:
                 raise ValueError("Scene duration must be positive")
             if not scene.path.is_file():
                 raise FileNotFoundError(scene.path)
@@ -30,15 +45,17 @@ class FFmpegCommandBuilder:
         command = [self._executable, "-y", "-hide_banner", "-loglevel", "error"]
         filter_inputs: list[str] = []
 
-        for index, scene in enumerate(request.scenes):
+        for index, (scene, duration) in enumerate(
+            zip(request.scenes, durations, strict=True)
+        ):
             if scene.is_image:
-                command.extend(["-loop", "1", "-t", str(scene.duration_seconds)])
+                command.extend(["-loop", "1", "-t", str(duration)])
             command.extend(["-i", str(scene.path)])
             filter_inputs.append(
                 f"[{index}:v]scale={request.width}:{request.height}:"
                 f"force_original_aspect_ratio=increase,"
                 f"crop={request.width}:{request.height},setsar=1,fps={request.fps},"
-                f"trim=duration={scene.duration_seconds},setpts=PTS-STARTPTS[v{index}]"
+                f"trim=duration={duration},setpts=PTS-STARTPTS[v{index}]"
             )
 
         audio_input_index: int | None = None
@@ -53,7 +70,20 @@ class FFmpegCommandBuilder:
         filter_complex += (
             f";{concat_inputs}concat=n={len(request.scenes)}:v=1:a=0,format=yuv420p[vout]"
         )
-        command.extend(["-filter_complex", filter_complex, "-map", "[vout]"])
+        video_map = "[vout]"
+        if subtitle_path is not None:
+            if not subtitle_path.is_file():
+                raise FileNotFoundError(subtitle_path)
+            escaped = str(subtitle_path).replace("\\", "\\\\").replace(":", "\\:")
+            filter_complex += (
+                f";[vout]subtitles='{escaped}':"
+                "force_style='FontName=Arial,FontSize=62,Bold=1,"
+                "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,"
+                "BackColour=&H99000000,Outline=4,Shadow=1,"
+                "Alignment=2,MarginL=80,MarginR=80,MarginV=390'[vsub]"
+            )
+            video_map = "[vsub]"
+        command.extend(["-filter_complex", filter_complex, "-map", video_map])
 
         if audio_input_index is not None:
             command.extend(
@@ -89,21 +119,51 @@ class FFmpegCommandBuilder:
 
 
 class FFmpegVideoEngine:
-    def __init__(self, executable: str = "ffmpeg", *, timeout_seconds: float = 300.0) -> None:
+    def __init__(
+        self,
+        executable: str = "ffmpeg",
+        *,
+        ffprobe_executable: str = "ffprobe",
+        timeout_seconds: float = 300.0,
+    ) -> None:
         if timeout_seconds <= 0:
             raise ValueError("FFmpeg timeout must be positive")
         self._builder = FFmpegCommandBuilder(executable)
+        self._ffprobe = ffprobe_executable
         self._timeout_seconds = timeout_seconds
 
     async def render(self, request: VideoRenderRequest) -> VideoRenderResult:
-        command = self._builder.build(request)
+        audio_duration = 0.0
+        if request.voiceover_path is not None:
+            audio_duration = await self._probe_duration(request.voiceover_path)
+
+        scene_durations = tuple(scene.duration_seconds for scene in request.scenes)
+        total_scene_duration = sum(scene_durations)
+        if audio_duration > total_scene_duration:
+            scene_durations = scene_durations[:-1] + (
+                scene_durations[-1] + audio_duration - total_scene_duration,
+            )
+
+        subtitle_path: Path | None = None
+        if request.subtitle_text:
+            subtitle_duration = audio_duration or sum(scene_durations)
+            subtitle_path = request.output_path.with_suffix(".ass")
+            write_ass(subtitle_path, request.subtitle_text, subtitle_duration)
+
+        command = self._builder.build(
+            request,
+            scene_durations=scene_durations,
+            subtitle_path=subtitle_path,
+        )
         process = await asyncio.create_subprocess_exec(
             *command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
         try:
-            _, stderr = await asyncio.wait_for(process.communicate(), timeout=self._timeout_seconds)
+            _, stderr = await asyncio.wait_for(
+                process.communicate(), timeout=self._timeout_seconds
+            )
         except TimeoutError as exc:
             process.kill()
             await process.wait()
@@ -117,9 +177,85 @@ class FFmpegVideoEngine:
         if not request.output_path.is_file():
             raise RuntimeError("FFmpeg completed without producing the output file")
 
-        duration = sum(scene.duration_seconds for scene in request.scenes)
+        metadata = await self._probe_media(request.output_path)
+        if metadata["width"] != request.width or metadata["height"] != request.height:
+            raise RuntimeError("Rendered video dimensions do not match the requested 9:16 output")
+        if metadata["fps"] <= 0:
+            raise RuntimeError("Rendered video has an invalid frame rate")
+        if request.voiceover_path is not None and not metadata["has_audio"]:
+            raise RuntimeError("Rendered video is missing its audio stream")
+
         return VideoRenderResult(
             output_path=request.output_path,
-            duration_seconds=duration,
+            duration_seconds=metadata["duration"],
             command=tuple(command),
+            width=metadata["width"],
+            height=metadata["height"],
+            fps=metadata["fps"],
+            has_audio=metadata["has_audio"],
         )
+
+    async def _probe_duration(self, path: Path) -> float:
+        result = await self._run_probe(
+            [
+                self._ffprobe,
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "json",
+                str(path),
+            ]
+        )
+        duration = float(json.loads(result)["format"]["duration"])
+        if duration <= 0:
+            raise RuntimeError("Voiceover has an invalid duration")
+        return duration
+
+    async def _probe_media(self, path: Path) -> dict[str, object]:
+        result = await self._run_probe(
+            [
+                self._ffprobe,
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration:stream=codec_type,width,height,r_frame_rate",
+                "-of",
+                "json",
+                str(path),
+            ]
+        )
+        data = json.loads(result)
+        streams = data.get("streams", [])
+        video = next((item for item in streams if item.get("codec_type") == "video"), None)
+        if video is None:
+            raise RuntimeError("Rendered video has no video stream")
+        numerator, _, denominator = str(video.get("r_frame_rate", "0/1")).partition("/")
+        fps = float(numerator) / float(denominator or 1)
+        return {
+            "duration": float(data["format"]["duration"]),
+            "width": int(video.get("width") or 0),
+            "height": int(video.get("height") or 0),
+            "fps": fps,
+            "has_audio": any(item.get("codec_type") == "audio" for item in streams),
+        }
+
+    async def _run_probe(self, command: list[str]) -> str:
+        process = await asyncio.create_subprocess_exec(
+            *command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            stdout, stderr = await asyncio.wait_for(
+                process.communicate(), timeout=self._timeout_seconds
+            )
+        except TimeoutError as exc:
+            process.kill()
+            await process.wait()
+            raise RuntimeError("FFprobe timed out") from exc
+        if process.returncode != 0:
+            message = stderr.decode("utf-8", errors="replace").strip()
+            raise RuntimeError(f"FFprobe failed with exit code {process.returncode}: {message}")
+        return stdout.decode("utf-8")
