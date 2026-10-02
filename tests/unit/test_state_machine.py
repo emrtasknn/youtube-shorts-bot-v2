@@ -1,6 +1,20 @@
 import pytest
-from app.domain.enums import ApprovalStatus, PublicationStatus, RunStatus, StageStatus, ProviderHealthStatus
-from app.domain.state_machine import CircuitBreaker, InvalidTransition, transition_approval, transition_publication, transition_run, transition_stage
+
+from app.domain.enums import (
+    ApprovalStatus,
+    ProviderHealthStatus,
+    PublicationStatus,
+    RunStatus,
+    StageStatus,
+)
+from app.domain.state_machine import (
+    CircuitBreaker,
+    InvalidTransition,
+    transition_approval,
+    transition_publication,
+    transition_run,
+    transition_stage,
+)
 
 
 def test_run_happy_path_transition() -> None:
@@ -19,8 +33,14 @@ def test_stage_retry_loop() -> None:
 
 
 def test_approval_edit_request_can_return_to_pending() -> None:
-    assert transition_approval(ApprovalStatus.PENDING, ApprovalStatus.EDIT_REQUESTED) == ApprovalStatus.EDIT_REQUESTED
-    assert transition_approval(ApprovalStatus.EDIT_REQUESTED, ApprovalStatus.PENDING) == ApprovalStatus.PENDING
+    assert (
+        transition_approval(ApprovalStatus.PENDING, ApprovalStatus.EDIT_REQUESTED)
+        == ApprovalStatus.EDIT_REQUESTED
+    )
+    assert (
+        transition_approval(ApprovalStatus.EDIT_REQUESTED, ApprovalStatus.PENDING)
+        == ApprovalStatus.PENDING
+    )
 
 
 def test_publication_is_idempotent_at_domain_level() -> None:
