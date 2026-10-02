@@ -49,6 +49,11 @@ class ReliabilityExecutor:
         while len(attempted) < len(providers):
             provider_name = self.router.route(providers, attempted)
             attempted.add(provider_name)
+            if len(attempted) > 1:
+                print(
+                    f"[provider-fallback] capability={request.capability.value} "
+                    f"operation={request.operation} provider={provider_name}"
+                )
             provider_request = ProviderRequest(
                 request_id=request.request_id,
                 run_id=request.run_id,
