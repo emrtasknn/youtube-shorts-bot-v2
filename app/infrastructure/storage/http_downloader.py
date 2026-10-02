@@ -13,7 +13,9 @@ class HttpAssetDownloader:
         if not url.strip():
             raise ValueError("Asset download URL must not be empty")
         destination.parent.mkdir(parents=True, exist_ok=True)
-        async with httpx.AsyncClient(timeout=self._timeout_seconds, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=self._timeout_seconds, follow_redirects=True
+        ) as client:
             response = await client.get(url)
             response.raise_for_status()
             if not response.content:
