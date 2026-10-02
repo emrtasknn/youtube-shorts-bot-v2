@@ -188,8 +188,8 @@ class GenerateCustomShort:
                 ),
                 system_instruction="Return valid JSON only, with no markdown fences.",
                 generation_config={
-                    "temperature": 0.7,
                     "responseMimeType": "application/json",
+                    "maxOutputTokens": 1200,
                 },
             )
         )
