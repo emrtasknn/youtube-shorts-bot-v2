@@ -18,7 +18,9 @@ class ProviderRegistry:
         self._providers: dict[str, ProviderAdapter] = {}
         self._descriptors: dict[str, ProviderDescriptor] = {}
 
-    def register(self, provider: ProviderAdapter, descriptor: ProviderDescriptor | None = None) -> None:
+    def register(
+        self, provider: ProviderAdapter, descriptor: ProviderDescriptor | None = None
+    ) -> None:
         name = provider.name
         if name in self._providers:
             raise ProviderRegistryError(f"Provider already registered: {name}")
@@ -36,11 +38,7 @@ class ProviderRegistry:
 
     def candidates(self, capability: ProviderCapability) -> list[ProviderDescriptor]:
         return sorted(
-            (
-                d
-                for d in self._descriptors.values()
-                if d.enabled and capability in d.capabilities
-            ),
+            (d for d in self._descriptors.values() if d.enabled and capability in d.capabilities),
             key=lambda d: d.priority,
         )
 
