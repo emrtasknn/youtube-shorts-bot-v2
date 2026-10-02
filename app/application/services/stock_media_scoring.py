@@ -1,0 +1,112 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass(frozen=True, slots=True)
+class StockMediaScore:
+    score: float
+    relevance: float
+    orientation: float
+    resolution: float
+    duration: float
+    duplicate_penalty: float
+    eligible: bool
+    reasons: tuple[str, ...]
+
+
+class StockMediaScorer:
+    def __init__(
+        self,
+        *,
+        min_width: int = 1080,
+        min_height: int = 1920,
+        min_score: float = 0.60,
+    ) -> None:
+        self._min_width = min_width
+        self._min_height = min_height
+        self._min_score = min_score
+
+    def score(
+        self,
+        item: dict[str, Any],
+        *,
+        query: str,
+        used_provider_asset_ids: set[str] | None = None,
+        min_duration: float = 2.0,
+        max_duration: float = 60.0,
+    ) -> StockMediaScore:
+        reasons: list[str] = []
+        normalized_query = {token.lower() for token in query.split() if token}
+        searchable = " ".join(
+            str(item.get(key, "")) for key in ("alt", "description", "title")
+        ).lower()
+        matched = sum(1 for token in normalized_query if token in searchable)
+        relevance = matched / len(normalized_query) if normalized_query else 0.0
+
+        width = self._as_number(item.get("width"))
+        height = self._as_number(item.get("height"))
+        orientation = 1.0 if height > width else 0.0
+        resolution = min(
+            width / self._min_width if self._min_width else 1.0,
+            height / self._min_height if self._min_height else 1.0,
+        )
+        resolution = max(0.0, min(1.0, resolution))
+
+        duration = self._as_number(item.get("duration"))
+        duration_score = 1.0
+        if duration:
+            if duration < min_duration or duration > max_duration:
+                duration_score = 0.0
+                reasons.append("duration_out_of_range")
+        elif item.get("type") == "video":
+            duration_score = 0.0
+            reasons.append("missing_duration")
+
+        provider_asset_id = str(item.get("id", ""))
+        duplicate_penalty = 1.0 if (
+            provider_asset_id and provider_asset_id in (used_provider_asset_ids or set())
+        ) else 0.0
+        if duplicate_penalty:
+            reasons.append("already_used")
+
+        if relevance < 0.20:
+            reasons.append("low_relevance")
+        if orientation < 1.0:
+            reasons.append("not_portrait")
+        if resolution < 0.50:
+            reasons.append("low_resolution")
+
+        score = (
+            relevance * 0.45
+            + orientation * 0.15
+            + resolution * 0.25
+            + duration_score * 0.15
+            - duplicate_penalty
+        )
+        eligible = (
+            score >= self._min_score
+            and relevance >= 0.20
+            and orientation == 1.0
+            and resolution >= 0.50
+            and duplicate_penalty == 0.0
+            and duration_score > 0.0
+        )
+        return StockMediaScore(
+            score=max(0.0, min(1.0, score)),
+            relevance=relevance,
+            orientation=orientation,
+            resolution=resolution,
+            duration=duration_score,
+            duplicate_penalty=duplicate_penalty,
+            eligible=eligible,
+            reasons=tuple(reasons),
+        )
+
+    @staticmethod
+    def _as_number(value: Any) -> float:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return 0.0
