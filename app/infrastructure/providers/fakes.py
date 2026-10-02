@@ -4,6 +4,7 @@ from collections.abc import Awaitable, Callable
 from decimal import Decimal
 
 from app.infrastructure.providers.contracts import (
+    ErrorCategory,
     ProviderCapability,
     ProviderError,
     ProviderRequest,
@@ -44,7 +45,7 @@ def success_result(request: ProviderRequest, output: str = "ok") -> ProviderResu
 def transient_error(provider: str, code: str = "UPSTREAM_503") -> ProviderError:
     return ProviderError(
         code=code,
-        category="TRANSIENT",
+        category=ErrorCategory.TRANSIENT,
         provider=provider,
         message="temporary failure",
         retryable=True,

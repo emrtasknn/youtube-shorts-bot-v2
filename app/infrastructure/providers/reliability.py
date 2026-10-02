@@ -51,7 +51,7 @@ class RetryManager:
 
     def delay(self, attempt: int, error: ProviderError) -> float:
         if error.retry_after_seconds is not None:
-            return max(0.0, min(error.retry_after_seconds, self.policy.max_delay_seconds))
+            return float(max(0.0, min(error.retry_after_seconds, self.policy.max_delay_seconds)))
         exponential = self.policy.base_delay_seconds * (2 ** max(0, attempt - 1))
         bounded = min(exponential, self.policy.max_delay_seconds)
         jitter = bounded * self.policy.jitter_ratio * self._random()
@@ -125,8 +125,9 @@ class ConcurrencyLimiter:
             raise ValueError("limit must be positive")
         self._semaphores[key] = asyncio.Semaphore(limit)
 
-    def semaphore(self, key: str) -> asyncio.Semaphore:
-        return self._semaphores.get(key, _UnlimitedSemaphore())
+    def semaphore(self, key: str) -> asyncio.Semaphore | _UnlimitedSemaphore:
+        semaphore = self._semaphores.get(key)
+        return semaphore if semaphore is not None else _UnlimitedSemaphore()
 
 
 class _UnlimitedSemaphore:
