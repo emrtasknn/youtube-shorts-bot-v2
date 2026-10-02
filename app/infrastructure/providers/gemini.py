@@ -132,9 +132,7 @@ class GeminiTextProvider:
             request_payload["generationConfig"] = generation_config
         return request_payload
 
-    def _normalize_response(
-        self, response: dict[str, Any]
-    ) -> tuple[str, ProviderUsage]:
+    def _normalize_response(self, response: dict[str, Any]) -> tuple[str, ProviderUsage]:
         candidates = response.get("candidates")
         if not isinstance(candidates, list) or not candidates:
             raise ProviderError(
