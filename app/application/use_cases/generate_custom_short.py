@@ -128,11 +128,12 @@ class GenerateCustomShort:
                     )
                 )
             run.status = RunStatus.ASSET_GENERATION
+            narration_text = f"{script.hook} {script.body} {script.cta or ''}".strip()
             voice = await self._tts.synthesize(
                 TTSRequest(
                     run_id=str(run.id),
                     request_id=f"{run.id}:voiceover",
-                    text=f"{script.hook} {script.body} {script.cta or ''}".strip(),
+                    text=narration_text,
                 )
             )
             run_dir = self._storage_root / str(run.id)
@@ -151,6 +152,7 @@ class GenerateCustomShort:
                     scenes=tuple(inputs),
                     output_path=output_path,
                     voiceover_path=audio_path,
+                    subtitle_text=narration_text,
                 )
             )
             run.status = RunStatus.RENDERING
@@ -183,8 +185,13 @@ class GenerateCustomShort:
                     f"Create a {language} YouTube Short about: {topic}. "
                     "Target 25-40 seconds. Return JSON with hook, body, cta, "
                     "duration_target, scenes. scenes must contain 4 items with "
-                    "duration, narration, visual_goal, visual_query. Use concrete "
-                    "stock-photo queries. Do not invent uncertain historical facts."
+                    "duration, narration, visual_goal, visual_query. Every scene "
+                    "must describe the exact subject shown on screen. For historical "
+                    "topics include concrete entities, location, event and era in "
+                    "visual_query when relevant; never use generic queries such as "
+                    "crowd or people when the narration names a specific place/event. "
+                    "Use concrete stock-photo or historical-illustration queries. "
+                    "Do not invent uncertain historical facts."
                 ),
                 system_instruction="Return valid JSON only, with no markdown fences.",
                 generation_config={
@@ -232,9 +239,10 @@ class GenerateCustomShort:
 
     async def _select_asset(self, run: RunModel, scene: SceneModel) -> tuple[Path, AssetModel]:
         query = scene.primary_subject or scene.visual_goal or "historical scene"
+        broader_queries = [scene.visual_goal, "historical illustration"]
         strategies = StockMediaStrategyBuilder().build(
             exact_query=query,
-            broader_queries=["historical scene", "historical photo"],
+            broader_queries=[item for item in broader_queries if item.strip()],
         )
         result = await SearchStockMedia(self._stock_media).execute_strategy(
             run_id=str(run.id),
