@@ -7,7 +7,6 @@ from pathlib import Path
 from app.application.ports.video_engine import (
     VideoRenderRequest,
     VideoRenderResult,
-    VideoSceneInput,
 )
 from app.application.services.subtitles import write_ass
 
