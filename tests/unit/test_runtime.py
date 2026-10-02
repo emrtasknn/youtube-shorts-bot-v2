@@ -9,6 +9,8 @@ def test_build_runtime_registers_enabled_providers() -> None:
         pexels_api_key="pexels-test",
         gemini_enabled=True,
         gemini_api_key="gemini-test",
+        groq_enabled=True,
+        groq_api_key="groq-test",
         fish_audio_enabled=True,
         fish_audio_api_key="fish-test",
     )
@@ -16,6 +18,9 @@ def test_build_runtime_registers_enabled_providers() -> None:
     runtime = build_runtime(settings)
 
     assert runtime.executor.registry.get("gemini").capabilities == frozenset(
+        {ProviderCapability.TEXT_GENERATION}
+    )
+    assert runtime.executor.registry.get("groq").capabilities == frozenset(
         {ProviderCapability.TEXT_GENERATION}
     )
     assert runtime.executor.registry.get("pexels").capabilities == frozenset(
@@ -32,6 +37,7 @@ def test_build_runtime_rejects_missing_required_provider() -> None:
         pexels_api_key="pexels-test",
         gemini_enabled=True,
         gemini_api_key="gemini-test",
+        groq_enabled=False,
         fish_audio_enabled=False,
     )
 
