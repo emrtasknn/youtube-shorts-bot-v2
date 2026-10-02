@@ -88,7 +88,12 @@ class PexelsStockMediaProvider:
             timeout=timeout_seconds or self._timeout_seconds,
         )
         try:
-            response = await client.get(endpoint, params=params)
+            response = await client.get(
+                f"{self._base_url}{endpoint}",
+                headers=headers,
+                params=params,
+                timeout=timeout_seconds or self._timeout_seconds,
+            )
         except httpx.TimeoutException as exc:
             raise ProviderError(
                 code="TIMEOUT",
