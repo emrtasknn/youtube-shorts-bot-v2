@@ -77,9 +77,7 @@ class GroqTextProvider:
             "Content-Type": "application/json",
         }
         owns_client = self._client is None
-        client = self._client or httpx.AsyncClient(
-            timeout=timeout_seconds or self._timeout_seconds
-        )
+        client = self._client or httpx.AsyncClient(timeout=timeout_seconds or self._timeout_seconds)
         try:
             response = await client.post(
                 f"{self._base_url}/chat/completions",
@@ -186,11 +184,15 @@ class GroqTextProvider:
             "source": "groq",
             "finish_reason": choice.get("finish_reason"),
         }
-        return text.strip(), ProviderUsage(
-            input_units=input_units,
-            output_units=output_units,
-            total_units=total_units,
-        ), metadata
+        return (
+            text.strip(),
+            ProviderUsage(
+                input_units=input_units,
+                output_units=output_units,
+                total_units=total_units,
+            ),
+            metadata,
+        )
 
     def _provider_error(self, response: httpx.Response) -> ProviderError:
         retry_after = response.headers.get("retry-after")
