@@ -57,4 +57,4 @@ def test_validate_output_rejects_empty_file(tmp_path: Path) -> None:
     output = tmp_path / "video.mp4"
     output.touch()
     with pytest.raises(RuntimeError, match="missing or empty"):
-        validate_output(output, 30)
+        validate_output(output, 30.0)
