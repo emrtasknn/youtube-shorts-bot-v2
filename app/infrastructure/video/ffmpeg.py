@@ -100,9 +100,7 @@ class FFmpegVideoEngine:
             stderr=asyncio.subprocess.PIPE,
         )
         try:
-            _, stderr = await asyncio.wait_for(
-                process.communicate(), timeout=self._timeout_seconds
-            )
+            _, stderr = await asyncio.wait_for(process.communicate(), timeout=self._timeout_seconds)
         except TimeoutError as exc:
             process.kill()
             await process.wait()
