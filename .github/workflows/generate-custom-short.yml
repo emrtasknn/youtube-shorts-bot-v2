@@ -24,7 +24,6 @@ permissions:
 
 jobs:
   generate:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'test: trigger first video' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
