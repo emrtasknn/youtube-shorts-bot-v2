@@ -55,7 +55,7 @@ class RetryManager:
         exponential = self.policy.base_delay_seconds * (2 ** max(0, attempt - 1))
         bounded = min(exponential, self.policy.max_delay_seconds)
         jitter = bounded * self.policy.jitter_ratio * self._random()
-        return min(self.policy.max_delay_seconds, bounded + jitter)
+        return float(min(self.policy.max_delay_seconds, bounded + jitter))
 
     async def wait(self, attempt: int, error: ProviderError) -> float:
         delay = self.delay(attempt, error)
