@@ -1,4 +1,5 @@
 from app.config.settings import Settings
+from app.infrastructure.providers.fish_audio import FishAudioTTSProvider
 from app.infrastructure.providers.gemini import GeminiTextProvider
 from app.infrastructure.providers.pexels import PexelsStockMediaProvider
 from app.infrastructure.providers.registry import ProviderRegistry
@@ -23,6 +24,18 @@ def build_provider_registry(settings: Settings) -> ProviderRegistry:
                 base_url=settings.gemini_base_url,
                 model=settings.gemini_model,
                 timeout_seconds=settings.gemini_timeout_seconds,
+            )
+        )
+
+    if settings.fish_audio_enabled and settings.fish_audio_api_key:
+        registry.register(
+            FishAudioTTSProvider(
+                settings.fish_audio_api_key,
+                base_url=settings.fish_audio_base_url,
+                model=settings.fish_audio_model,
+                format=settings.fish_audio_format,
+                reference_id=settings.fish_audio_reference_id or None,
+                timeout_seconds=settings.fish_audio_timeout_seconds,
             )
         )
 
