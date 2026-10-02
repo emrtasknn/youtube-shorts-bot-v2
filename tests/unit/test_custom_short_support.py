@@ -18,6 +18,30 @@ def test_parse_script_accepts_valid_json() -> None:
     assert len(result["scenes"]) == 3
 
 
+def test_parse_script_normalizes_human_readable_durations() -> None:
+    payload = {
+        "hook": "H",
+        "body": "B",
+        "duration_target": "about 30 seconds",
+        "scenes": [{"visual_query": "roman", "duration": "6 seconds"}] * 3,
+    }
+    result = parse_script(json.dumps(payload))
+    assert result["duration_target"] == 30.0
+    assert result["scenes"][0]["duration"] == 6.0
+
+
+def test_parse_script_uses_safe_defaults_for_invalid_durations() -> None:
+    payload = {
+        "hook": "H",
+        "body": "B",
+        "duration_target": "thirty seconds",
+        "scenes": [{"visual_query": "roman", "duration": "unknown"}] * 3,
+    }
+    result = parse_script(json.dumps(payload))
+    assert result["duration_target"] == 30.0
+    assert result["scenes"][0]["duration"] == 6.0
+
+
 def test_parse_script_rejects_missing_scene_query() -> None:
     payload = {
         "hook": "H",
