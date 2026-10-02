@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     debug: bool = False
     database_url: str = "postgresql+psycopg://shorts:shorts@localhost:5432/shorts"
     telegram_bot_token: str = ""
+    pexels_enabled: bool = False
+    pexels_api_key: str = ""
+    pexels_base_url: str = "https://api.pexels.com"
+    pexels_timeout_seconds: float = 30.0
 
 
 @lru_cache
