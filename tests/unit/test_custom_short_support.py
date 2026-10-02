@@ -89,3 +89,21 @@ def test_parse_script_rejects_missing_scene_narration() -> None:
     }
     with pytest.raises(ValueError, match="narration"):
         parse_script(json.dumps(payload))
+
+
+def test_parse_script_rejects_generic_visual_query() -> None:
+    payload = {
+        "hook": "H",
+        "body": "B",
+        "duration_target": 28,
+        "scenes": [
+            {
+                "visual_query": "crowd people historical photo",
+                "visual_goal": "Specific historical event",
+                "narration": "A specific event happened.",
+            }
+        ]
+        * 3,
+    }
+    with pytest.raises(ValueError, match="specific visual_query"):
+        parse_script(json.dumps(payload))
