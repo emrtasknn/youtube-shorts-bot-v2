@@ -6,6 +6,23 @@ from pathlib import Path
 from typing import Any
 
 
+_GENERIC_VISUAL_TOKENS = {
+    "crowd",
+    "people",
+    "person",
+    "group",
+    "city",
+    "street",
+    "historical",
+    "history",
+    "photo",
+    "photograph",
+    "image",
+    "event",
+    "scene",
+}
+
+
 def _coerce_seconds(value: Any, *, default: float, minimum: float, maximum: float) -> float:
     if isinstance(value, bool):
         return default
@@ -57,6 +74,13 @@ def parse_script(raw: str) -> dict[str, Any]:
             raise ValueError("Every scene needs a visual_goal")
         if not visual_query:
             raise ValueError("Every scene needs a visual_query")
+        query_tokens = {
+            token.lower().strip(".,!?;:()[]{}")
+            for token in visual_query.split()
+            if token.strip(".,!?;:()[]{}")
+        }
+        if query_tokens and query_tokens.issubset(_GENERIC_VISUAL_TOKENS):
+            raise ValueError("Every scene needs a specific visual_query")
         normalized_scenes.append(
             {
                 "duration": _coerce_seconds(
