@@ -1,0 +1,114 @@
+name: Generate Custom Short
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "Short konusu"
+        required: true
+        type: string
+      language:
+        description: "İçerik dili"
+        required: false
+        default: "tr"
+        type: string
+      run_key:
+        description: "Opsiyonel benzersiz run key"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: shorts
+          POSTGRES_USER: shorts
+          POSTGRES_PASSWORD: shorts
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U shorts -d shorts"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      DATABASE_URL: postgresql+psycopg://shorts:shorts@localhost:5432/shorts
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      FISH_AUDIO_API_KEY: ${{ secrets.FISH_AUDIO_API_KEY }}
+      GEMINI_ENABLED: "true"
+      PEXELS_ENABLED: "true"
+      FISH_AUDIO_ENABLED: "true"
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Install application
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[dev]"
+
+      - name: Run database migrations
+        run: alembic upgrade head
+
+      - name: Validate required secrets
+        run: |
+          test -n "$GEMINI_API_KEY" || (echo "GEMINI_API_KEY is missing" && exit 1)
+          test -n "$PEXELS_API_KEY" || (echo "PEXELS_API_KEY is missing" && exit 1)
+          test -n "$FISH_AUDIO_API_KEY" || (echo "FISH_AUDIO_API_KEY is missing" && exit 1)
+
+      - name: Generate Short
+        env:
+          TOPIC: ${{ inputs.topic }}
+          LANGUAGE: ${{ inputs.language }}
+          RUN_KEY: ${{ inputs.run_key }}
+        run: |
+          set -euo pipefail
+          if [ -z "$RUN_KEY" ]; then
+            RUN_KEY="github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          fi
+          python -m app custom "$TOPIC" \
+            --language "$LANGUAGE" \
+            --run-key "$RUN_KEY" \
+            --requested-by "github-actions" | tee generation-result.json
+
+      - name: Validate generated video
+        run: |
+          set -euo pipefail
+          test -s storage/renders/custom.mp4
+          ffprobe -v error -show_entries stream=codec_type,width,height,r_frame_rate \
+            -of default=noprint_wrappers=1 storage/renders/custom.mp4
+          ffprobe -v error -show_entries format=duration \
+            -of default=noprint_wrappers=1 storage/renders/custom.mp4
+
+      - name: Upload generated Short
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-short-${{ github.run_id }}
+          path: |
+            storage/renders/custom.mp4
+            generation-result.json
+          if-no-files-found: warn
+          retention-days: 7
