@@ -103,9 +103,7 @@ class FishAudioTTSProvider:
             "model": model,
         }
         owns_client = self._client is None
-        client = self._client or httpx.AsyncClient(
-            timeout=timeout_seconds or self._timeout_seconds
-        )
+        client = self._client or httpx.AsyncClient(timeout=timeout_seconds or self._timeout_seconds)
         try:
             response = await client.post(
                 f"{self._base_url}/v1/tts",
