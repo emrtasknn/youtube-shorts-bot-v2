@@ -1,6 +1,8 @@
 name: Generate Custom Short
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       topic:
@@ -22,6 +24,7 @@ permissions:
 
 jobs:
   generate:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'test: trigger first video' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -83,8 +86,8 @@ jobs:
 
       - name: Generate Short
         env:
-          TOPIC: ${{ inputs.topic }}
-          LANGUAGE: ${{ inputs.language }}
+          TOPIC: ${{ inputs.topic || 'The 1518 Dancing Plague: When Hundreds of People Danced Until They Collapsed' }}
+          LANGUAGE: ${{ inputs.language || 'en' }}
           RUN_KEY: ${{ inputs.run_key }}
         run: |
           set -euo pipefail
