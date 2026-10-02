@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     pexels_api_key: str = ""
     pexels_base_url: str = "https://api.pexels.com"
     pexels_timeout_seconds: float = 30.0
+    gemini_enabled: bool = False
+    gemini_api_key: str = ""
+    gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta"
+    gemini_model: str = "gemini-3.6-flash"
+    gemini_timeout_seconds: float = 60.0
 
 
 @lru_cache
