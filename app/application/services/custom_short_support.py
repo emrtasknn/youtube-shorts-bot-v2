@@ -8,7 +8,10 @@ from typing import Any
 def parse_script(raw: str) -> dict[str, Any]:
     text = raw.strip()
     if text.startswith("```"):
-        text = text.split("\\n", 1)[1].rsplit("```", 1)[0].strip()
+        lines = text.splitlines()
+        if len(lines) < 3 or not lines[-1].strip().startswith("```"):
+            raise ValueError("Invalid markdown-fenced JSON response")
+        text = "\n".join(lines[1:-1]).strip()
     data = json.loads(text)
     if not isinstance(data, dict):
         raise ValueError("Script response must be a JSON object")
