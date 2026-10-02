@@ -17,6 +17,7 @@ class VideoRenderRequest:
     scenes: tuple[VideoSceneInput, ...]
     output_path: Path
     voiceover_path: Path | None = None
+    subtitle_text: str | None = None
     width: int = 1080
     height: int = 1920
     fps: int = 30
@@ -27,6 +28,10 @@ class VideoRenderResult:
     output_path: Path
     duration_seconds: float
     command: tuple[str, ...] = field(default_factory=tuple)
+    width: int = 0
+    height: int = 0
+    fps: float = 0.0
+    has_audio: bool = False
 
 
 class VideoEngine(Protocol):
