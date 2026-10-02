@@ -9,7 +9,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.application.ports.asset_downloader import AssetDownloader
-from app.application.ports.stock_media import StockMediaGateway, StockMediaStrategy
+from app.application.ports.stock_media import StockMediaGateway
 from app.application.ports.text_generation import TextGenerationGateway, TextGenerationRequest
 from app.application.ports.tts import TTSGateway, TTSRequest
 from app.application.ports.video_engine import VideoEngine, VideoRenderRequest, VideoSceneInput
@@ -47,6 +47,7 @@ class GenerateCustomShort:
         self._video_engine = video_engine
         self._downloader = downloader
         self._storage_root = storage_root
+        self._script_data: dict[str, Any] = {}
 
     async def execute(self, request: CustomShortRequest) -> CustomShortResult:
         topic = request.topic.strip()
