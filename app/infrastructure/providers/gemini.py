@@ -78,9 +78,7 @@ class GeminiTextProvider:
             "x-goog-api-key": self._api_key,
         }
         owns_client = self._client is None
-        client = self._client or httpx.AsyncClient(
-            timeout=timeout_seconds or self._timeout_seconds
-        )
+        client = self._client or httpx.AsyncClient(timeout=timeout_seconds or self._timeout_seconds)
         try:
             response = await client.post(
                 f"{self._base_url}/models/{model}:generateContent",
@@ -128,9 +126,7 @@ class GeminiTextProvider:
         }
         system_instruction = payload.get("system_instruction")
         if system_instruction:
-            request_payload["system_instruction"] = {
-                "parts": [{"text": str(system_instruction)}]
-            }
+            request_payload["system_instruction"] = {"parts": [{"text": str(system_instruction)}]}
         generation_config = payload.get("generation_config")
         if isinstance(generation_config, dict) and generation_config:
             request_payload["generationConfig"] = generation_config
