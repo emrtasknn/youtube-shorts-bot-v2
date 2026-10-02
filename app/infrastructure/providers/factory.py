@@ -1,6 +1,7 @@
 from app.config.settings import Settings
 from app.infrastructure.providers.fish_audio import FishAudioTTSProvider
 from app.infrastructure.providers.gemini import GeminiTextProvider
+from app.infrastructure.providers.groq import GroqTextProvider
 from app.infrastructure.providers.pexels import PexelsStockMediaProvider
 from app.infrastructure.providers.registry import ProviderRegistry
 
@@ -24,6 +25,16 @@ def build_provider_registry(settings: Settings) -> ProviderRegistry:
                 base_url=settings.gemini_base_url,
                 model=settings.gemini_model,
                 timeout_seconds=settings.gemini_timeout_seconds,
+            )
+        )
+
+    if settings.groq_enabled and settings.groq_api_key:
+        registry.register(
+            GroqTextProvider(
+                settings.groq_api_key,
+                base_url=settings.groq_base_url,
+                model=settings.groq_model,
+                timeout_seconds=settings.groq_timeout_seconds,
             )
         )
 
