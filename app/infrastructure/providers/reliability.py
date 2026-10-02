@@ -93,9 +93,7 @@ class TokenBucket:
         async with self._lock:
             while True:
                 now = time.monotonic()
-                self.tokens = min(
-                    self.capacity, self.tokens + (now - self.updated_at) * self.rate
-                )
+                self.tokens = min(self.capacity, self.tokens + (now - self.updated_at) * self.rate)
                 self.updated_at = now
                 if self.tokens >= tokens:
                     self.tokens -= tokens
