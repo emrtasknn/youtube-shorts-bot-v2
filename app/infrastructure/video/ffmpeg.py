@@ -41,6 +41,13 @@ class FFmpegCommandBuilder:
                 f"trim=duration={scene.duration_seconds},setpts=PTS-STARTPTS[v{index}]"
             )
 
+        audio_input_index: int | None = None
+        if request.voiceover_path is not None:
+            if not request.voiceover_path.is_file():
+                raise FileNotFoundError(request.voiceover_path)
+            audio_input_index = len(request.scenes)
+            command.extend(["-i", str(request.voiceover_path)])
+
         concat_inputs = "".join(f"[v{index}]" for index in range(len(request.scenes)))
         filter_complex = ";".join(filter_inputs)
         filter_complex += (
@@ -48,15 +55,11 @@ class FFmpegCommandBuilder:
         )
         command.extend(["-filter_complex", filter_complex, "-map", "[vout]"])
 
-        if request.voiceover_path is not None:
-            if not request.voiceover_path.is_file():
-                raise FileNotFoundError(request.voiceover_path)
+        if audio_input_index is not None:
             command.extend(
                 [
-                    "-i",
-                    str(request.voiceover_path),
                     "-map",
-                    f"{len(request.scenes)}:a:0",
+                    f"{audio_input_index}:a:0",
                     "-c:a",
                     "aac",
                     "-b:a",
