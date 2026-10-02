@@ -65,15 +65,10 @@ class StockMediaScorer:
             reasons.append("missing_duration")
 
         provider_asset_id = str(item.get("id", ""))
-        duplicate_penalty = (
-            1.0
-            if (
-                provider_asset_id
-                and provider_asset_id in (used_provider_asset_ids or set())
-            )
-            else 0.0
-        )
-        if duplicate_penalty:
+        used_ids = used_provider_asset_ids or set()
+        duplicate_penalty = 0.0
+        if provider_asset_id and provider_asset_id in used_ids:
+            duplicate_penalty = 1.0
             reasons.append("already_used")
 
         if relevance < 0.20:
