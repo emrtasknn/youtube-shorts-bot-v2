@@ -91,14 +91,34 @@ jobs:
           if [ -z "$RUN_KEY" ]; then
             RUN_KEY="github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           fi
-          python -m app custom "$TOPIC"             --language "$LANGUAGE"             --run-key "$RUN_KEY"             --requested-by "github-actions" | tee generation-result.json
+          python -m app custom "$TOPIC" --language "$LANGUAGE" --run-key "$RUN_KEY" --requested-by "github-actions" | tee generation-result.json
 
-      - name: Validate generated video
+      - name: Resolve generated video path
+        id: resolve_video
         run: |
           set -euo pipefail
-          test -s storage/renders/custom.mp4
-          ffprobe -v error -show_entries stream=codec_type,width,height,r_frame_rate             -of default=noprint_wrappers=1 storage/renders/custom.mp4
-          ffprobe -v error -show_entries format=duration             -of default=noprint_wrappers=1 storage/renders/custom.mp4
+          VIDEO_PATH="$(python - <<'PY'
+import json
+from pathlib import Path
+
+data = json.loads(Path("generation-result.json").read_text())
+path = Path(data["output_path"])
+if not path.is_file() or path.stat().st_size == 0:
+    raise SystemExit(f"Generated video is missing or empty: {path}")
+print(path)
+PY
+)"
+          echo "video_path=$VIDEO_PATH" >> "$GITHUB_OUTPUT"
+          echo "Generated video: $VIDEO_PATH"
+
+      - name: Validate generated video
+        env:
+          VIDEO_PATH: ${{ steps.resolve_video.outputs.video_path }}
+        run: |
+          set -euo pipefail
+          test -s "$VIDEO_PATH"
+          ffprobe -v error -show_entries stream=codec_type,width,height,r_frame_rate -of default=noprint_wrappers=1 "$VIDEO_PATH"
+          ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1 "$VIDEO_PATH"
 
       - name: Upload generated Short
         if: ${{ always() }}
@@ -106,7 +126,7 @@ jobs:
         with:
           name: custom-short-${{ github.run_id }}
           path: |
-            storage/renders/custom.mp4
+            ${{ steps.resolve_video.outputs.video_path }}
             generation-result.json
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 7
