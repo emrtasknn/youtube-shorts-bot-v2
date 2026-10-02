@@ -45,7 +45,7 @@ async def test_tts_returns_audio_bytes() -> None:
     assert result.provider == "fish_audio"
     assert result.output["audio_bytes"] == audio
     assert result.output["mime_type"] == "audio/mpeg"
-    assert result.usage.input_units == len("Merhaba, bugün tarihte ne oldu?".encode("utf-8"))
+    assert result.usage.input_units == len("Merhaba, bugün tarihte ne oldu?".encode())
 
 
 @pytest.mark.asyncio
