@@ -1,0 +1,83 @@
+from pathlib import Path
+
+import pytest
+
+from app.application.ports.video_engine import VideoRenderRequest, VideoSceneInput
+from app.infrastructure.video.ffmpeg import FFmpegCommandBuilder
+
+
+def test_builder_creates_vertical_scene_pipeline(tmp_path: Path) -> None:
+    image = tmp_path / "scene.jpg"
+    image.touch()
+    output = tmp_path / "output.mp4"
+    request = VideoRenderRequest(
+        scenes=(VideoSceneInput(image, 2.5, is_image=True),),
+        output_path=output,
+    )
+
+    command = FFmpegCommandBuilder().build(request)
+    filter_complex = command[command.index("-filter_complex") + 1]
+
+    assert command[:4] == ["ffmpeg", "-y", "-hide_banner", "-loglevel"]
+    assert "-loop" in command
+    assert "scale=1080:1920" in filter_complex
+    assert "crop=1080:1920" in filter_complex
+    assert "concat=n=1:v=1:a=0" in filter_complex
+    assert command[-2:] == ["mp4", str(output)]
+
+
+def test_builder_supports_mixed_scenes_and_voiceover(tmp_path: Path) -> None:
+    image = tmp_path / "scene.jpg"
+    video = tmp_path / "scene.mp4"
+    voiceover = tmp_path / "voice.mp3"
+    output = tmp_path / "output.mp4"
+    for path in (image, video, voiceover):
+        path.touch()
+
+    request = VideoRenderRequest(
+        scenes=(VideoSceneInput(image, 2.0, is_image=True), VideoSceneInput(video, 3.0)),
+        output_path=output,
+        voiceover_path=voiceover,
+    )
+    command = FFmpegCommandBuilder().build(request)
+    filter_complex = command[command.index("-filter_complex") + 1]
+
+    assert command.count("-i") == 3
+    assert "[0:v]" in filter_complex
+    assert "[1:v]" in filter_complex
+    assert "concat=n=2:v=1:a=0" in filter_complex
+    assert "2:a:0" in command
+    assert "-shortest" in command
+
+
+def test_builder_rejects_empty_scenes(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="At least one video scene"):
+        FFmpegCommandBuilder().build(
+            VideoRenderRequest(scenes=(), output_path=tmp_path / "output.mp4")
+        )
+
+
+def test_builder_rejects_missing_scene_file(tmp_path: Path) -> None:
+    missing = tmp_path / "missing.jpg"
+    with pytest.raises(FileNotFoundError):
+        FFmpegCommandBuilder().build(
+            VideoRenderRequest(
+                scenes=(VideoSceneInput(missing, 1.0, is_image=True),),
+                output_path=tmp_path / "output.mp4",
+            )
+        )
+
+
+def test_builder_passes_paths_as_arguments(tmp_path: Path) -> None:
+    image = tmp_path / "scene;touch-HACKED.jpg"
+    image.touch()
+    output = tmp_path / "output.mp4"
+    command = FFmpegCommandBuilder().build(
+        VideoRenderRequest(
+            scenes=(VideoSceneInput(image, 1.0, is_image=True),),
+            output_path=output,
+        )
+    )
+
+    assert str(image) in command
+    assert "touch-HACKED.jpg" not in command[:-1]
