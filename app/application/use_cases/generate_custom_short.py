@@ -16,7 +16,7 @@ from app.application.ports.video_engine import VideoEngine, VideoRenderRequest, 
 from app.application.services.custom_short_support import parse_script, validate_output
 from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
-from app.application.services.stock_media_strategy import StockMediaStrategyRouter
+from app.application.services.stock_media_strategy import StockMediaStrategyBuilder
 from app.application.use_cases.search_stock_media import SearchStockMedia
 from app.domain.enums import (
     ApprovalStatus,
@@ -232,11 +232,14 @@ class GenerateCustomShort:
 
     async def _select_asset(self, run: RunModel, scene: SceneModel) -> tuple[Path, AssetModel]:
         query = scene.primary_subject or scene.visual_goal or "historical scene"
-        router = StockMediaStrategyRouter()
+        strategies = StockMediaStrategyBuilder().build(
+            exact_query=query,
+            broader_queries=["historical scene", "historical photo"],
+        )
         result = await SearchStockMedia(self._stock_media).execute_strategy(
             run_id=str(run.id),
             request_id=f"{run.id}:scene:{scene.scene_index}",
-            strategies=[router.build_exact(query), router.build_broad(query)],
+            strategies=strategies,
         )
         selected = StockMediaSelector(StockMediaScorer()).select(result.items, query=result.query)
         if selected is None:
