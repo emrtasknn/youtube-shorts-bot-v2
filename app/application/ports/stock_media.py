@@ -25,5 +25,14 @@ class StockMediaSearchResult:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True, slots=True)
+class StockMediaStrategy:
+    name: str
+    query: str
+    min_items: int = 1
+    operation: str = "search_photos"
+    orientation: str | None = "portrait"
+
+
 class StockMediaGateway(Protocol):
     async def search(self, request: StockMediaSearchRequest) -> StockMediaSearchResult: ...
