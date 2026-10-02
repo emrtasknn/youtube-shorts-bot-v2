@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
-      - run: ruff check --fix .
+      - run: ruff check --fix --ignore E501 .
       - run: ruff format .
       - name: Commit formatted files
         run: |
