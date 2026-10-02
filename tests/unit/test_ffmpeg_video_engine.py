@@ -40,9 +40,13 @@ def test_builder_supports_mixed_scenes_and_voiceover(tmp_path: Path) -> None:
         voiceover_path=voiceover,
     )
     command = FFmpegCommandBuilder().build(request)
-    filter_complex = command[command.index("-filter_complex") + 1]
+    filter_complex_index = command.index("-filter_complex")
+    voiceover_index = command.index(str(voiceover))
+    filter_complex = command[filter_complex_index + 1]
 
     assert command.count("-i") == 3
+    assert voiceover_index < filter_complex_index
+    assert command.index("-map") > filter_complex_index
     assert "[0:v]" in filter_complex
     assert "[1:v]" in filter_complex
     assert "concat=n=2:v=1:a=0" in filter_complex
