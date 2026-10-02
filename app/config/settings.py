@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta"
     gemini_model: str = "gemini-3.8-flash"
     gemini_timeout_seconds: float = 60.0
+    groq_enabled: bool = True
+    groq_api_key: str = ""
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+    groq_model: str = "openai/gpt-oss-20b"
+    groq_timeout_seconds: float = 60.0
     fish_audio_enabled: bool = True
     fish_audio_api_key: str = ""
     fish_audio_base_url: str = "https://api.fish.audio"
