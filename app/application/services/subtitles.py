@@ -28,7 +28,10 @@ def build_ass(text: str, duration_seconds: float) -> str:
         raise ValueError("Subtitle text must contain words")
 
     chunk_size = 6
-    chunks = [" ".join(words[index : index + chunk_size]) for index in range(0, len(words), chunk_size)]
+    chunks = [
+        " ".join(words[index : index + chunk_size])
+        for index in range(0, len(words), chunk_size)
+    ]
     step = duration_seconds / len(chunks)
     events: list[str] = []
     for index, chunk in enumerate(chunks):
