@@ -110,7 +110,15 @@ class PexelsStockMediaProvider:
                 await client.aclose()
 
         if 200 <= response.status_code < 300:
-            return response.json()
+            payload = response.json()
+            if not isinstance(payload, dict):
+                raise ProviderError(
+                    code="INVALID_RESPONSE",
+                    category=ErrorCategory.INVALID_REQUEST,
+                    provider=self.name,
+                    message="Pexels API returned a non-object JSON response",
+                )
+            return payload
 
         raise self._provider_error(response)
 
