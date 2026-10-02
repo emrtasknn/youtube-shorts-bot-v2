@@ -43,9 +43,11 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://shorts:shorts@localhost:5432/shorts
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
       FISH_AUDIO_API_KEY: ${{ secrets.FISH_AUDIO_API_KEY }}
       GEMINI_ENABLED: "true"
+      GROQ_ENABLED: "true"
       PEXELS_ENABLED: "true"
       FISH_AUDIO_ENABLED: "true"
       PYTHONUNBUFFERED: "1"
@@ -75,6 +77,7 @@ jobs:
       - name: Validate required secrets
         run: |
           test -n "$GEMINI_API_KEY" || (echo "GEMINI_API_KEY is missing" && exit 1)
+          test -n "$GROQ_API_KEY" || (echo "GROQ_API_KEY is missing" && exit 1)
           test -n "$PEXELS_API_KEY" || (echo "PEXELS_API_KEY is missing" && exit 1)
           test -n "$FISH_AUDIO_API_KEY" || (echo "FISH_AUDIO_API_KEY is missing" && exit 1)
 
@@ -88,19 +91,14 @@ jobs:
           if [ -z "$RUN_KEY" ]; then
             RUN_KEY="github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           fi
-          python -m app custom "$TOPIC" \
-            --language "$LANGUAGE" \
-            --run-key "$RUN_KEY" \
-            --requested-by "github-actions" | tee generation-result.json
+          python -m app custom "$TOPIC"             --language "$LANGUAGE"             --run-key "$RUN_KEY"             --requested-by "github-actions" | tee generation-result.json
 
       - name: Validate generated video
         run: |
           set -euo pipefail
           test -s storage/renders/custom.mp4
-          ffprobe -v error -show_entries stream=codec_type,width,height,r_frame_rate \
-            -of default=noprint_wrappers=1 storage/renders/custom.mp4
-          ffprobe -v error -show_entries format=duration \
-            -of default=noprint_wrappers=1 storage/renders/custom.mp4
+          ffprobe -v error -show_entries stream=codec_type,width,height,r_frame_rate             -of default=noprint_wrappers=1 storage/renders/custom.mp4
+          ffprobe -v error -show_entries format=duration             -of default=noprint_wrappers=1 storage/renders/custom.mp4
 
       - name: Upload generated Short
         if: ${{ always() }}
