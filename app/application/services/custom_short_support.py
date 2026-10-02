@@ -1,8 +1,24 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
+
+
+def _coerce_seconds(value: Any, *, default: float, minimum: float, maximum: float) -> float:
+    if isinstance(value, bool):
+        return default
+    if isinstance(value, (int, float)):
+        seconds = float(value)
+    elif isinstance(value, str):
+        match = re.search(r"-?\d+(?:\.\d+)?", value.replace(",", "."))
+        seconds = float(match.group()) if match else default
+    else:
+        seconds = default
+    if not minimum <= seconds <= maximum:
+        return default
+    return seconds
 
 
 def parse_script(raw: str) -> dict[str, Any]:
@@ -17,12 +33,26 @@ def parse_script(raw: str) -> dict[str, Any]:
         raise ValueError("Script response must be a JSON object")
     if not {"hook", "body", "duration_target", "scenes"}.issubset(data):
         raise ValueError("Script response is missing required fields")
+    data["hook"] = str(data["hook"]).strip()
+    data["body"] = str(data["body"]).strip()
+    data["cta"] = str(data.get("cta") or "").strip()
+    if not data["hook"] or not data["body"]:
+        raise ValueError("Script hook and body must not be empty")
+    data["duration_target"] = _coerce_seconds(data["duration_target"], default=30.0, minimum=15.0, maximum=60.0)
     scenes = data["scenes"]
     if not isinstance(scenes, list) or not 3 <= len(scenes) <= 6:
         raise ValueError("Script must contain between 3 and 6 scenes")
+    normalized_scenes: list[dict[str, Any]] = []
     for scene in scenes:
-        if not isinstance(scene, dict) or not scene.get("visual_query"):
+        if not isinstance(scene, dict) or not str(scene.get("visual_query") or "").strip():
             raise ValueError("Every scene needs a visual_query")
+        normalized_scenes.append({
+            "duration": _coerce_seconds(scene.get("duration"), default=6.0, minimum=1.0, maximum=20.0),
+            "narration": str(scene.get("narration") or "").strip(),
+            "visual_goal": str(scene.get("visual_goal") or "").strip(),
+            "visual_query": str(scene["visual_query"]).strip(),
+        })
+    data["scenes"] = normalized_scenes
     return data
 
 
