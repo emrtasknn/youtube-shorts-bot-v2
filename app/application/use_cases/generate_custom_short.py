@@ -158,9 +158,7 @@ class GenerateCustomShort:
             run.status = RunStatus.QC
             validate_output(render.output_path, render.duration_seconds)
             run.status = RunStatus.READY_FOR_APPROVAL
-            self._session.add(
-                ApprovalModel(run_id=run.id, status=ApprovalStatus.PENDING)
-            )
+            self._session.add(ApprovalModel(run_id=run.id, status=ApprovalStatus.PENDING))
             self._session.commit()
             return CustomShortResult(
                 run.id,
@@ -175,9 +173,7 @@ class GenerateCustomShort:
             self._session.commit()
             raise
 
-    async def _create_script(
-        self, run: RunModel, topic: str, language: str
-    ) -> ScriptModel:
+    async def _create_script(self, run: RunModel, topic: str, language: str) -> ScriptModel:
         result = await self._text.generate(
             TextGenerationRequest(
                 run_id=str(run.id),
@@ -234,9 +230,7 @@ class GenerateCustomShort:
         self._session.flush()
         return scenes
 
-    async def _select_asset(
-        self, run: RunModel, scene: SceneModel
-    ) -> tuple[Path, AssetModel]:
+    async def _select_asset(self, run: RunModel, scene: SceneModel) -> tuple[Path, AssetModel]:
         query = scene.primary_subject or scene.visual_goal or "historical scene"
         router = StockMediaStrategyRouter()
         result = await SearchStockMedia(self._stock_media).execute_strategy(
@@ -244,19 +238,13 @@ class GenerateCustomShort:
             request_id=f"{run.id}:scene:{scene.scene_index}",
             strategies=[router.build_exact(query), router.build_broad(query)],
         )
-        selected = StockMediaSelector(StockMediaScorer()).select(
-            result.items, query=result.query
-        )
+        selected = StockMediaSelector(StockMediaScorer()).select(result.items, query=result.query)
         if selected is None:
-            raise RuntimeError(
-                f"No eligible stock asset found for scene {scene.scene_index}"
-            )
+            raise RuntimeError(f"No eligible stock asset found for scene {scene.scene_index}")
         item = selected.item
         url = str(item.get("download_url") or "").strip()
         if not url:
-            raise RuntimeError(
-                f"Selected asset has no download URL: {item.get('id')}"
-            )
+            raise RuntimeError(f"Selected asset has no download URL: {item.get('id')}")
         path = self._storage_root / str(run.id) / f"scene-{scene.scene_index}.jpg"
         await self._downloader.download(url, path)
         asset = AssetModel(
