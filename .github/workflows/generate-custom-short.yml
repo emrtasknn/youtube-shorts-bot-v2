@@ -85,8 +85,8 @@ jobs:
 
       - name: Generate Short
         env:
-          TOPIC: ${{ inputs.topic || 'The 1518 Dancing Plague: When Hundreds of People Danced Until They Collapsed' }}
-          LANGUAGE: ${{ inputs.language || 'en' }}
+          TOPIC: "The 1518 Dancing Plague: When Hundreds of People Danced Until They Collapsed"
+          LANGUAGE: "en"
           RUN_KEY: ${{ inputs.run_key }}
         run: |
           set -euo pipefail
