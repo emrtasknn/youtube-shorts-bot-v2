@@ -51,9 +51,7 @@ class PexelsStockMediaProvider:
             )
 
         params = self._search_params(request.payload, query)
-        endpoint = (
-            "/v1/search" if request.operation == "search_photos" else "/v1/videos/search"
-        )
+        endpoint = "/v1/search" if request.operation == "search_photos" else "/v1/videos/search"
         response = await self._request(endpoint, params, request.timeout_seconds)
 
         return ProviderResult(
