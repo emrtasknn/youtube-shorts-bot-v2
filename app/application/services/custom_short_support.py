@@ -46,16 +46,25 @@ def parse_script(raw: str) -> dict[str, Any]:
         raise ValueError("Script must contain between 3 and 6 scenes")
     normalized_scenes: list[dict[str, Any]] = []
     for scene in scenes:
-        if not isinstance(scene, dict) or not str(scene.get("visual_query") or "").strip():
+        if not isinstance(scene, dict):
+            raise ValueError("Every scene must be an object")
+        narration = str(scene.get("narration") or "").strip()
+        visual_goal = str(scene.get("visual_goal") or "").strip()
+        visual_query = str(scene.get("visual_query") or "").strip()
+        if not narration:
+            raise ValueError("Every scene needs narration")
+        if not visual_goal:
+            raise ValueError("Every scene needs a visual_goal")
+        if not visual_query:
             raise ValueError("Every scene needs a visual_query")
         normalized_scenes.append(
             {
                 "duration": _coerce_seconds(
                     scene.get("duration"), default=6.0, minimum=1.0, maximum=20.0
                 ),
-                "narration": str(scene.get("narration") or "").strip(),
-                "visual_goal": str(scene.get("visual_goal") or "").strip(),
-                "visual_query": str(scene["visual_query"]).strip(),
+                "narration": narration,
+                "visual_goal": visual_goal,
+                "visual_query": visual_query,
             }
         )
     data["scenes"] = normalized_scenes
