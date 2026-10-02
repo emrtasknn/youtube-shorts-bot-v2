@@ -8,6 +8,7 @@ from app.application.ports.text_generation import TextGenerationGateway
 from app.application.ports.tts import TTSGateway
 from app.application.ports.video_engine import VideoEngine
 from app.config.settings import Settings
+from app.infrastructure.providers.contracts import ProviderCapability
 from app.infrastructure.providers.executor import ReliabilityExecutor
 from app.infrastructure.providers.factory import build_provider_registry
 from app.infrastructure.providers.reliability import (
@@ -45,9 +46,9 @@ def build_runtime(settings: Settings) -> RuntimeComponents:
     registry = build_provider_registry(settings)
     providers = registry.providers_by_capability()
 
-    text_providers = providers.get(next(cap for cap in providers if cap.value == "TEXT_GENERATION"), [])
-    stock_providers = providers.get(next(cap for cap in providers if cap.value == "STOCK_MEDIA"), [])
-    tts_providers = providers.get(next(cap for cap in providers if cap.value == "TTS"), [])
+    text_providers = providers.get(ProviderCapability.TEXT_GENERATION, [])
+    stock_providers = providers.get(ProviderCapability.STOCK_MEDIA, [])
+    tts_providers = providers.get(ProviderCapability.TTS, [])
 
     if not text_providers:
         raise RuntimeError("No text-generation provider is enabled")
@@ -56,7 +57,13 @@ def build_runtime(settings: Settings) -> RuntimeComponents:
     if not tts_providers:
         raise RuntimeError("No TTS provider is enabled")
 
-    retry = RetryManager(RetryPolicy(max_attempts=3, base_delay_seconds=1.0, max_delay_seconds=30.0))
+    retry = RetryManager(
+        RetryPolicy(
+            max_attempts=3,
+            base_delay_seconds=1.0,
+            max_delay_seconds=30.0,
+        )
+    )
     health = ProviderHealthManager()
     rate_limiter = RateLimiter()
     concurrency = ConcurrencyLimiter()
