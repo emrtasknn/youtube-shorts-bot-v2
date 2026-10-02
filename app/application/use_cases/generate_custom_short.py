@@ -77,7 +77,6 @@ class GenerateCustomShort:
         self._video_engine = video_engine
         self._downloader = downloader
         self._storage_root = storage_root
-        self._script_data: dict[str, Any] = {}
 
     async def execute(self, request: CustomShortRequest) -> CustomShortResult:
         topic = request.topic.strip()
@@ -111,9 +110,9 @@ class GenerateCustomShort:
             run.status = RunStatus.RESEARCHING
             run.status = RunStatus.TOPIC_VALIDATION
             run.status = RunStatus.SCRIPTING
-            script = await self._create_script(run, topic, request.language)
+            script, script_data = await self._create_script(run, topic, request.language)
             run.status = RunStatus.STORYBOARDING
-            scenes = self._create_scenes(script, self._script_data)
+            scenes = self._create_scenes(script, script_data["scenes"])
             run.status = RunStatus.ASSET_PLANNING
             inputs = []
             for scene in scenes:
@@ -173,7 +172,9 @@ class GenerateCustomShort:
             self._session.commit()
             raise
 
-    async def _create_script(self, run: RunModel, topic: str, language: str) -> ScriptModel:
+    async def _create_script(
+        self, run: RunModel, topic: str, language: str
+    ) -> tuple[ScriptModel, dict[str, Any]]:
         result = await self._text.generate(
             TextGenerationRequest(
                 run_id=str(run.id),
@@ -192,8 +193,7 @@ class GenerateCustomShort:
                 },
             )
         )
-        self._script_data = parse_script(result.text)
-        data = self._script_data
+        data = parse_script(result.text)
         script = ScriptModel(
             content_id=run.content_id,
             version=1,
@@ -207,7 +207,7 @@ class GenerateCustomShort:
         )
         self._session.add(script)
         self._session.flush()
-        return script
+        return script, data
 
     def _create_scenes(self, script: ScriptModel, data: Any) -> list[SceneModel]:
         if not isinstance(data, list):
