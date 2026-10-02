@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+
 def parse_script(raw: str) -> dict[str, Any]:
     text = raw.strip()
     if text.startswith("```"):
@@ -20,6 +21,7 @@ def parse_script(raw: str) -> dict[str, Any]:
         if not isinstance(scene, dict) or not scene.get("visual_query"):
             raise ValueError("Every scene needs a visual_query")
     return data
+
 
 def validate_output(path: Path, duration_seconds: float) -> None:
     if not path.is_file() or path.stat().st_size == 0:
