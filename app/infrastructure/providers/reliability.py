@@ -1,22 +1,16 @@
 from __future__ import annotations
 
 import asyncio
-import math
 import random
 import time
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from enum import StrEnum
-from typing import Callable
 
-from app.infrastructure.providers.contracts import (
-    ErrorCategory,
-    ProviderError,
-    ProviderRequest,
-    ProviderResult,
-)
+from app.infrastructure.providers.contracts import ErrorCategory, ProviderError, ProviderResult
 
 
 class RetryDecision(StrEnum):

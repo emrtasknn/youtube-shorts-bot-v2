@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import pytest
 
+from app.domain.enums import EventSeverity
 from app.infrastructure.providers.contracts import (
     ErrorCategory,
     ProviderCapability,
@@ -26,7 +27,6 @@ from app.infrastructure.providers.reliability import (
     StrategyRouter,
 )
 from app.infrastructure.providers.telemetry import ReliabilityTelemetry
-from app.domain.enums import EventSeverity
 
 
 def request(key: str = "key") -> ProviderRequest:
@@ -88,6 +88,7 @@ def test_circuit_breaker_recovery() -> None:
 @pytest.mark.asyncio
 async def test_executor_falls_back_after_primary_failure() -> None:
     registry = ProviderRegistry()
+
     async def fail(_: ProviderRequest) -> ProviderResult:
         raise ProviderError(
             code="503",
@@ -96,6 +97,7 @@ async def test_executor_falls_back_after_primary_failure() -> None:
             message="down",
             retryable=True,
         )
+
     primary = FakeProvider("primary", frozenset({ProviderCapability.TEXT_GENERATION}), fail)
     secondary = FakeProvider(
         "secondary", frozenset({ProviderCapability.TEXT_GENERATION}), success_result
@@ -110,7 +112,9 @@ async def test_executor_falls_back_after_primary_failure() -> None:
         retry=RetryManager(RetryPolicy(max_attempts=1)),
         health=health,
         rate_limiter=RateLimiter(),
-        concurrency=__import__("app.infrastructure.providers.reliability", fromlist=["ConcurrencyLimiter"]).ConcurrencyLimiter(),
+        concurrency=__import__(
+            "app.infrastructure.providers.reliability", fromlist=["ConcurrencyLimiter"]
+        ).ConcurrencyLimiter(),
         quota=QuotaManager(),
         idempotency=IdempotencyStore(),
         costs=CostTracker(),
