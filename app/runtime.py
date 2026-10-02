@@ -11,6 +11,11 @@ from app.config.settings import Settings
 from app.infrastructure.providers.contracts import ProviderCapability
 from app.infrastructure.providers.executor import ReliabilityExecutor
 from app.infrastructure.providers.factory import build_provider_registry
+from app.infrastructure.providers.gateways import (
+    ProviderStockMediaGateway,
+    ProviderTextGenerationGateway,
+    ProviderTTSGateway,
+)
 from app.infrastructure.providers.reliability import (
     ConcurrencyLimiter,
     CostTracker,
@@ -21,11 +26,6 @@ from app.infrastructure.providers.reliability import (
     RetryManager,
     RetryPolicy,
     StrategyRouter,
-)
-from app.infrastructure.providers.gateways import (
-    ProviderStockMediaGateway,
-    ProviderTTSGateway,
-    ProviderTextGenerationGateway,
 )
 from app.infrastructure.storage.http_downloader import HttpAssetDownloader
 from app.infrastructure.video.ffmpeg import FFmpegVideoEngine
