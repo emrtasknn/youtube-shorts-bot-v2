@@ -1,7 +1,14 @@
+from dataclasses import replace
+
 import httpx
 import pytest
 
-from app.infrastructure.providers.contracts import ErrorCategory, ProviderError, ProviderRequest
+from app.infrastructure.providers.contracts import (
+    ErrorCategory,
+    ProviderCapability,
+    ProviderError,
+    ProviderRequest,
+)
 from app.infrastructure.providers.gemini import GeminiTextProvider
 
 
@@ -9,7 +16,7 @@ def request() -> ProviderRequest:
     return ProviderRequest(
         request_id="req-1",
         run_id="run-1",
-        capability="TEXT_GENERATION",
+        capability=ProviderCapability.TEXT_GENERATION,
         operation="generate_text",
         provider="gemini",
         payload={
@@ -48,14 +55,7 @@ async def test_generate_text_normalizes_response() -> None:
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     provider = GeminiTextProvider("secret", model="gemini-default", client=client)
     try:
-        result = await provider.execute(
-            ProviderRequest(
-                **{
-                    **request().__dict__,
-                    "model": "gemini-test",
-                }
-            )
-        )
+        result = await provider.execute(replace(request(), model="gemini-test"))
     finally:
         await client.aclose()
 
