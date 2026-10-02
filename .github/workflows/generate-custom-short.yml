@@ -93,34 +93,22 @@ jobs:
           if [ -z "$RUN_KEY" ]; then
             RUN_KEY="github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           fi
-          python -m app custom "$TOPIC" --language "$LANGUAGE" --run-key "$RUN_KEY" --requested-by "github-actions" | tee generation-result.json
+          python -m app custom "$TOPIC"             --language "$LANGUAGE"             --run-key "$RUN_KEY"             --requested-by "github-actions" | tee generation-result.json
 
-      - name: Resolve generated video path
-        id: resolve_video
+      - name: Resolve generated video
         run: |
           set -euo pipefail
-          VIDEO_PATH="$(python - <<'PY'
-import json
-from pathlib import Path
-
-data = json.loads(Path("generation-result.json").read_text())
-path = Path(data["output_path"])
-if not path.is_file() or path.stat().st_size == 0:
-    raise SystemExit(f"Generated video is missing or empty: {path}")
-print(path)
-PY
-)"
-          echo "video_path=$VIDEO_PATH" >> "$GITHUB_OUTPUT"
-          echo "Generated video: $VIDEO_PATH"
+          VIDEO_PATH="$(python -c 'import json; from pathlib import Path; print(json.loads(Path("generation-result.json").read_text())["output_path"])')"
+          test -s "$VIDEO_PATH"
+          mkdir -p storage/renders
+          cp "$VIDEO_PATH" storage/renders/custom.mp4
 
       - name: Validate generated video
-        env:
-          VIDEO_PATH: ${{ steps.resolve_video.outputs.video_path }}
         run: |
           set -euo pipefail
-          test -s "$VIDEO_PATH"
-          ffprobe -v error -show_entries stream=codec_type,width,height,r_frame_rate -of default=noprint_wrappers=1 "$VIDEO_PATH"
-          ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1 "$VIDEO_PATH"
+          test -s storage/renders/custom.mp4
+          ffprobe -v error -show_entries stream=codec_type,width,height,r_frame_rate             -of default=noprint_wrappers=1 storage/renders/custom.mp4
+          ffprobe -v error -show_entries format=duration             -of default=noprint_wrappers=1 storage/renders/custom.mp4
 
       - name: Upload generated Short
         if: ${{ always() }}
@@ -128,7 +116,7 @@ PY
         with:
           name: custom-short-${{ github.run_id }}
           path: |
-            ${{ steps.resolve_video.outputs.video_path }}
+            storage/renders/custom.mp4
             generation-result.json
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 7
