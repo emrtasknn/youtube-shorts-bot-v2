@@ -11,6 +11,7 @@ class StockMediaStrategyBuilder:
         broader_queries: list[str] | None = None,
         operation: str = "search_photos",
         orientation: str | None = "portrait",
+        provider_candidates: tuple[str, ...] | None = None,
     ) -> list[StockMediaStrategy]:
         exact = exact_query.strip()
         if not exact:
@@ -22,6 +23,7 @@ class StockMediaStrategyBuilder:
                 query=exact,
                 operation=operation,
                 orientation=orientation,
+                provider_candidates=provider_candidates,
             )
         ]
         for index, query in enumerate(broader_queries or [], start=1):
@@ -33,6 +35,7 @@ class StockMediaStrategyBuilder:
                         query=normalized,
                         operation=operation,
                         orientation=orientation,
+                        provider_candidates=provider_candidates,
                         min_relevance=0.10,
                     )
                 )
