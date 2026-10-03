@@ -247,7 +247,9 @@ class GenerateCustomShort:
             exact_query=query,
             broader_queries=valid_broader_queries,
         )
-        result, selected = await SearchStockMedia(self._stock_media).execute_strategy_until_selected(
+        result, selected = await SearchStockMedia(
+            self._stock_media
+        ).execute_strategy_until_selected(
             run_id=str(run.id),
             request_id=f"{run.id}:scene:{scene.scene_index}",
             strategies=strategies,
