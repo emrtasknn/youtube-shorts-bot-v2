@@ -70,6 +70,7 @@ class SearchStockMedia:
                     query=strategy.query,
                     operation=strategy.operation,
                     orientation=strategy.orientation,
+                    provider_candidates=strategy.provider_candidates,
                     metadata={**(metadata or {}), "strategy": strategy.name},
                 )
             )
