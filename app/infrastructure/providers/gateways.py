@@ -90,7 +90,7 @@ class ProviderStockMediaGateway(StockMediaGateway):
                 run_id=request.run_id,
                 capability=ProviderCapability.STOCK_MEDIA,
                 operation=request.operation,
-                provider=self._providers[0],
+                provider=(request.provider_candidates or self._providers)[0],
                 payload={
                     "query": request.query,
                     "page": request.page,
@@ -99,7 +99,7 @@ class ProviderStockMediaGateway(StockMediaGateway):
                 },
                 idempotency_key=f"{request.run_id}:stock:{request.request_id}",
             ),
-            candidates=self._providers,
+            candidates=list(request.provider_candidates or self._providers),
         )
         output = result.output or {}
         return StockMediaSearchResult(
