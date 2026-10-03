@@ -12,7 +12,7 @@ from app.infrastructure.telegram.bot import TelegramBot
 
 
 class TelegramWorker:
-    def __init__(self, session: Session, bot: TelegramBot, control: TelegramControlPlane, admin_chat_id: int) -> None:
+    def __init__(self, session: Session, bot: TelegramBot, control: TelegramControlPlane, admin_chat_id: int, admin_user_id: int) -> None:
         self._session = session
         self._bot = bot
         self._control = control
@@ -44,7 +44,7 @@ class TelegramWorker:
         callback = update.get("callback_query")
         if isinstance(callback, dict):
             user = callback.get("from") or {}
-            if not isinstance(user, dict) or int(user.get("id", -1)) != self._admin_chat_id:
+            if not isinstance(user, dict) or int(user.get("id", -1)) != self._admin_user_id:
                 await self._bot.answer_callback(str(callback.get("id")), "Unauthorized")
                 return
             data = str(callback.get("data") or "")
