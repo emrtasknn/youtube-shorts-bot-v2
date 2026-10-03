@@ -18,3 +18,4 @@ db-migrate:
 	alembic upgrade head
 db-current:
 	alembic current
+quality: lint format-check typecheck test
