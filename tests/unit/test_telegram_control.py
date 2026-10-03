@@ -17,18 +17,9 @@ def test_approval_transitions_are_terminal_after_resolution() -> None:
 
 
 def test_run_approval_and_publish_transitions() -> None:
-    assert (
-        transition_run(RunStatus.READY_FOR_APPROVAL, RunStatus.APPROVED)
-        == RunStatus.APPROVED
-    )
-    assert (
-        transition_run(RunStatus.APPROVED, RunStatus.PUBLISHING)
-        == RunStatus.PUBLISHING
-    )
-    assert (
-        transition_run(RunStatus.PUBLISHING, RunStatus.PUBLISHED)
-        == RunStatus.PUBLISHED
-    )
+    assert transition_run(RunStatus.READY_FOR_APPROVAL, RunStatus.APPROVED) == RunStatus.APPROVED
+    assert transition_run(RunStatus.APPROVED, RunStatus.PUBLISHING) == RunStatus.PUBLISHING
+    assert transition_run(RunStatus.PUBLISHING, RunStatus.PUBLISHED) == RunStatus.PUBLISHED
 
 
 def test_run_cannot_publish_before_approval() -> None:
