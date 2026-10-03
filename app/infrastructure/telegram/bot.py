@@ -76,7 +76,9 @@ class TelegramBot:
             raise RuntimeError(f"Telegram getFile returned no file_path for {file_id}")
         destination.parent.mkdir(parents=True, exist_ok=True)
         async with httpx.AsyncClient(timeout=max(self._timeout, 180.0)) as client:
-            response = await client.get(f"{self._base_url.replace('/bot', '/file/bot')}/{file_path}")
+            response = await client.get(
+                f"{self._base_url.replace('/bot', '/file/bot')}/{file_path}"
+            )
             response.raise_for_status()
             destination.write_bytes(response.content)
         return destination
