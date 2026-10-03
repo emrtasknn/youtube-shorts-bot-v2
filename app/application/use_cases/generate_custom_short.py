@@ -240,9 +240,12 @@ class GenerateCustomShort:
     async def _select_asset(self, run: RunModel, scene: SceneModel) -> tuple[Path, AssetModel]:
         query = scene.primary_subject or scene.visual_goal or "historical scene"
         broader_queries = [scene.visual_goal, "historical illustration"]
+        valid_broader_queries = [
+            item.strip() for item in broader_queries if isinstance(item, str) and item.strip()
+        ]
         strategies = StockMediaStrategyBuilder().build(
             exact_query=query,
-            broader_queries=[item for item in broader_queries if item and item.strip()],
+            broader_queries=valid_broader_queries,
         )
         result = await SearchStockMedia(self._stock_media).execute_strategy(
             run_id=str(run.id),
