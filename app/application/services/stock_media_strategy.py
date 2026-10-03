@@ -33,6 +33,7 @@ class StockMediaStrategyBuilder:
                         query=normalized,
                         operation=operation,
                         orientation=orientation,
+                        min_relevance=0.10,
                     )
                 )
         return strategies
