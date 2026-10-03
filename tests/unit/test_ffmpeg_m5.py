@@ -27,6 +27,8 @@ def test_ffmpeg_builder_maps_voiceover_and_subtitles(tmp_path: Path) -> None:
 
     assert command.index("-i") < command.index("-filter_complex")
     assert str(audio) in command
-    assert str(subtitles) in command
+    command_text = " ".join(command)
+    assert str(subtitles) in command_text
+    assert "subtitles=" in command_text
     assert "trim=duration=8.5" in " ".join(command)
     assert "-shortest" in command
