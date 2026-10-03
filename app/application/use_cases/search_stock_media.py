@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from app.application.services.stock_media_selector import ScoredStockMedia, StockMediaSelector
 from app.application.ports.stock_media import (
     StockMediaGateway,
@@ -39,6 +37,7 @@ class SearchStockMedia:
                     query=strategy.query,
                     operation=strategy.operation,
                     orientation=strategy.orientation,
+                    provider_candidates=strategy.provider_candidates,
                     metadata={**(metadata or {}), "strategy": strategy.name},
                 )
             )
