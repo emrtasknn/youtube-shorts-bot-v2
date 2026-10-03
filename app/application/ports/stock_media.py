@@ -33,6 +33,7 @@ class StockMediaStrategy:
     min_items: int = 1
     operation: str = "search_photos"
     orientation: str | None = "portrait"
+    provider_candidates: tuple[str, ...] | None = None
     min_relevance: float = 0.20
 
 
