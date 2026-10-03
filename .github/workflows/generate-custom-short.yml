@@ -41,11 +41,11 @@ jobs:
           --health-retries=20
 
     env:
-      DATABASE_URL: postgresql+psycopg://shorts:shorts@localhost:5432/shorts
+      DATABASE_URL: ${{ secrets.M5_DATABASE_URL }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-      FISH_AUDIO_API_KEY: ${{ secrets.FISH_AUDIO_API_KEY }}
+      FISH_AUDIO_API_KEY: ${{ secrets.FISH_AUDIO_API_KEY }}\n      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}\n      TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}\n      M5_DATABASE_URL: ${{ secrets.M5_DATABASE_URL }}
       GEMINI_ENABLED: "true"
       GROQ_ENABLED: "true"
       PEXELS_ENABLED: "true"
@@ -172,7 +172,7 @@ jobs:
           ffprobe -v error -show_entries stream=codec_type,width,height,r_frame_rate             -of default=noprint_wrappers=1 storage/renders/custom.mp4
           ffprobe -v error -show_entries format=duration             -of default=noprint_wrappers=1 storage/renders/custom.mp4
 
-      - name: Upload generated Short
+      - name: Send Telegram review\n        env:\n          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}\n          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}\n        run: |\n          set -euo pipefail\n          test -n "$TELEGRAM_BOT_TOKEN" || (echo "TELEGRAM_BOT_TOKEN is missing" && exit 1)\n          test -n "$TELEGRAM_ADMIN_CHAT_ID" || (echo "TELEGRAM_ADMIN_CHAT_ID is missing" && exit 1)\n          python -m app telegram-review\n\n      - name: Upload generated Short
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:

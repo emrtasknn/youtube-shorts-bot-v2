@@ -1,0 +1,28 @@
+services:
+  - type: worker
+    name: youtube-shorts-bot-v2-telegram
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ADMIN_CHAT_ID
+        sync: false
+      - key: TELEGRAM_ADMIN_USER_ID
+        sync: false
+      - key: YOUTUBE_CLIENT_ID
+        sync: false
+      - key: YOUTUBE_CLIENT_SECRET
+        sync: false
+      - key: YOUTUBE_REFRESH_TOKEN
+        sync: false
+      - key: YOUTUBE_PRIVACY_STATUS
+        value: public
+      - key: YOUTUBE_CATEGORY_ID
+        value: "27"
+    startCommand: alembic upgrade head && python -m app telegram-poll
