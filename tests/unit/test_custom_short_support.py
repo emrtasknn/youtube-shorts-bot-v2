@@ -17,7 +17,8 @@ def test_parse_script_accepts_valid_json() -> None:
                 "visual_goal": "Roman Colosseum",
                 "narration": "Romans gathered.",
             }
-        ] * 3,
+        ]
+        * 3,
     }
     result = parse_script(json.dumps(payload))
     assert result["hook"] == "H"
@@ -56,7 +57,8 @@ def test_parse_script_uses_safe_defaults_for_invalid_durations() -> None:
                 "narration": "Romans gathered.",
                 "duration": "unknown",
             }
-        ] * 3,
+        ]
+        * 3,
     }
     result = parse_script(json.dumps(payload))
     assert result["duration_target"] == 30.0
