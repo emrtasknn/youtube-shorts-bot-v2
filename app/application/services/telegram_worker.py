@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.application.services.telegram_control import TelegramControlPlane
+from app.domain.enums import RunStatus
 from app.infrastructure.database.models import ApprovalModel, RunModel
 from app.infrastructure.telegram.bot import TelegramBot
 
@@ -34,7 +35,7 @@ class TelegramWorker:
         sent = 0
         for approval in approvals:
             run = self._session.get(RunModel, approval.run_id)
-            if run and run.status.value == "READY_FOR_APPROVAL":
+            if run and run.status == RunStatus.READY_FOR_APPROVAL:
                 await self._control.send_review(self._admin_chat_id, run.id)
                 sent += 1
         return sent
