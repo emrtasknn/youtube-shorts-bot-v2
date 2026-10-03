@@ -50,7 +50,11 @@ class TelegramBot:
         return await self._call("sendMessage", json=payload)
 
     async def edit_message(
-        self, chat_id: int, message_id: int, text: str, reply_markup: dict[str, Any] | None = None
+        self,
+        chat_id: int,
+        message_id: int,
+        text: str,
+        reply_markup: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         payload: dict[str, Any] = {
             "chat_id": chat_id,
