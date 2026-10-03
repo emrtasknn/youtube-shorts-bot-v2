@@ -7,7 +7,6 @@ from time import perf_counter
 
 from app.infrastructure.providers.contracts import ProviderError, ProviderRequest, ProviderResult
 
-logger = logging.getLogger(__name__)
 from app.infrastructure.providers.registry import ProviderRegistry
 from app.infrastructure.providers.reliability import (
     ConcurrencyLimiter,
