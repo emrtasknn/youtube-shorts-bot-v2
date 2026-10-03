@@ -89,6 +89,7 @@ def test_validate_output_rejects_empty_file(tmp_path: Path) -> None:
     with pytest.raises(RuntimeError, match="missing or empty"):
         validate_output(output, 30.0)
 
+
 def test_parse_script_rejects_missing_scene_narration() -> None:
     payload = {
         "hook": "H",
