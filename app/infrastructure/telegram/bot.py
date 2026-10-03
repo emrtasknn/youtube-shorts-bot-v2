@@ -77,9 +77,7 @@ class TelegramBot:
             data["reply_markup"] = json.dumps(reply_markup, ensure_ascii=False)
         with video_path.open("rb") as video:
             files = {"video": (video_path.name, video, "video/mp4")}
-            async with httpx.AsyncClient(
-                timeout=max(self._timeout, 180.0)
-            ) as client:
+            async with httpx.AsyncClient(timeout=max(self._timeout, 180.0)) as client:
                 response = await client.post(
                     f"{self._base_url}/sendVideo",
                     data=data,
