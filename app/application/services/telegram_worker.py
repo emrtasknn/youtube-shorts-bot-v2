@@ -24,6 +24,7 @@ class TelegramWorker:
         self._bot = bot
         self._control = control
         self._admin_chat_id = admin_chat_id
+        self._admin_user_id = admin_user_id
         self._offset: int | None = None
 
     async def send_pending(self) -> int:
@@ -60,7 +61,8 @@ class TelegramWorker:
             try:
                 action, raw_run_id = data.split(":", 1)
                 run_id = UUID(raw_run_id)
-                username = str(user.get("username") or user.get("id"))
+                raw_username = user.get("username")
+                username = raw_username if isinstance(raw_username, str) else str(user.get("id"))
                 if action == "approve":
                     message = await self._control.approve(run_id, username)
                     await self._bot.answer_callback(str(callback["id"]), message)
