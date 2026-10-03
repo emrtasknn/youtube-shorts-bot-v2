@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any
 
 
@@ -14,6 +15,7 @@ class StockMediaScore:
     duplicate_penalty: float
     eligible: bool
     reasons: tuple[str, ...]
+    matched_terms: tuple[str, ...] = ()
 
 
 class StockMediaScorer:
@@ -38,12 +40,15 @@ class StockMediaScorer:
         max_duration: float = 60.0,
     ) -> StockMediaScore:
         reasons: list[str] = []
-        normalized_query = {token.lower() for token in query.split() if token}
-        searchable = " ".join(
-            str(item.get(key, "")) for key in ("alt", "description", "title")
-        ).lower()
-        matched = sum(1 for token in normalized_query if token in searchable)
-        relevance = matched / len(normalized_query) if normalized_query else 0.0
+        query_terms = self._tokens(query)
+        searchable = self._normalize(
+            " ".join(str(item.get(key, "")) for key in ("alt", "description", "title"))
+        )
+        matched_terms = tuple(term for term in query_terms if term in searchable)
+        coverage = len(matched_terms) / len(query_terms) if query_terms else 0.0
+        phrase = self._normalize(query)
+        phrase_bonus = 0.35 if phrase and phrase in searchable else 0.0
+        relevance = min(1.0, coverage * 0.65 + phrase_bonus)
 
         width = self._as_number(item.get("width"))
         height = self._as_number(item.get("height"))
@@ -102,6 +107,33 @@ class StockMediaScorer:
             duplicate_penalty=duplicate_penalty,
             eligible=eligible,
             reasons=tuple(reasons),
+            matched_terms=matched_terms,
+        )
+
+    @staticmethod
+    def _normalize(value: str) -> str:
+        return " ".join(re.findall(r"[a-z0-9]+", value.lower()))
+
+    @classmethod
+    def _tokens(cls, value: str) -> tuple[str, ...]:
+        stopwords = {
+            "a",
+            "an",
+            "and",
+            "at",
+            "by",
+            "for",
+            "from",
+            "in",
+            "of",
+            "on",
+            "the",
+            "to",
+            "when",
+            "with",
+        }
+        return tuple(
+            token for token in cls._normalize(value).split() if token not in stopwords
         )
 
     @staticmethod
