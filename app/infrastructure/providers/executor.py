@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import logging
 import sys
 from dataclasses import dataclass
 from time import perf_counter
 
 from app.infrastructure.providers.contracts import ProviderError, ProviderRequest, ProviderResult
-
 from app.infrastructure.providers.registry import ProviderRegistry
 from app.infrastructure.providers.reliability import (
     ConcurrencyLimiter,
