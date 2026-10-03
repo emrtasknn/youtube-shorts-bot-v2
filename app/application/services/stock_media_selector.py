@@ -42,6 +42,7 @@ class StockMediaSelector:
         *,
         query: str,
         used_provider_asset_ids: set[str] | None = None,
+        min_relevance: float = 0.20,
     ) -> list[ScoredStockMedia]:
         candidates = [
             ScoredStockMedia(
