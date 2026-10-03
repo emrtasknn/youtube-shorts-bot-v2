@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -22,20 +23,40 @@ class TelegramBot:
             raise RuntimeError(f"Telegram {method} failed: {payload}")
         return payload["result"]
 
-    async def get_updates(self, *, offset: int | None = None, timeout: int = 25) -> list[dict[str, Any]]:
-        return await self._call("getUpdates", json={"offset": offset, "timeout": timeout, "allowed_updates": ["message", "callback_query"]})
+    async def get_updates(
+        self, *, offset: int | None = None, timeout: int = 25
+    ) -> list[dict[str, Any]]:
+        return await self._call(
+            "getUpdates",
+            json={
+                "offset": offset,
+                "timeout": timeout,
+                "allowed_updates": ["message", "callback_query"],
+            },
+        )
 
     async def answer_callback(self, callback_query_id: str, text: str) -> None:
-        await self._call("answerCallbackQuery", json={"callback_query_id": callback_query_id, "text": text})
+        await self._call(
+            "answerCallbackQuery",
+            json={"callback_query_id": callback_query_id, "text": text},
+        )
 
-    async def send_message(self, chat_id: int, text: str, reply_markup: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def send_message(
+        self, chat_id: int, text: str, reply_markup: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         payload: dict[str, Any] = {"chat_id": chat_id, "text": text}
         if reply_markup:
             payload["reply_markup"] = reply_markup
         return await self._call("sendMessage", json=payload)
 
-    async def edit_message(self, chat_id: int, message_id: int, text: str, reply_markup: dict[str, Any] | None = None) -> dict[str, Any]:
-        payload: dict[str, Any] = {"chat_id": chat_id, "message_id": message_id, "text": text}
+    async def edit_message(
+        self, chat_id: int, message_id: int, text: str, reply_markup: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": text,
+        }
         if reply_markup is not None:
             payload["reply_markup"] = reply_markup
         return await self._call("editMessageText", json=payload)
@@ -49,11 +70,17 @@ class TelegramBot:
     ) -> dict[str, Any]:
         data: dict[str, Any] = {"chat_id": str(chat_id), "caption": caption}
         if reply_markup:
-            data["reply_markup"] = __import__("json").dumps(reply_markup, ensure_ascii=False)
+            data["reply_markup"] = json.dumps(reply_markup, ensure_ascii=False)
         with video_path.open("rb") as video:
             files = {"video": (video_path.name, video, "video/mp4")}
-            async with httpx.AsyncClient(timeout=max(self._timeout, 180.0)) as client:
-                response = await client.post(f"{self._base_url}/sendVideo", data=data, files=files)
+            async with httpx.AsyncClient(
+                timeout=max(self._timeout, 180.0)
+            ) as client:
+                response = await client.post(
+                    f"{self._base_url}/sendVideo",
+                    data=data,
+                    files=files,
+                )
                 response.raise_for_status()
                 payload = response.json()
         if not payload.get("ok"):
