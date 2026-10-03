@@ -32,9 +32,7 @@ class YouTubePublisher:
             payload = response.json()
         token = payload.get("access_token")
         if not token:
-            raise RuntimeError(
-                f"YouTube OAuth refresh did not return an access token: {payload}"
-            )
+            raise RuntimeError(f"YouTube OAuth refresh did not return an access token: {payload}")
         return str(token)
 
     async def publish(self, request: PublicationRequest) -> PublicationResult:
