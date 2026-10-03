@@ -91,15 +91,79 @@ jobs:
           if [ -z "$RUN_KEY" ]; then
             RUN_KEY="github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           fi
-          python -m app custom "$TOPIC"             --language "$LANGUAGE"             --run-key "$RUN_KEY"             --requested-by "github-actions" | tee generation-result.json
+          # stdout is a machine-readable JSON contract. Provider diagnostics stay on stderr.
+          python -m app custom "$TOPIC" \
+            --language "$LANGUAGE" \
+            --run-key "$RUN_KEY" \
+            --requested-by "github-actions" \
+            > generation-result.json
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result_path = Path("generation-result.json")
+          if not result_path.is_file() or result_path.stat().st_size == 0:
+              raise SystemExit("generation-result.json is missing or empty")
+
+          try:
+              result = json.loads(result_path.read_text())
+          except json.JSONDecodeError as exc:
+              raise SystemExit(
+                  f"generation-result.json is not valid JSON: {exc}"
+              ) from exc
+
+          required = {
+              "run_id",
+              "content_id",
+              "script_id",
+              "output_path",
+              "duration_seconds",
+              "status",
+          }
+          missing = sorted(required - result.keys())
+          if missing:
+              raise SystemExit(
+                  f"generation-result.json is missing required fields: {missing}"
+              )
+
+          if result["status"] != "READY_FOR_APPROVAL":
+              raise SystemExit(
+                  f"Unexpected generation status: {result['status']}"
+              )
+
+          output_path = Path(str(result["output_path"]))
+          if output_path.is_absolute():
+              raise SystemExit("Generated output_path must be relative")
+
+          if output_path.parts[:2] != ("storage", "runs"):
+              raise SystemExit(
+                  f"Generated output_path is outside expected run storage: {output_path}"
+              )
+
+          if not output_path.is_file() or output_path.stat().st_size == 0:
+              raise SystemExit(
+                  f"Generated video is missing or empty: {output_path}"
+              )
+
+          print(f"Generation result validated: {result['run_id']}")
+          print(f"Generated video: {output_path}")
+          PY
 
       - name: Resolve generated video
         run: |
           set -euo pipefail
-          VIDEO_PATH="$(python -c 'import json; from pathlib import Path; print(json.loads(Path("generation-result.json").read_text())["output_path"])')"
+          VIDEO_PATH="$(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          print(json.loads(Path("generation-result.json").read_text())["output_path"])
+          PY
+          )"
           test -s "$VIDEO_PATH"
           mkdir -p storage/renders
           cp "$VIDEO_PATH" storage/renders/custom.mp4
+          test -s storage/renders/custom.mp4
 
       - name: Validate generated video
         run: |

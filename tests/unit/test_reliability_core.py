@@ -86,7 +86,9 @@ def test_circuit_breaker_recovery() -> None:
 
 
 @pytest.mark.asyncio
-async def test_executor_falls_back_after_primary_failure() -> None:
+async def test_executor_falls_back_after_primary_failure(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     registry = ProviderRegistry()
 
     async def fail(_: ProviderRequest) -> ProviderResult:
@@ -121,9 +123,12 @@ async def test_executor_falls_back_after_primary_failure() -> None:
         router=StrategyRouter(health),
     )
     result = await executor.execute(request(), candidates=["primary", "secondary"])
+    captured = capsys.readouterr()
     assert result.provider == "secondary"
     assert primary.calls == 1
     assert secondary.calls == 1
+    assert "[provider-fallback]" in captured.err
+    assert captured.out == ""
 
 
 def test_idempotency_returns_same_result() -> None:
