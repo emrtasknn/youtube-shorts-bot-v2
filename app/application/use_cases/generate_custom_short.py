@@ -247,14 +247,12 @@ class GenerateCustomShort:
             exact_query=query,
             broader_queries=valid_broader_queries,
         )
-        result = await SearchStockMedia(self._stock_media).execute_strategy(
+        result, selected = await SearchStockMedia(self._stock_media).execute_strategy_until_selected(
             run_id=str(run.id),
             request_id=f"{run.id}:scene:{scene.scene_index}",
             strategies=strategies,
+            selector=StockMediaSelector(StockMediaScorer()),
         )
-        selected = StockMediaSelector(StockMediaScorer()).select(result.items, query=result.query)
-        if selected is None:
-            raise RuntimeError(f"No eligible stock asset found for scene {scene.scene_index}")
         item = selected.item
         url = str(item.get("download_url") or "").strip()
         if not url:
