@@ -5,6 +5,8 @@ import asyncio
 import json
 import uuid
 
+from sqlalchemy.orm import Session
+
 from app.application.services.telegram_control import TelegramControlPlane
 from app.application.services.telegram_worker import TelegramWorker
 from app.application.use_cases.generate_custom_short import (
@@ -50,13 +52,13 @@ def _build_telegram_bot() -> TelegramBot:
 def _build_telegram_control(
     *,
     with_runtime: bool = False,
-) -> tuple[TelegramControlPlane, object]:
+) -> tuple[TelegramControlPlane, TelegramBot, Session]:
     settings = get_settings()
     bot = _build_telegram_bot()
     session = get_session()
 
     if not with_runtime:
-        return TelegramControlPlane(session=session, bot=bot), session
+        return TelegramControlPlane(session=session, bot=bot), bot, session
 
     runtime = build_runtime(settings)
     generator = GenerateCustomShort(
@@ -78,7 +80,7 @@ def _build_telegram_control(
         publisher=publisher,
         generator=generator,
     )
-    return control, session
+    return control, bot, session
 
 
 async def _run_custom(args: argparse.Namespace) -> None:
@@ -121,11 +123,11 @@ async def _run_custom(args: argparse.Namespace) -> None:
 
 async def _run_telegram_review() -> None:
     settings = get_settings()
-    control, session = _build_telegram_control()
+    control, bot, session = _build_telegram_control()
     try:
         worker = TelegramWorker(
             session=session,
-            bot=control._bot,
+            bot=bot,
             control=control,
             admin_chat_id=settings.telegram_admin_chat_id,
             admin_user_id=settings.telegram_admin_user_id,
@@ -138,7 +140,7 @@ async def _run_telegram_review() -> None:
 
 async def _run_telegram_poll() -> None:
     settings = get_settings()
-    control, session = _build_telegram_control(with_runtime=True)
+    control, bot, session = _build_telegram_control(with_runtime=True)
     try:
         worker = TelegramWorker(
             session=session,
