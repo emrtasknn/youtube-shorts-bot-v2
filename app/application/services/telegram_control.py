@@ -34,12 +34,16 @@ class TelegramControlPlane:
             raise ValueError(f"Run not found: {run_id}")
         return run
 
-    def _video_path(self, run: RunModel) -> Path:
+    async def _video_path(self, run: RunModel) -> Path:
         run_dir = Path("storage/runs") / str(run.id)
         candidates = sorted(run_dir.glob("*.mp4"))
-        if not candidates:
-            raise FileNotFoundError(f"No generated MP4 found for run {run.id}")
-        return candidates[0]
+        if candidates:
+            return candidates[0]
+        approval = self._approval(run.id)
+        file_id = str((approval.approval_metadata or {}).get("telegram_file_id") or "")
+        if not file_id:
+            raise FileNotFoundError(f"No generated MP4 or Telegram file_id found for run {run.id}")
+        return await self._bot.download_file(file_id, run_dir / "telegram-recovered.mp4")
 
     def _keyboard(self, run_id: UUID, *, approved: bool = False) -> dict[str, object]:
         if approved:
