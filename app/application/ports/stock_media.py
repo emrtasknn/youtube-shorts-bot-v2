@@ -13,6 +13,7 @@ class StockMediaSearchRequest:
     page: int = 1
     per_page: int = 15
     orientation: str | None = None
+    provider_candidates: tuple[str, ...] | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -32,6 +33,7 @@ class StockMediaStrategy:
     min_items: int = 1
     operation: str = "search_photos"
     orientation: str | None = "portrait"
+    min_relevance: float = 0.20
 
 
 class StockMediaGateway(Protocol):
