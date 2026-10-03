@@ -3,6 +3,7 @@
 Revision ID: 0002_m5_telegram
 Revises: 0001_m1_domain
 """
+
 from alembic import op
 
 revision = "0002_m5_telegram"
