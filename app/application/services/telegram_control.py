@@ -58,7 +58,7 @@ class TelegramControlPlane:
         content = self._session.get(ContentModel, run.content_id)
         video = self._video_path(run)
         caption = f"Review\n\n{content.topic if content else 'YouTube Short'}\nRun: {run.id}"
-        await self._bot.send_video(chat_id, video, caption, self._keyboard(run.id))
+        message = await self._bot.send_video(chat_id, video, caption, self._keyboard(run.id))\n        video_payload = message.get("video") or {}\n        file_id = str(video_payload.get("file_id") or "")\n        approval = self._approval(run.id)\n        approval.approval_metadata = {**(approval.approval_metadata or {}), "telegram_file_id": file_id}\n        self._session.commit()
 
     async def approve(self, run_id: UUID, user: str) -> str:
         run = self._run(run_id)
@@ -128,7 +128,7 @@ class TelegramControlPlane:
         title = (content.topic if content else "YouTube Short").strip()[:100]
         description = f"{title}\n\n#shorts #tarih"
         try:
-            result = await self._publisher.publish(PublicationRequest(run_id=str(run_id), video_path=self._video_path(run), title=title, description=description))
+            result = await self._publisher.publish(PublicationRequest(run_id=str(run_id), video_path=await self._video_path(run), title=title, description=description))
             publication.status = transition_publication(PublicationStatus.QUEUED, PublicationStatus.UPLOADING)
             publication.platform_post_id = result.platform_post_id
             publication.url = result.url
