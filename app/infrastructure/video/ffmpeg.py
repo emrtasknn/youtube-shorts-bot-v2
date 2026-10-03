@@ -28,11 +28,15 @@ class FFmpegCommandBuilder:
             raise ValueError("Video dimensions must be positive")
         if request.fps <= 0:
             raise ValueError("Video FPS must be positive")
-        durations = scene_durations or tuple(scene.duration_seconds for scene in request.scenes)
+        durations = scene_durations or tuple(
+            scene.duration_seconds for scene in request.scenes
+        )
         if len(durations) != len(request.scenes):
             raise ValueError("Scene duration count must match scene count")
 
-        for scene, duration in zip(request.scenes, durations, strict=True):
+        for scene, duration in zip(
+            request.scenes, durations, strict=True
+        ):
             if duration <= 0:
                 raise ValueError("Scene duration must be positive")
             if not scene.path.is_file():
@@ -42,7 +46,9 @@ class FFmpegCommandBuilder:
         command = [self._executable, "-y", "-hide_banner", "-loglevel", "error"]
         filter_inputs: list[str] = []
 
-        for index, (scene, duration) in enumerate(zip(request.scenes, durations, strict=True)):
+        for index, (scene, duration) in enumerate(
+            zip(request.scenes, durations, strict=True)
+        ):
             if scene.is_image:
                 command.extend(["-loop", "1", "-t", str(duration)])
             command.extend(["-i", str(scene.path)])
@@ -156,7 +162,9 @@ class FFmpegVideoEngine:
             stderr=asyncio.subprocess.PIPE,
         )
         try:
-            _, stderr = await asyncio.wait_for(process.communicate(), timeout=self._timeout_seconds)
+            _, stderr = await asyncio.wait_for(
+                process.communicate(), timeout=self._timeout_seconds
+            )
         except TimeoutError as exc:
             process.kill()
             await process.wait()
