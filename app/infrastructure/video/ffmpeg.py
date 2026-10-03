@@ -3,12 +3,21 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
+from typing import TypedDict
 
 from app.application.ports.video_engine import (
     VideoRenderRequest,
     VideoRenderResult,
 )
 from app.application.services.subtitles import write_ass
+
+
+class MediaProbe(TypedDict):
+    duration: float
+    width: int
+    height: int
+    fps: float
+    has_audio: bool
 
 
 class FFmpegCommandBuilder:
@@ -206,7 +215,7 @@ class FFmpegVideoEngine:
             raise RuntimeError("Voiceover has an invalid duration")
         return duration
 
-    async def _probe_media(self, path: Path) -> dict[str, object]:
+    async def _probe_media(self, path: Path) -> MediaProbe:
         result = await self._run_probe(
             [
                 self._ffprobe,
