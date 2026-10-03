@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from time import perf_counter
 
 from app.infrastructure.providers.contracts import ProviderError, ProviderRequest, ProviderResult
+
+logger = logging.getLogger(__name__)
 from app.infrastructure.providers.registry import ProviderRegistry
 from app.infrastructure.providers.reliability import (
     ConcurrencyLimiter,
@@ -50,9 +53,11 @@ class ReliabilityExecutor:
             provider_name = self.router.route(providers, attempted)
             attempted.add(provider_name)
             if len(attempted) > 1:
-                print(
-                    f"[provider-fallback] capability={request.capability.value} "
-                    f"operation={request.operation} provider={provider_name}"
+                logger.info(
+                    "[provider-fallback] capability=%s operation=%s provider=%s",
+                    request.capability.value,
+                    request.operation,
+                    provider_name,
                 )
             provider_request = ProviderRequest(
                 request_id=request.request_id,
