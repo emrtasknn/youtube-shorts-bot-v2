@@ -8,15 +8,27 @@ from app.domain.state_machine import InvalidTransition, transition_approval, tra
 
 
 def test_approval_transitions_are_terminal_after_resolution() -> None:
-    assert transition_approval(ApprovalStatus.PENDING, ApprovalStatus.APPROVED) == ApprovalStatus.APPROVED
+    assert (
+        transition_approval(ApprovalStatus.PENDING, ApprovalStatus.APPROVED)
+        == ApprovalStatus.APPROVED
+    )
     with pytest.raises(InvalidTransition):
         transition_approval(ApprovalStatus.APPROVED, ApprovalStatus.REJECTED)
 
 
 def test_run_approval_and_publish_transitions() -> None:
-    assert transition_run(RunStatus.READY_FOR_APPROVAL, RunStatus.APPROVED) == RunStatus.APPROVED
-    assert transition_run(RunStatus.APPROVED, RunStatus.PUBLISHING) == RunStatus.PUBLISHING
-    assert transition_run(RunStatus.PUBLISHING, RunStatus.PUBLISHED) == RunStatus.PUBLISHED
+    assert (
+        transition_run(RunStatus.READY_FOR_APPROVAL, RunStatus.APPROVED)
+        == RunStatus.APPROVED
+    )
+    assert (
+        transition_run(RunStatus.APPROVED, RunStatus.PUBLISHING)
+        == RunStatus.PUBLISHING
+    )
+    assert (
+        transition_run(RunStatus.PUBLISHING, RunStatus.PUBLISHED)
+        == RunStatus.PUBLISHED
+    )
 
 
 def test_run_cannot_publish_before_approval() -> None:
