@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from app.application.services.stock_media_selector import ScoredStockMedia, StockMediaSelector
 from app.application.ports.stock_media import (
     StockMediaGateway,
     StockMediaSearchRequest,
     StockMediaSearchResult,
     StockMediaStrategy,
 )
+from app.application.services.stock_media_selector import ScoredStockMedia, StockMediaSelector
 
 
 class SearchStockMedia:
