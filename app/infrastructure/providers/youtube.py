@@ -10,7 +10,9 @@ from app.application.ports.publisher import PublicationRequest, PublicationResul
 class YouTubePublisher:
     def __init__(self, client_id: str, client_secret: str, refresh_token: str) -> None:
         if not all((client_id, client_secret, refresh_token)):
-            raise ValueError("YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET and YOUTUBE_REFRESH_TOKEN are required")
+            raise ValueError(
+                "YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET and YOUTUBE_REFRESH_TOKEN are required"
+            )
         self._client_id = client_id
         self._client_secret = client_secret
         self._refresh_token = refresh_token
@@ -30,7 +32,9 @@ class YouTubePublisher:
             payload = response.json()
         token = payload.get("access_token")
         if not token:
-            raise RuntimeError(f"YouTube OAuth refresh did not return an access token: {payload}")
+            raise RuntimeError(
+                f"YouTube OAuth refresh did not return an access token: {payload}"
+            )
         return str(token)
 
     async def publish(self, request: PublicationRequest) -> PublicationResult:
@@ -82,7 +86,9 @@ class YouTubePublisher:
         video_id = str(payload.get("id") or "")
         if not video_id:
             raise RuntimeError(f"YouTube upload response has no video id: {payload}")
-        actual_privacy = str(payload.get("status", {}).get("privacyStatus") or request.privacy_status)
+        actual_privacy = str(
+            payload.get("status", {}).get("privacyStatus") or request.privacy_status
+        )
         return PublicationResult(
             provider="youtube",
             platform_post_id=video_id,
