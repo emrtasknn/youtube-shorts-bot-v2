@@ -98,4 +98,6 @@ def validate_output(path: Path, duration_seconds: float) -> None:
     if not path.is_file() or path.stat().st_size == 0:
         raise RuntimeError("QC failed: rendered video is missing or empty")
     if not 15 <= duration_seconds <= 60:
-        raise RuntimeError(f"QC failed: duration {duration_seconds:.2f}s is outside 15-60s")
+        raise RuntimeError(
+            f"QC failed: duration {duration_seconds:.2f}s is outside 15-60s"
+        )
