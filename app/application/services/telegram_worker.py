@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.application.services.telegram_control import TelegramControlPlane
-from app.domain.enums import RunStatus
+from app.domain.enums import ApprovalStatus, RunStatus
 from app.infrastructure.database.models import ApprovalModel, RunModel
 from app.infrastructure.telegram.bot import TelegramBot
 
@@ -35,9 +36,18 @@ class TelegramWorker:
         sent = 0
         for approval in approvals:
             run = self._session.get(RunModel, approval.run_id)
-            if run and run.status == RunStatus.READY_FOR_APPROVAL:
+            if not run or run.status != RunStatus.READY_FOR_APPROVAL:
+                continue
+            try:
                 await self._control.send_review(self._admin_chat_id, run.id)
-                sent += 1
+            except FileNotFoundError:
+                approval.status = ApprovalStatus.EXPIRED
+                approval.responded_at = datetime.now(UTC)
+                approval.comment = "Generated video is no longer available for Telegram review."
+                run.status = RunStatus.CANCELLED
+                self._session.commit()
+                continue
+            sent += 1
         return sent
 
     async def run_forever(self) -> None:
