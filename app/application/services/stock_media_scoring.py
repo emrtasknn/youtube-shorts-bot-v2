@@ -38,6 +38,7 @@ class StockMediaScorer:
         used_provider_asset_ids: set[str] | None = None,
         min_duration: float = 2.0,
         max_duration: float = 60.0,
+        min_relevance: float = 0.20,
     ) -> StockMediaScore:
         reasons: list[str] = []
         query_terms = self._tokens(query)
@@ -76,7 +77,7 @@ class StockMediaScorer:
             duplicate_penalty = 1.0
             reasons.append("already_used")
 
-        if relevance < 0.20:
+        if relevance < min_relevance:
             reasons.append("low_relevance")
         if orientation < 1.0:
             reasons.append("not_portrait")
@@ -92,7 +93,7 @@ class StockMediaScorer:
         )
         eligible = (
             score >= self._min_score
-            and relevance >= 0.20
+            and relevance >= min_relevance
             and orientation == 1.0
             and resolution >= 0.50
             and duplicate_penalty == 0.0
@@ -132,9 +133,7 @@ class StockMediaScorer:
             "when",
             "with",
         }
-        return tuple(
-            token for token in cls._normalize(value).split() if token not in stopwords
-        )
+        return tuple(token for token in cls._normalize(value).split() if token not in stopwords)
 
     @staticmethod
     def _as_number(value: Any) -> float:
