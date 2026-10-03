@@ -17,8 +17,7 @@ def test_parse_script_accepts_valid_json() -> None:
                 "visual_goal": "Roman Colosseum",
                 "narration": "Romans gathered.",
             }
-        ]
-        * 3,
+        ] * 3,
     }
     result = parse_script(json.dumps(payload))
     assert result["hook"] == "H"
