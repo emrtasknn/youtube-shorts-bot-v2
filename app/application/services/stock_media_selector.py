@@ -28,6 +28,7 @@ class StockMediaSelector:
             items,
             query=query,
             used_provider_asset_ids=used_provider_asset_ids,
+            min_relevance=min_relevance,
         )
         eligible = [
             candidate
@@ -51,6 +52,7 @@ class StockMediaSelector:
                     item,
                     query=query,
                     used_provider_asset_ids=used_provider_asset_ids,
+                    min_relevance=min_relevance,
                 ),
             )
             for item in items
