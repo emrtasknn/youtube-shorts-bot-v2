@@ -92,7 +92,10 @@ class TelegramWorker:
                 await self._bot.send_message(self._admin_chat_id, f"M5 action failed: {exc}")
             return
         update_message = update.get("message")
-        if isinstance(update_message, dict) and str(update_message.get("text", "")).strip() == "/review":
+        if (
+            isinstance(update_message, dict)
+            and str(update_message.get("text", "")).strip() == "/review"
+        ):
             chat = update_message.get("chat") or {}
             if isinstance(chat, dict) and int(chat.get("id", -1)) == self._admin_chat_id:
                 await self.send_pending()
