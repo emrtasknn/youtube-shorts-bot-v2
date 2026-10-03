@@ -22,7 +22,27 @@ class StockMediaSelector:
         *,
         query: str,
         used_provider_asset_ids: set[str] | None = None,
+        min_relevance: float = 0.20,
     ) -> ScoredStockMedia | None:
+        ranked = self.rank(
+            items,
+            query=query,
+            used_provider_asset_ids=used_provider_asset_ids,
+        )
+        eligible = [
+            candidate
+            for candidate in ranked
+            if candidate.score.eligible and candidate.score.relevance >= min_relevance
+        ]
+        return eligible[0] if eligible else None
+
+    def rank(
+        self,
+        items: list[dict[str, Any]],
+        *,
+        query: str,
+        used_provider_asset_ids: set[str] | None = None,
+    ) -> list[ScoredStockMedia]:
         candidates = [
             ScoredStockMedia(
                 item=item,
@@ -34,7 +54,4 @@ class StockMediaSelector:
             )
             for item in items
         ]
-        eligible = [candidate for candidate in candidates if candidate.score.eligible]
-        if not eligible:
-            return None
-        return max(eligible, key=lambda candidate: candidate.score.score)
+        return sorted(candidates, key=lambda candidate: candidate.score.score, reverse=True)
