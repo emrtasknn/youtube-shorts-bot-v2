@@ -86,7 +86,9 @@ def test_circuit_breaker_recovery() -> None:
 
 
 @pytest.mark.asyncio
-async def test_executor_falls_back_after_primary_failure(capsys: pytest.CaptureFixture[str]) -> None:
+async def test_executor_falls_back_after_primary_failure(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     registry = ProviderRegistry()
 
     async def fail(_: ProviderRequest) -> ProviderResult:
