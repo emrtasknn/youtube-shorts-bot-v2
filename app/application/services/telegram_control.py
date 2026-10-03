@@ -72,16 +72,10 @@ class TelegramControlPlane:
         approval = self._approval(run.id)
         file_id = str((approval.approval_metadata or {}).get("telegram_file_id") or "")
         if not file_id:
-            raise FileNotFoundError(
-                f"No generated MP4 or Telegram file_id found for run {run.id}"
-            )
-        return await self._bot.download_file(
-            file_id, run_dir / "telegram-recovered.mp4"
-        )
+            raise FileNotFoundError(f"No generated MP4 or Telegram file_id found for run {run.id}")
+        return await self._bot.download_file(file_id, run_dir / "telegram-recovered.mp4")
 
-    def _keyboard(
-        self, run_id: UUID, *, approved: bool = False
-    ) -> dict[str, object]:
+    def _keyboard(self, run_id: UUID, *, approved: bool = False) -> dict[str, object]:
         if approved:
             rows = [
                 [{"text": "Publish", "callback_data": f"publish:{run_id}"}],
@@ -100,19 +94,12 @@ class TelegramControlPlane:
     async def send_review(self, chat_id: int, run_id: UUID) -> None:
         run = self._run(run_id)
         if run.status != RunStatus.READY_FOR_APPROVAL:
-            raise InvalidTransition(
-                f"Run {run_id} is not ready for approval: {run.status}"
-            )
+            raise InvalidTransition(f"Run {run_id} is not ready for approval: {run.status}")
 
         content = self._session.get(ContentModel, run.content_id)
         video = await self._video_path(run)
-        caption = (
-            f"Review\n\n{content.topic if content else 'YouTube Short'}"
-            f"\nRun: {run.id}"
-        )
-        message = await self._bot.send_video(
-            chat_id, video, caption, self._keyboard(run.id)
-        )
+        caption = f"Review\n\n{content.topic if content else 'YouTube Short'}\nRun: {run.id}"
+        message = await self._bot.send_video(chat_id, video, caption, self._keyboard(run.id))
         video_payload = message.get("video") or {}
         file_id = str(video_payload.get("file_id") or "")
         approval = self._approval(run.id)
@@ -130,9 +117,7 @@ class TelegramControlPlane:
         if approval.status != ApprovalStatus.PENDING:
             return f"Approval already resolved: {approval.status}"
 
-        approval.status = transition_approval(
-            approval.status, ApprovalStatus.APPROVED
-        )
+        approval.status = transition_approval(approval.status, ApprovalStatus.APPROVED)
         approval.responded_at = datetime.now(UTC)
         approval.responded_by = user
         run.status = transition_run(run.status, RunStatus.APPROVED)
@@ -147,9 +132,7 @@ class TelegramControlPlane:
         if approval.status != ApprovalStatus.PENDING:
             return f"Approval already resolved: {approval.status}"
 
-        approval.status = transition_approval(
-            approval.status, ApprovalStatus.REJECTED
-        )
+        approval.status = transition_approval(approval.status, ApprovalStatus.REJECTED)
         approval.responded_at = datetime.now(UTC)
         approval.responded_by = user
         run.status = transition_run(run.status, RunStatus.CANCELLED)
@@ -162,9 +145,7 @@ class TelegramControlPlane:
         if approval.status != ApprovalStatus.PENDING:
             return f"Approval already resolved: {approval.status}"
 
-        approval.status = transition_approval(
-            approval.status, ApprovalStatus.REGENERATE
-        )
+        approval.status = transition_approval(approval.status, ApprovalStatus.REGENERATE)
         approval.responded_at = datetime.now(UTC)
         approval.responded_by = user
         run.status = transition_run(run.status, RunStatus.CANCELLED)
@@ -191,10 +172,7 @@ class TelegramControlPlane:
 
         run = self._run(run_id)
         approval = self._approval(run_id)
-        if (
-            approval.status != ApprovalStatus.APPROVED
-            or run.status != RunStatus.APPROVED
-        ):
+        if approval.status != ApprovalStatus.APPROVED or run.status != RunStatus.APPROVED:
             return "Approve the Short before publishing."
 
         publication = self._session.scalar(
@@ -203,10 +181,7 @@ class TelegramControlPlane:
                 PublicationModel.platform == PublicationPlatform.YOUTUBE,
             )
         )
-        if (
-            publication is not None
-            and publication.status == PublicationStatus.PUBLISHED
-        ):
+        if publication is not None and publication.status == PublicationStatus.PUBLISHED:
             return f"Already published: {publication.url}"
 
         if publication is None:
@@ -225,9 +200,7 @@ class TelegramControlPlane:
             return f"Publication is already in state: {publication.status}"
 
         run.status = transition_run(run.status, RunStatus.PUBLISHING)
-        publication.status = transition_publication(
-            publication.status, PublicationStatus.QUEUED
-        )
+        publication.status = transition_publication(publication.status, PublicationStatus.QUEUED)
         self._session.commit()
 
         content = self._session.get(ContentModel, run.content_id)
