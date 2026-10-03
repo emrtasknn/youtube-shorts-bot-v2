@@ -12,8 +12,13 @@ def test_parse_script_accepts_valid_json() -> None:
         "body": "B",
         "duration_target": 28,
         "scenes": [
-            {"visual_query": "Rome Colosseum", "visual_goal": "Roman Colosseum", "narration": "Romans gathered."}
-        ] * 3,
+            {
+                "visual_query": "Rome Colosseum",
+                "visual_goal": "Roman Colosseum",
+                "narration": "Romans gathered.",
+            }
+        ]
+        * 3,
     }
     result = parse_script(json.dumps(payload))
     assert result["hook"] == "H"
@@ -32,7 +37,8 @@ def test_parse_script_normalizes_human_readable_durations() -> None:
                 "narration": "Romans gathered.",
                 "duration": "6 seconds",
             }
-        ] * 3,
+        ]
+        * 3,
     }
     result = parse_script(json.dumps(payload))
     assert result["duration_target"] == 30.0
@@ -64,8 +70,13 @@ def test_parse_script_rejects_missing_scene_query() -> None:
         "body": "B",
         "duration_target": 28,
         "scenes": [
-            {"visual_query": "", "visual_goal": "Roman Colosseum", "narration": "Romans gathered."}
-        ] * 3,
+            {
+                "visual_query": "",
+                "visual_goal": "Roman Colosseum",
+                "narration": "Romans gathered.",
+            }
+        ]
+        * 3,
     }
     with pytest.raises(ValueError, match="visual_query"):
         parse_script(json.dumps(payload))
