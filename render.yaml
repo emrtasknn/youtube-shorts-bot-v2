@@ -25,4 +25,4 @@ services:
         value: public
       - key: YOUTUBE_CATEGORY_ID
         value: "27"
-    startCommand: alembic upgrade head && python -m app telegram-poll
+    dockerCommand: /bin/sh -c "alembic upgrade head && python -m app telegram-poll"
