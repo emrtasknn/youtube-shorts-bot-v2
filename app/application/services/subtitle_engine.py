@@ -44,8 +44,10 @@ class SubtitleEngine:
         cues: list[SubtitleCue] = []
         cursor = 0.0
         for index, (chunk, weight) in enumerate(zip(chunks, weights, strict=True)):
-            end = duration_seconds if index == len(chunks) - 1 else (
-                cursor + duration_seconds * weight / total_weight
+            end = (
+                duration_seconds
+                if index == len(chunks) - 1
+                else (cursor + duration_seconds * weight / total_weight)
             )
             cues.append(
                 SubtitleCue(
@@ -64,12 +66,8 @@ class SubtitleEngine:
 
         for word in words:
             candidate = " ".join((*current, word))
-            should_break = (
-                current
-                and (
-                    len(current) >= self._max_words
-                    or len(candidate) > self._max_characters
-                )
+            should_break = current and (
+                len(current) >= self._max_words or len(candidate) > self._max_characters
             )
             if should_break:
                 chunks.append(" ".join(current))
