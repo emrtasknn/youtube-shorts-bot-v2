@@ -10,6 +10,7 @@ from app.infrastructure.database.models import (
     AssetModel,
     AssetUsageModel,
     ContentModel,
+    PerformanceProductionSnapshotModel,
     PerformanceSnapshotModel,
     PublicationModel,
     RunModel,
@@ -29,8 +30,6 @@ class PerformanceMemoryService:
         self._session = session
 
     def save_production_snapshot(self, memory: PerformanceMemory) -> PerformanceMemory:
-        from app.infrastructure.database.models import PerformanceProductionSnapshotModel
-
         existing = self._session.scalar(
             select(PerformanceProductionSnapshotModel).where(
                 PerformanceProductionSnapshotModel.publication_id == memory.publication_id
@@ -65,7 +64,7 @@ class PerformanceMemoryService:
         return memory
 
     @staticmethod
-    def _to_memory(snapshot: "PerformanceProductionSnapshotModel") -> PerformanceMemory:
+    def _to_memory(snapshot: PerformanceProductionSnapshotModel) -> PerformanceMemory:
         features = PerformanceProductionFeatures(
             category=snapshot.category,
             language=snapshot.language,
