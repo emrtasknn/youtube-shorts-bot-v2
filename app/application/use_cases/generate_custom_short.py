@@ -206,6 +206,11 @@ class GenerateCustomShort:
             )
         )
         data = parse_script(result.text)
+        hook_engine = HookEngine()
+        hook_evaluation = hook_engine.evaluate(str(data["hook"]))
+        if not hook_evaluation.is_acceptable:
+            data["hook"] = hook_engine.fallback(topic)
+            hook_engine.ensure_acceptable(str(data["hook"]))
         script = ScriptModel(
             content_id=run.content_id,
             version=1,
