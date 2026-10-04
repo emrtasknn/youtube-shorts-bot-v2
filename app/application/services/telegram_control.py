@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.application.ports.publisher import PublicationRequest, Publisher
+from app.application.services.performance_memory import PerformanceMemoryService
 from app.application.use_cases.generate_custom_short import (
     CustomShortRequest,
     GenerateCustomShort,
@@ -229,6 +230,18 @@ class TelegramControlPlane:
             publication.published_at = datetime.now(UTC)
             run.status = transition_run(run.status, RunStatus.PUBLISHED)
             self._session.commit()
+
+            # Capture immutable production features only after the external publication succeeds.
+            # A snapshot failure must not turn a successful YouTube publication into a retryable publish.
+            try:
+                PerformanceMemoryService(self._session).capture_production_snapshot(publication.id)
+                self._session.commit()
+            except Exception as snapshot_exc:
+                self._session.rollback()
+                raise RuntimeError(
+                    f"Published successfully, but production snapshot capture failed: {snapshot_exc}"
+                ) from snapshot_exc
+
             return f"Published: {result.url}"
         except Exception as exc:
             publication.status = PublicationStatus.FAILED_RETRYABLE
