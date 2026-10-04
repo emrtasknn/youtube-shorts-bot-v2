@@ -195,8 +195,7 @@ class GenerateCustomShort:
                     "visual_query when relevant; never use generic queries such as "
                     "crowd or people when the narration names a specific place/event. "
                     "Use concrete stock-photo or historical-illustration queries. "
-                    "The hook must be 4-18 words and strongly favor one of these types: shocking fact, unanswered question, impossible event, curiosity gap, contradiction.
-"
+                    "The hook must be 4-18 words and strongly favor one of these types: shocking fact, unanswered question, impossible event, curiosity gap, contradiction.\n"
                     "Do not invent uncertain historical facts."
                 ),
                 system_instruction="Return valid JSON only, with no markdown fences.",
