@@ -48,9 +48,7 @@ class PerformanceSnapshotService:
                 else None
             ),
             retention=(
-                Decimal(str(performance.retention))
-                if performance.retention is not None
-                else None
+                Decimal(str(performance.retention)) if performance.retention is not None else None
             ),
         )
         self._session.add(model)
