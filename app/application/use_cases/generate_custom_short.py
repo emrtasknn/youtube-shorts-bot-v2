@@ -14,6 +14,7 @@ from app.application.ports.text_generation import TextGenerationGateway, TextGen
 from app.application.ports.tts import TTSGateway, TTSRequest
 from app.application.ports.video_engine import VideoEngine, VideoRenderRequest, VideoSceneInput
 from app.application.services.custom_short_support import parse_script, validate_output
+from app.application.services.hook_engine import HookEngine
 from app.application.services.scene_contract import build_scene_contract
 from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
@@ -194,6 +195,7 @@ class GenerateCustomShort:
                     "visual_query when relevant; never use generic queries such as "
                     "crowd or people when the narration names a specific place/event. "
                     "Use concrete stock-photo or historical-illustration queries. "
+                    "The hook must be 4-18 words and strongly favor one of these types: shocking fact, unanswered question, impossible event, curiosity gap, contradiction.\n"
                     "Do not invent uncertain historical facts."
                 ),
                 system_instruction="Return valid JSON only, with no markdown fences.",
@@ -204,6 +206,11 @@ class GenerateCustomShort:
             )
         )
         data = parse_script(result.text)
+        hook_engine = HookEngine()
+        hook_evaluation = hook_engine.evaluate(str(data["hook"]))
+        if not hook_evaluation.is_acceptable:
+            data["hook"] = hook_engine.fallback(topic)
+            hook_engine.ensure_acceptable(str(data["hook"]))
         script = ScriptModel(
             content_id=run.content_id,
             version=1,
