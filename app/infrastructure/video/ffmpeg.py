@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from typing import TypedDict
 
+from app.application.services.audio_ducking import AudioDucking, DuckingConfig
+
 from app.application.ports.video_engine import (
     VideoRenderRequest,
     VideoRenderResult,
@@ -63,11 +65,20 @@ class FFmpegCommandBuilder:
             )
 
         audio_input_index: int | None = None
+        background_audio_index: int | None = None
+        if request.background_audio_path is not None and request.voiceover_path is None:
+            raise ValueError("Background audio requires a voiceover for ducking")
         if request.voiceover_path is not None:
             if not request.voiceover_path.is_file():
                 raise FileNotFoundError(request.voiceover_path)
             audio_input_index = len(request.scenes)
             command.extend(["-i", str(request.voiceover_path)])
+
+        if request.background_audio_path is not None:
+            if not request.background_audio_path.is_file():
+                raise FileNotFoundError(request.background_audio_path)
+            background_audio_index = len(request.scenes) + 1
+            command.extend(["-stream_loop", "-1", "-i", str(request.background_audio_path)])
 
         concat_inputs = "".join(f"[v{index}]" for index in range(len(request.scenes)))
         filter_complex = ";".join(filter_inputs)
@@ -90,17 +101,40 @@ class FFmpegCommandBuilder:
         command.extend(["-filter_complex", filter_complex, "-map", video_map])
 
         if audio_input_index is not None:
-            command.extend(
-                [
-                    "-map",
-                    f"{audio_input_index}:a:0",
-                    "-c:a",
-                    "aac",
-                    "-b:a",
-                    "192k",
-                    "-shortest",
-                ]
-            )
+            if background_audio_index is not None:
+                ducking = AudioDucking(
+                    DuckingConfig(
+                        background_volume=request.background_volume,
+                        threshold=request.ducking_threshold,
+                        ratio=request.ducking_ratio,
+                        attack_ms=request.ducking_attack_ms,
+                        release_ms=request.ducking_release_ms,
+                    )
+                )
+                filter_complex += (
+                    f";[{audio_input_index}:a]aformat=sample_fmts=fltp[voice];"
+                    f"[{background_audio_index}:a]atrim=duration={sum(durations):g},"
+                    "asetpts=PTS-STARTPTS[background];"
+                    + ducking.build_filter(
+                        voice_label="voice",
+                        background_label="background",
+                        output_label="aout",
+                    )
+                )
+                command[command.index("-filter_complex") + 1] = filter_complex
+                command.extend(["-map", "[aout]", "-c:a", "aac", "-b:a", "192k", "-shortest"])
+            else:
+                command.extend(
+                    [
+                        "-map",
+                        f"{audio_input_index}:a:0",
+                        "-c:a",
+                        "aac",
+                        "-b:a",
+                        "192k",
+                        "-shortest",
+                    ]
+                )
 
         command.extend(
             [
