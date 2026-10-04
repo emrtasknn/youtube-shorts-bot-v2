@@ -191,7 +191,6 @@ def test_performance_memory_requires_performance_snapshot() -> None:
         engine.dispose()
 
 
-
 def test_production_snapshot_is_immutable_and_idempotent() -> None:
     engine = create_engine(database_url())
     try:
