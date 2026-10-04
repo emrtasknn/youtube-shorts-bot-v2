@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     youtube_client_id: str = ""
     youtube_client_secret: str = ""
     youtube_refresh_token: str = ""
+    youtube_analytics_base_url: str = "https://youtubeanalytics.googleapis.com/v2"
+    youtube_analytics_timeout_seconds: float = 30.0
     youtube_privacy_status: str = "public"
     youtube_category_id: str = "27"
     pexels_enabled: bool = True
