@@ -220,18 +220,19 @@ def test_production_snapshot_is_immutable_and_idempotent() -> None:
             script.hook = "Changed hook after publication"
             session.flush()
 
-            second = service.save_production_snapshot(
-                service.get_for_publication(publication.id)
-            )
+            second = service.save_production_snapshot(service.get_for_publication(publication.id))
 
             assert second.features.topic == "M8.2 linking test"
             assert second.features.hook == "How did this happen?"
             assert second.features.visual_providers == ("pexels",)
-            assert session.scalar(
-                select(func.count(PerformanceProductionSnapshotModel.id)).where(
-                    PerformanceProductionSnapshotModel.publication_id == publication.id
+            assert (
+                session.scalar(
+                    select(func.count(PerformanceProductionSnapshotModel.id)).where(
+                        PerformanceProductionSnapshotModel.publication_id == publication.id
+                    )
                 )
-            ) == 1
+                == 1
+            )
             session.rollback()
     finally:
         engine.dispose()
