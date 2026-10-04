@@ -4,6 +4,12 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from app.application.ports.analytics import AnalyticsProvider, VideoPerformance
+from app.application.services.metrics_retry import (
+    MetricsCollectionError,
+    MetricsCollectionException,
+    MetricsFailureKind,
+    MetricsRetryPolicy,
+)
 from app.application.services.performance_snapshot import PerformanceSnapshotService
 
 
@@ -31,9 +37,35 @@ class MetricsCollector:
         if not request.platform_post_id:
             raise ValueError("platform_post_id is required")
 
-        performance = await self._provider.fetch_video_performance(
-            publication_id=request.publication_id,
-            platform_post_id=request.platform_post_id,
-            measured_at=request.measured_at,
-        )
+        try:
+            performance = await self._provider.fetch_video_performance(
+                publication_id=request.publication_id,
+                platform_post_id=request.platform_post_id,
+                measured_at=request.measured_at,
+            )
+        except Exception as exc:
+            kind = MetricsRetryPolicy.classify(exc)
+            raise MetricsCollectionException(
+                MetricsCollectionError(
+                    kind=kind,
+                    code=self._error_code(exc),
+                    message=str(exc),
+                    attempts=1,
+                )
+            ) from exc
+
         return self._snapshot_service.save(performance)
+
+    @staticmethod
+    def _error_code(error: BaseException) -> str:
+        import httpx
+
+        if isinstance(error, httpx.HTTPStatusError):
+            return f"HTTP_{error.response.status_code}"
+        if isinstance(error, httpx.TimeoutException):
+            return "TIMEOUT"
+        if isinstance(error, httpx.NetworkError):
+            return "NETWORK_ERROR"
+        if isinstance(error, ValueError):
+            return "INVALID_RESPONSE"
+        return "ANALYTICS_PROVIDER_ERROR"
