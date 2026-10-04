@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from app.application.services.visual_relevance import VisualRelevanceContext, VisualRelevanceScorer
+
 
 @dataclass(frozen=True, slots=True)
 class StockMediaScore:
@@ -39,17 +41,17 @@ class StockMediaScorer:
         min_duration: float = 2.0,
         max_duration: float = 60.0,
         min_relevance: float = 0.20,
+        relevance_context: VisualRelevanceContext | None = None,
     ) -> StockMediaScore:
         reasons: list[str] = []
-        query_terms = self._tokens(query)
-        searchable = self._normalize(
-            " ".join(str(item.get(key, "")) for key in ("alt", "description", "title"))
+        relevance_result = VisualRelevanceScorer().score(
+            item,
+            query=query,
+            context=relevance_context,
         )
-        matched_terms = tuple(term for term in query_terms if term in searchable)
-        coverage = len(matched_terms) / len(query_terms) if query_terms else 0.0
-        phrase = self._normalize(query)
-        phrase_bonus = 0.35 if phrase and phrase in searchable else 0.0
-        relevance = min(1.0, coverage * 0.65 + phrase_bonus)
+        relevance = relevance_result.score
+        matched_terms = relevance_result.matched_terms
+        reasons.extend(relevance_result.reasons)
 
         width = self._as_number(item.get("width"))
         height = self._as_number(item.get("height"))
