@@ -23,6 +23,9 @@ def test_parse_script_accepts_valid_json() -> None:
     result = parse_script(json.dumps(payload))
     assert result["hook"] == "H"
     assert len(result["scenes"]) == 3
+    assert result["scenes"][0]["purpose"] == "support_narration"
+    assert result["scenes"][0]["subject"] == "Rome Colosseum"
+    assert result["scenes"][0]["visual_style"] == "documentary"
 
 
 def test_parse_script_normalizes_human_readable_durations() -> None:

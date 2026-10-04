@@ -5,6 +5,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from app.application.services.scene_contract import build_scene_contract
+
 _GENERIC_VISUAL_TOKENS = {
     "crowd",
     "people",
@@ -62,34 +64,19 @@ def parse_script(raw: str) -> dict[str, Any]:
         raise ValueError("Script must contain between 3 and 6 scenes")
     normalized_scenes: list[dict[str, Any]] = []
     for scene in scenes:
-        if not isinstance(scene, dict):
-            raise ValueError("Every scene must be an object")
-        narration = str(scene.get("narration") or "").strip()
-        visual_goal = str(scene.get("visual_goal") or "").strip()
-        visual_query = str(scene.get("visual_query") or "").strip()
-        if not narration:
-            raise ValueError("Every scene needs narration")
-        if not visual_goal:
-            raise ValueError("Every scene needs a visual_goal")
-        if not visual_query:
-            raise ValueError("Every scene needs a visual_query")
+        contract = build_scene_contract(scene)
         query_tokens = {
             token.lower().strip(".,!?;:()[]{}")
-            for token in visual_query.split()
+            for token in contract.visual_query.split()
             if token.strip(".,!?;:()[]{}")
         }
         if query_tokens and query_tokens.issubset(_GENERIC_VISUAL_TOKENS):
             raise ValueError("Every scene needs a specific visual_query")
-        normalized_scenes.append(
-            {
-                "duration": _coerce_seconds(
-                    scene.get("duration"), default=6.0, minimum=1.0, maximum=20.0
-                ),
-                "narration": narration,
-                "visual_goal": visual_goal,
-                "visual_query": visual_query,
-            }
+        normalized = contract.to_dict()
+        normalized["duration"] = _coerce_seconds(
+            scene.get("duration"), default=6.0, minimum=1.0, maximum=20.0
         )
+        normalized_scenes.append(normalized)
     data["scenes"] = normalized_scenes
     return data
 
