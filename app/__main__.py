@@ -18,6 +18,7 @@ from app.infrastructure.database.connection import get_session
 from app.infrastructure.providers.youtube import YouTubePublisher
 from app.infrastructure.telegram.bot import TelegramBot
 from app.runtime import build_runtime
+from app.infrastructure.telegram.webhook import run as run_telegram_webhook
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -37,6 +38,10 @@ def _build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "telegram-poll",
         help="Run the Telegram approval and publishing worker",
+    )
+    subparsers.add_parser(
+        "telegram-webhook",
+        help="Run the Telegram webhook HTTP server",
     )
     return parser
 
@@ -161,6 +166,8 @@ async def _run(args: argparse.Namespace) -> None:
         await _run_telegram_review()
     elif args.command == "telegram-poll":
         await _run_telegram_poll()
+    elif args.command == "telegram-webhook":
+        await asyncio.to_thread(run_telegram_webhook)
 
 
 def main() -> None:
