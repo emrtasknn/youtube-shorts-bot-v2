@@ -191,6 +191,32 @@ def test_performance_memory_requires_performance_snapshot() -> None:
         engine.dispose()
 
 
+def test_production_snapshot_can_be_captured_before_metrics_exist() -> None:
+    engine = create_engine(database_url())
+    try:
+        with Session(engine) as session:
+            publication = create_memory_fixture(session)
+            session.query(PerformanceSnapshotModel).filter(
+                PerformanceSnapshotModel.publication_id == publication.id
+            ).delete(synchronize_session=False)
+            session.flush()
+
+            service = PerformanceMemoryService(session)
+            captured = service.capture_production_snapshot(publication.id)
+
+            assert captured.features.topic == "M8.2 linking test"
+            assert captured.features.hook == "How did this happen?"
+            assert captured.features.visual_providers == ("pexels",)
+            assert session.scalar(
+                select(PerformanceProductionSnapshotModel).where(
+                    PerformanceProductionSnapshotModel.publication_id == publication.id
+                )
+            ) is not None
+            session.rollback()
+    finally:
+        engine.dispose()
+
+
 def test_production_snapshot_is_immutable_and_idempotent() -> None:
     engine = create_engine(database_url())
     try:
