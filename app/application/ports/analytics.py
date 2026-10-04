@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Protocol
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,3 +62,13 @@ class VideoPerformance:
             "average_view_duration_seconds": self.average_view_duration_seconds,
             "retention": self.retention,
         }
+
+
+class AnalyticsProvider(Protocol):
+    async def fetch_video_performance(
+        self,
+        *,
+        publication_id: str,
+        platform_post_id: str,
+        measured_at: datetime,
+    ) -> VideoPerformance: ...
