@@ -175,12 +175,8 @@ class FFmpegVideoEngine:
         if request.voiceover_path is not None:
             audio_duration = await self._probe_duration(request.voiceover_path)
 
-        scene_durations = tuple(scene.duration_seconds for scene in request.scenes)
-        if audio_duration:
-            scene_durations = SceneTimingAllocator().allocate(
-                scene_durations,
-                audio_duration,
-            )
+        scene_durations = self._resolve_scene_durations(request, audio_duration)
+
 
         subtitle_path: Path | None = None
         if request.subtitle_text:
@@ -230,6 +226,16 @@ class FFmpegVideoEngine:
             fps=metadata["fps"],
             has_audio=metadata["has_audio"],
         )
+
+    def _resolve_scene_durations(
+        self,
+        request: VideoRenderRequest,
+        audio_duration: float,
+    ) -> tuple[float, ...]:
+        scene_durations = tuple(scene.duration_seconds for scene in request.scenes)
+        if not audio_duration:
+            return scene_durations
+        return SceneTimingAllocator().allocate(scene_durations, audio_duration)
 
     async def _probe_duration(self, path: Path) -> float:
         result = await self._run_probe(
