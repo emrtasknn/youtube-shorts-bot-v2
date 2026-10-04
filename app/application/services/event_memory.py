@@ -1,5 +1,4 @@
-from __future__
-
+from __future__ import annotations
 from dataclasses import dataclass
 from hashlib import sha256
 from typing import Any, Literal
