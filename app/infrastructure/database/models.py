@@ -280,6 +280,34 @@ class PublicationModel(Base):
     updated_at: Mapped[datetime] = updated_at()
 
 
+class PerformanceSnapshotModel(Base):
+    __tablename__ = "performance_snapshots"
+    __table_args__ = (
+        UniqueConstraint(
+            "publication_id",
+            "measured_at",
+            name="uq_performance_snapshots_publication_measured",
+        ),
+        Index("ix_performance_snapshots_publication_measured", "publication_id", "measured_at"),
+    )
+    id: Mapped[UUID] = uuid_pk()
+    publication_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("publications.id", ondelete="CASCADE"), nullable=False
+    )
+    platform: Mapped[str] = mapped_column(String(32), nullable=False)
+    platform_post_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    measured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    views: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    likes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    comments: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    shares: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    subscribers_gained: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    watch_time_seconds: Mapped[Decimal | None] = mapped_column(Numeric(12, 3))
+    average_view_duration_seconds: Mapped[Decimal | None] = mapped_column(Numeric(12, 3))
+    retention: Mapped[Decimal | None] = mapped_column(Numeric(6, 5))
+    created_at: Mapped[datetime] = created_at()
+
+
 class PublicationAttemptModel(Base):
     __tablename__ = "publication_attempts"
     __table_args__ = (
