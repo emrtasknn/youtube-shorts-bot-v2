@@ -17,8 +17,8 @@ from app.config.settings import get_settings
 from app.infrastructure.database.connection import get_session
 from app.infrastructure.providers.youtube import YouTubePublisher
 from app.infrastructure.telegram.bot import TelegramBot
-from app.runtime import build_runtime
 from app.infrastructure.telegram.webhook import run as run_telegram_webhook
+from app.runtime import build_runtime
 
 
 def _build_parser() -> argparse.ArgumentParser:
