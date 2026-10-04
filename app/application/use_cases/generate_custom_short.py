@@ -14,7 +14,9 @@ from app.application.ports.text_generation import TextGenerationGateway, TextGen
 from app.application.ports.tts import TTSGateway, TTSRequest
 from app.application.ports.video_engine import VideoEngine, VideoRenderRequest, VideoSceneInput
 from app.application.services.custom_short_support import parse_script, validate_output
+from app.application.services.event_memory import EventMemoryCandidate, EventMemoryService
 from app.application.services.hook_engine import HookEngine
+from app.application.services.novelty_hardening import NoveltyHardeningService
 from app.application.services.scene_contract import build_scene_contract
 from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
@@ -113,7 +115,18 @@ class GenerateCustomShort:
             run.status = RunStatus.RESEARCHING
             run.status = RunStatus.TOPIC_VALIDATION
             run.status = RunStatus.SCRIPTING
-            script, script_data = await self._create_script(run, topic, request.language)
+            script, script_data, event_candidate = await self._create_script(
+                run, topic, request.language
+            )
+            if event_candidate is not None:
+                novelty = NoveltyHardeningService(EventMemoryService(self._session)).evaluate(
+                    event_candidate
+                )
+                if not novelty.accepted:
+                    raise ValueError(
+                        f"Novelty check rejected event: {novelty.reason}"
+                        f" ({novelty.matched_event_id or 'unknown'})"
+                    )
             run.status = RunStatus.STORYBOARDING
             scenes = self._create_scenes(script, script_data["scenes"])
             run.status = RunStatus.ASSET_PLANNING
@@ -161,6 +174,23 @@ class GenerateCustomShort:
             run.status = RunStatus.RENDERING
             run.status = RunStatus.QC
             validate_output(render.output_path, render.duration_seconds)
+            if event_candidate is not None:
+                EventMemoryService(self._session).upsert(
+                    EventMemoryCandidate(
+                        event_id=event_candidate.event_id,
+                        canonical_title=event_candidate.canonical_title,
+                        aliases=event_candidate.aliases,
+                        date=event_candidate.date,
+                        location=event_candidate.location,
+                        entities=event_candidate.entities,
+                        event_summary=event_candidate.event_summary,
+                        core_facts=event_candidate.core_facts,
+                        claims=event_candidate.claims,
+                        sources=event_candidate.sources,
+                        first_video_id=event_candidate.first_video_id,
+                        status="USED",
+                    )
+                )
             run.status = RunStatus.READY_FOR_APPROVAL
             self._session.add(ApprovalModel(run_id=run.id, status=ApprovalStatus.PENDING))
             self._session.commit()
@@ -179,7 +209,7 @@ class GenerateCustomShort:
 
     async def _create_script(
         self, run: RunModel, topic: str, language: str
-    ) -> tuple[ScriptModel, dict[str, Any]]:
+    ) -> tuple[ScriptModel, dict[str, Any], EventMemoryCandidate | None]:
         result = await self._text.generate(
             TextGenerationRequest(
                 run_id=str(run.id),
@@ -187,7 +217,13 @@ class GenerateCustomShort:
                 prompt=(
                     f"Create a {language} YouTube Short about: {topic}. "
                     "Target 25-40 seconds. Return JSON with hook, body, cta, "
-                    "duration_target, scenes. Each scene must contain duration, narration, "
+                    "duration_target, event_memory, scenes. For historical topics, "
+                    "event_memory must contain canonical_title, aliases, date, location, "
+                    "entities, event_summary, core_facts, claims, sources, and status. "
+                    "Use status NEW_EVENT when the event is believed to be new, KNOWN_EVENT "
+                    "when it is known, and UNCERTAIN when identity is unclear. "
+                    "For non-historical topics event_memory may be null. "
+                    "Each scene must contain duration, narration, "
                     "visual_goal, visual_query, purpose, subject, action, entities, "
                     "location, era, visual_intent, visual_style, must_show, and must_avoid. "
                     "must describe the exact subject shown on screen. For historical "
@@ -206,6 +242,17 @@ class GenerateCustomShort:
             )
         )
         data = parse_script(result.text)
+        event_candidate = None
+        event_memory_payload = data.get("event_memory")
+        if event_memory_payload is not None and not isinstance(event_memory_payload, dict):
+            raise ValueError("event_memory must be an object or null")
+        if isinstance(event_memory_payload, dict):
+            normalized_event_memory = dict(event_memory_payload)
+            normalized_event_memory.pop("event_id", None)
+            event_candidate = EventMemoryCandidate.from_payload(
+                normalized_event_memory,
+                fallback_title=topic,
+            )
         hook_engine = HookEngine()
         hook_evaluation = hook_engine.evaluate(str(data["hook"]))
         if not hook_evaluation.is_acceptable:
@@ -224,7 +271,7 @@ class GenerateCustomShort:
         )
         self._session.add(script)
         self._session.flush()
-        return script, data
+        return script, data, event_candidate
 
     def _create_scenes(self, script: ScriptModel, data: Any) -> list[SceneModel]:
         if not isinstance(data, list):
