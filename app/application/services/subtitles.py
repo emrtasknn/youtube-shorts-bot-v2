@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from app.application.services.subtitle_engine import SubtitleEngine
+
 
 def _format_ass_time(seconds: float) -> str:
     centiseconds = max(0, round(seconds * 100))
@@ -12,34 +14,22 @@ def _format_ass_time(seconds: float) -> str:
     return f"{hours}:{minutes:02d}:{secs:02d}.{centis:02d}"
 
 
-def _wrap_text(text: str, max_words: int = 6) -> list[str]:
+def _wrap_text(text: str, max_words: int = 3) -> list[str]:
     words = re.findall(r"\S+", text.strip())
-    return [" ".join(words[index : index + max_words]) for index in range(0, len(words), max_words)]
+    return [
+        " ".join(words[index : index + max_words])
+        for index in range(0, len(words), max_words)
+    ]
 
 
 def build_ass(text: str, duration_seconds: float) -> str:
-    if not text.strip():
-        raise ValueError("Subtitle text must not be empty")
-    if duration_seconds <= 0:
-        raise ValueError("Subtitle duration must be positive")
-
-    words = re.findall(r"\S+", text.strip())
-    if not words:
-        raise ValueError("Subtitle text must contain words")
-
-    chunk_size = 6
-    chunks = [
-        " ".join(words[index : index + chunk_size]) for index in range(0, len(words), chunk_size)
-    ]
-    step = duration_seconds / len(chunks)
+    cues = SubtitleEngine().build_cues(text, duration_seconds)
     events: list[str] = []
-    for index, chunk in enumerate(chunks):
-        start = index * step
-        end = duration_seconds if index == len(chunks) - 1 else (index + 1) * step
-        wrapped = "\\N".join(_wrap_text(chunk))
+    for cue in cues:
+        wrapped = "\\N".join(_wrap_text(cue.text))
         events.append(
-            f"Dialogue: 0,{_format_ass_time(start)},{_format_ass_time(end)},"
-            f"Default,,0,0,0,,{wrapped}"
+            f"Dialogue: 0,{_format_ass_time(cue.start_seconds)},"
+            f"{_format_ass_time(cue.end_seconds)},Default,,0,0,0,,{wrapped}"
         )
 
     header = """[Script Info]
