@@ -54,16 +54,17 @@ class VideoQualityGate:
         if duration_seconds <= 0:
             failures.append("output duration must be positive")
         if width != expectation.width or height != expectation.height:
-            failures.append(
-                f"output dimensions must be {expectation.width}x{expectation.height}"
-            )
+            failures.append(f"output dimensions must be {expectation.width}x{expectation.height}")
         if abs(fps - expectation.fps) > 0.01:
             failures.append(f"output FPS must be {expectation.fps:g}")
         if require_audio and not has_audio:
             failures.append("output audio stream is required")
 
         target_duration = expected_duration
-        if target_duration is not None and abs(duration_seconds - target_duration) > expectation.duration_tolerance_seconds:
+        if (
+            target_duration is not None
+            and abs(duration_seconds - target_duration) > expectation.duration_tolerance_seconds
+        ):
             failures.append(
                 f"output duration differs from expected by more than "
                 f"{expectation.duration_tolerance_seconds:g}s"
