@@ -70,7 +70,11 @@ class NoveltyHardeningService:
     ) -> bool:
         if candidate.date and existing.date and candidate.date != existing.date:
             return False
-        if candidate.location and existing.location and candidate.location.casefold() != existing.location.casefold():
+        if (
+            candidate.location
+            and existing.location
+            and candidate.location.casefold() != existing.location.casefold()
+        ):
             return False
 
         candidate_entities = {value.casefold() for value in candidate.entities}
