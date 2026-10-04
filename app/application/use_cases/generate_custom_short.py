@@ -9,13 +9,12 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.application.ports.asset_downloader import AssetDownloader
-from app.application.ports.stock_media import StockMediaGateway
+from app.application.ports.stock_media import StockMediaGateway, StockMediaStrategy
 from app.application.ports.text_generation import TextGenerationGateway, TextGenerationRequest
 from app.application.ports.tts import TTSGateway, TTSRequest
 from app.application.ports.video_engine import VideoEngine, VideoRenderRequest, VideoSceneInput
 from app.application.services.custom_short_support import parse_script, validate_output
 from app.application.services.scene_contract import build_scene_contract
-from app.application.ports.stock_media import StockMediaStrategy
 from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.visual_source_resolver import VisualSourceResolver
