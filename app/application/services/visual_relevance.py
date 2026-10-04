@@ -25,7 +25,7 @@ class VisualRelevanceContext:
     must_avoid: tuple[str, ...] = ()
 
     @classmethod
-    def from_scene(cls, scene: SceneContract) -> "VisualRelevanceContext":
+    def from_scene(cls, scene: SceneContract) -> VisualRelevanceContext:
         return cls(
             entities=scene.entities,
             location=scene.location,
