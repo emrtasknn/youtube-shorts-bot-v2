@@ -9,7 +9,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.application.ports.asset_downloader import AssetDownloader
-from app.application.ports.stock_media import StockMediaGateway
+from app.application.ports.stock_media import StockMediaGateway, StockMediaStrategy
 from app.application.ports.text_generation import TextGenerationGateway, TextGenerationRequest
 from app.application.ports.tts import TTSGateway, TTSRequest
 from app.application.ports.video_engine import VideoEngine, VideoRenderRequest, VideoSceneInput
@@ -17,7 +17,7 @@ from app.application.services.custom_short_support import parse_script, validate
 from app.application.services.scene_contract import build_scene_contract
 from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
-from app.application.services.stock_media_strategy import StockMediaStrategyBuilder
+from app.application.services.visual_source_resolver import VisualSourceResolver
 from app.application.use_cases.search_stock_media import SearchStockMedia
 from app.domain.enums import (
     ApprovalStatus,
@@ -246,15 +246,39 @@ class GenerateCustomShort:
         return scenes
 
     async def _select_asset(self, run: RunModel, scene: SceneModel) -> tuple[Path, AssetModel]:
-        query = scene.primary_subject or scene.visual_goal or "historical scene"
-        broader_queries = [scene.visual_goal, "historical illustration"]
-        valid_broader_queries = [
-            item.strip() for item in broader_queries if isinstance(item, str) and item.strip()
-        ]
-        strategies = StockMediaStrategyBuilder().build(
-            exact_query=query,
-            broader_queries=valid_broader_queries,
+        scene_contract = build_scene_contract(
+            {
+                "narration": scene.narration,
+                "visual_goal": scene.visual_goal,
+                "visual_query": scene.primary_subject,
+                "action": scene.action,
+                "location": scene.location,
+                "era": scene.era,
+                "must_show": scene.must_show or [],
+                "must_avoid": scene.must_avoid or [],
+            }
         )
+        source_plan = VisualSourceResolver().resolve(scene_contract)
+        if source_plan.kind != "stock":
+            raise RuntimeError(f"Unsupported visual source: {source_plan.kind}")
+        strategies = [
+            StockMediaStrategy(
+                name="exact",
+                query=source_plan.exact_query,
+                operation="search_photos",
+                orientation="portrait",
+            ),
+            *[
+                StockMediaStrategy(
+                    name=f"broader_{index}",
+                    query=query,
+                    operation="search_photos",
+                    orientation="portrait",
+                    min_relevance=0.10,
+                )
+                for index, query in enumerate(source_plan.broader_queries, start=1)
+            ],
+        ]
         result, selected = await SearchStockMedia(
             self._stock_media
         ).execute_strategy_until_selected(
@@ -281,6 +305,7 @@ class GenerateCustomShort:
             status=AssetStatus.READY,
             asset_metadata={
                 "query": result.query,
+                "source_plan": source_plan.to_dict(),
                 "score": selected.score.score,
                 "scene_contract": {
                     "visual_goal": scene.visual_goal,
