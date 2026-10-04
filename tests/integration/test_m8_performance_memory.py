@@ -73,7 +73,7 @@ def create_memory_fixture(session: Session) -> PublicationModel:
         body="A short test script.",
         duration_target=Decimal("34.00"),
         word_count=92,
-        status=ScriptStatus.PUBLISHED,
+        status=ScriptStatus.APPROVED,
         created_at=datetime(2026, 10, 4, 18, 0, tzinfo=UTC),
     )
     session.add(script)
@@ -140,7 +140,7 @@ def test_performance_memory_links_publication_to_content_and_script() -> None:
 
             assert memory.publication_id == publication.id
             assert memory.run_id == publication.run_id
-            assert memory.features.category == "ContentCategory.HISTORY_FACT"
+            assert memory.features.category == "HISTORY_FACT"
             assert memory.features.topic == "M8.2 linking test"
             assert memory.features.hook == "How did this happen?"
             assert memory.features.scene_count == 1
