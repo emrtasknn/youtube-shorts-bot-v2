@@ -1,6 +1,6 @@
 """Create the M8.3 immutable production feature snapshot table.
 
-Revision ID: 0005_m8_production_feature_snapshot
+Revision ID: 0005_m8_prod_feature_snapshot
 Revises: 0004_m7_performance_snapshots
 """
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-revision = "0005_m8_production_feature_snapshot"
+revision = "0005_m8_prod_feature_snapshot"
 down_revision = "0004_m7_performance_snapshots"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -38,7 +38,12 @@ def upgrade() -> None:
         sa.Column("visual_providers", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column("tts_provider", sa.String(length=100), nullable=True),
         sa.Column("production_strategy", sa.String(length=255), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["publication_id"], ["publications.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["run_id"], ["runs.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["content_id"], ["contents.id"], ondelete="CASCADE"),
