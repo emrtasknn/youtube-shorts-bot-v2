@@ -16,10 +16,7 @@ def _format_ass_time(seconds: float) -> str:
 
 def _wrap_text(text: str, max_words: int = 3) -> list[str]:
     words = re.findall(r"\S+", text.strip())
-    return [
-        " ".join(words[index : index + max_words])
-        for index in range(0, len(words), max_words)
-    ]
+    return [" ".join(words[index : index + max_words]) for index in range(0, len(words), max_words)]
 
 
 def build_ass(text: str, duration_seconds: float) -> str:
