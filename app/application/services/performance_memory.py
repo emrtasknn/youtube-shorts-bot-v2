@@ -124,6 +124,11 @@ class PerformanceMemoryService:
         return self._build_memory(publication)
 
     def _build_memory(self, publication: PublicationModel) -> PerformanceMemory:
+        if not publication.platform_post_id:
+            raise PerformanceMemoryNotFoundError("publication has no platform post id")
+        if publication.published_at is None:
+            raise PerformanceMemoryNotFoundError("publication has no published_at")
+
         run = self._session.get(RunModel, publication.run_id)
         if run is None:
             raise PerformanceMemoryNotFoundError("publication run not found")
