@@ -51,6 +51,9 @@ class TelegramWorker:
                 await asyncio.sleep(3)
                 await self._bot.send_message(self._admin_chat_id, f"Telegram worker error: {exc}")
 
+    async def handle_update(self, update: dict[str, object]) -> None:
+        await self._handle(update)
+
     async def _handle(self, update: dict[str, object]) -> None:
         callback = update.get("callback_query")
         if isinstance(callback, dict):
