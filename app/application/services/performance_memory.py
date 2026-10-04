@@ -91,6 +91,19 @@ class PerformanceMemoryService:
             features=features,
         )
 
+    def capture_production_snapshot(self, publication_id: UUID) -> PerformanceMemory:
+        """Capture immutable production features immediately after publication."""
+        publication = self._session.get(PublicationModel, publication_id)
+        if publication is None:
+            raise PerformanceMemoryNotFoundError("publication not found")
+        if not publication.platform_post_id:
+            raise PerformanceMemoryNotFoundError("publication has no platform post id")
+        if publication.published_at is None:
+            raise PerformanceMemoryNotFoundError("publication has no published_at")
+
+        memory = self._build_memory(publication)
+        return self.save_production_snapshot(memory)
+
     def get_for_publication(self, publication_id: UUID) -> PerformanceMemory:
         publication = self._session.get(PublicationModel, publication_id)
         if publication is None:
@@ -108,6 +121,9 @@ class PerformanceMemoryService:
         if has_snapshot is None:
             raise PerformanceMemoryNotFoundError("publication has no performance snapshot")
 
+        return self._build_memory(publication)
+
+    def _build_memory(self, publication: PublicationModel) -> PerformanceMemory:
         run = self._session.get(RunModel, publication.run_id)
         if run is None:
             raise PerformanceMemoryNotFoundError("publication run not found")
