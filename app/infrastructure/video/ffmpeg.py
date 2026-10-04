@@ -5,12 +5,11 @@ import json
 from pathlib import Path
 from typing import TypedDict
 
-from app.application.services.audio_ducking import AudioDucking, DuckingConfig
-
 from app.application.ports.video_engine import (
     VideoRenderRequest,
     VideoRenderResult,
 )
+from app.application.services.audio_ducking import AudioDucking, DuckingConfig
 from app.application.services.subtitles import write_ass
 
 
