@@ -47,15 +47,11 @@ class VisualSourceResolver:
         return query
 
     @staticmethod
-    def _broader_queries(
-        scene: SceneContract, exact_query: str
-    ) -> tuple[str, ...]:
+    def _broader_queries(scene: SceneContract, exact_query: str) -> tuple[str, ...]:
         candidates = (
             scene.visual_goal.strip(),
             f"{scene.era.strip()} historical illustration" if scene.era.strip() else "",
-            f"{scene.location.strip()} historical illustration"
-            if scene.location.strip()
-            else "",
+            f"{scene.location.strip()} historical illustration" if scene.location.strip() else "",
             "historical illustration",
         )
         unique: list[str] = []
