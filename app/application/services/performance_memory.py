@@ -90,7 +90,7 @@ class PerformanceMemoryService:
             duration_target_seconds=script.duration_target,
             word_count=script.word_count,
             scene_count=int(scene_count or 0),
-            visual_providers=tuple(sorted(visual_providers)),
+            visual_providers=visual_providers,
             production_strategy=run.strategy,
         )
 
