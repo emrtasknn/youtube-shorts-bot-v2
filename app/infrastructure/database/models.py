@@ -368,3 +368,25 @@ class CostEventModel(Base):
     currency: Mapped[str] = mapped_column(String(8), default="USD", nullable=False)
     cost_metadata: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSONB)
     created_at: Mapped[datetime] = created_at()
+
+
+class EventMemoryModel(Base):
+    __tablename__ = "event_memory"
+    __table_args__ = (
+        Index("ix_event_memory_canonical_title", "canonical_title"),
+        Index("ix_event_memory_status", "status"),
+    )
+    event_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    canonical_title: Mapped[str] = mapped_column(String(500), nullable=False)
+    aliases: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    event_date: Mapped[str | None] = mapped_column(String(100))
+    location: Mapped[str | None] = mapped_column(String(500))
+    entities: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    event_summary: Mapped[str | None] = mapped_column(Text)
+    core_facts: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    claims: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    sources: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    first_video_id: Mapped[str | None] = mapped_column(String(255))
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_at: Mapped[datetime] = created_at()
+    updated_at: Mapped[datetime] = updated_at()
