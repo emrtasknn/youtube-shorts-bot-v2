@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.application.services.stock_media_scoring import StockMediaScore, StockMediaScorer
+from app.application.services.visual_relevance import VisualRelevanceContext
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,12 +24,14 @@ class StockMediaSelector:
         query: str,
         used_provider_asset_ids: set[str] | None = None,
         min_relevance: float = 0.20,
+        relevance_context: VisualRelevanceContext | None = None,
     ) -> ScoredStockMedia | None:
         ranked = self.rank(
             items,
             query=query,
             used_provider_asset_ids=used_provider_asset_ids,
             min_relevance=min_relevance,
+            relevance_context=relevance_context,
         )
         eligible = [
             candidate
@@ -44,6 +47,7 @@ class StockMediaSelector:
         query: str,
         used_provider_asset_ids: set[str] | None = None,
         min_relevance: float = 0.20,
+        relevance_context: VisualRelevanceContext | None = None,
     ) -> list[ScoredStockMedia]:
         candidates = [
             ScoredStockMedia(
@@ -53,6 +57,7 @@ class StockMediaSelector:
                     query=query,
                     used_provider_asset_ids=used_provider_asset_ids,
                     min_relevance=min_relevance,
+                    relevance_context=relevance_context,
                 ),
             )
             for item in items
