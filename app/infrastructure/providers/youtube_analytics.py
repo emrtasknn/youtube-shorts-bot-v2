@@ -21,9 +21,7 @@ class YouTubeAnalyticsAdapter:
         client: httpx.AsyncClient | None = None,
     ) -> None:
         if not all((client_id, client_secret, refresh_token)):
-            raise ValueError(
-                "YouTube Analytics OAuth credentials are required"
-            )
+            raise ValueError("YouTube Analytics OAuth credentials are required")
         if timeout_seconds <= 0:
             raise ValueError("timeout_seconds must be positive")
         self._client_id = client_id
@@ -94,9 +92,7 @@ class YouTubeAnalyticsAdapter:
         payload = response.json()
         token = payload.get("access_token")
         if not token:
-            raise RuntimeError(
-                f"YouTube OAuth refresh did not return an access token: {payload}"
-            )
+            raise RuntimeError(f"YouTube OAuth refresh did not return an access token: {payload}")
         return str(token)
 
     async def _request(
