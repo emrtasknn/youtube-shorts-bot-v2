@@ -14,6 +14,7 @@ from app.application.ports.text_generation import TextGenerationGateway, TextGen
 from app.application.ports.tts import TTSGateway, TTSRequest
 from app.application.ports.video_engine import VideoEngine, VideoRenderRequest, VideoSceneInput
 from app.application.services.custom_short_support import parse_script, validate_output
+from app.application.services.scene_contract import build_scene_contract
 from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.stock_media_strategy import StockMediaStrategyBuilder
@@ -184,8 +185,9 @@ class GenerateCustomShort:
                 prompt=(
                     f"Create a {language} YouTube Short about: {topic}. "
                     "Target 25-40 seconds. Return JSON with hook, body, cta, "
-                    "duration_target, scenes. scenes must contain 4 items with "
-                    "duration, narration, visual_goal, visual_query. Every scene "
+                    "duration_target, scenes. Each scene must contain duration, narration, "
+                    "visual_goal, visual_query, purpose, subject, action, entities, "
+                    "location, era, visual_intent, visual_style, must_show, and must_avoid. "
                     "must describe the exact subject shown on screen. For historical "
                     "topics include concrete entities, location, event and era in "
                     "visual_query when relevant; never use generic queries such as "
@@ -223,13 +225,19 @@ class GenerateCustomShort:
         for index, item in enumerate(data):
             if not isinstance(item, dict):
                 raise ValueError("Scene must be an object")
+            contract = build_scene_contract(item)
             scene = SceneModel(
                 script_id=script.id,
                 scene_index=index,
                 duration=Decimal(str(item.get("duration", 6))),
-                narration=str(item.get("narration", "")),
-                visual_goal=str(item.get("visual_goal", "")),
-                primary_subject=str(item.get("visual_query", "")),
+                narration=contract.narration,
+                visual_goal=contract.visual_goal,
+                primary_subject=contract.visual_query,
+                action=contract.action,
+                era=contract.era,
+                location=contract.location,
+                must_show=list(contract.must_show),
+                must_avoid=list(contract.must_avoid),
                 status=SceneStatus.PLANNED,
             )
             self._session.add(scene)
@@ -274,6 +282,15 @@ class GenerateCustomShort:
             asset_metadata={
                 "query": result.query,
                 "score": selected.score.score,
+                "scene_contract": {
+                    "visual_goal": scene.visual_goal,
+                    "subject": scene.primary_subject,
+                    "action": scene.action,
+                    "location": scene.location,
+                    "era": scene.era,
+                    "must_show": scene.must_show or [],
+                    "must_avoid": scene.must_avoid or [],
+                },
             },
         )
         return path, asset
