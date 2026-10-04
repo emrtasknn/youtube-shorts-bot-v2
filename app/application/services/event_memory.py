@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__
 
 from dataclasses import dataclass
 from hashlib import sha256
@@ -163,7 +163,9 @@ class EventMemoryService:
         stored_model.location = existing.location or candidate.location
         stored_model.event_summary = existing.event_summary or candidate.event_summary
         stored_model.first_video_id = existing.first_video_id or candidate.first_video_id
-        stored_model.status = "USED" if "USED" in {existing.status, candidate.status} else candidate.status
+        stored_model.status = (
+            "USED" if "USED" in {existing.status, candidate.status} else candidate.status
+        )
         self._session.flush()
         return self._to_candidate(stored_model)
 
