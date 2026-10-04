@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import pytest
 from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
 from app.application.ports.analytics import VideoPerformance
 from app.application.services.metrics_collector import (
@@ -15,10 +16,6 @@ from app.application.services.metrics_collector import (
 from app.application.services.performance_snapshot import PerformanceSnapshotService
 from app.domain.enums import ContentCategory, PublicationPlatform, PublicationStatus, RunType
 from app.infrastructure.database.models import ContentModel, PublicationModel, RunModel
-from sqlalchemy.orm import Session
-
-
-pytestmark = pytest.mark.integration
 
 
 def database_url() -> str:
