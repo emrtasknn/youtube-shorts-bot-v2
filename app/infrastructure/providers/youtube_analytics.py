@@ -99,20 +99,31 @@ class YouTubeAnalyticsAdapter:
         self,
         method: str,
         url: str,
-        **kwargs: object,
+        *,
+        params: dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,
+        data: dict[str, str] | None = None,
     ) -> httpx.Response:
         if self._client is not None:
             response = await self._client.request(
                 method,
                 url,
+                params=params,
+                headers=headers,
+                data=data,
                 timeout=self._timeout_seconds,
-                **kwargs,
             )
             response.raise_for_status()
             return response
 
         async with httpx.AsyncClient(timeout=self._timeout_seconds) as client:
-            response = await client.request(method, url, **kwargs)
+            response = await client.request(
+                method,
+                url,
+                params=params,
+                headers=headers,
+                data=data,
+            )
             response.raise_for_status()
             return response
 
@@ -130,8 +141,11 @@ class YouTubeAnalyticsAdapter:
 
     @staticmethod
     def _int_metric(row: list[object], index: int) -> int:
+        value = row[index]
+        if not isinstance(value, (int, float, str)):
+            raise RuntimeError("YouTube Analytics returned an invalid integer metric")
         try:
-            return max(0, int(row[index]))
+            return max(0, int(value))
         except (TypeError, ValueError) as exc:
             raise RuntimeError("YouTube Analytics returned an invalid integer metric") from exc
 
@@ -142,8 +156,11 @@ class YouTubeAnalyticsAdapter:
         *,
         multiplier: float = 1.0,
     ) -> float:
+        value = row[index]
+        if not isinstance(value, (int, float, str)):
+            raise RuntimeError("YouTube Analytics returned an invalid numeric metric")
         try:
-            value = float(row[index]) * multiplier
+            result = float(value) * multiplier
         except (TypeError, ValueError) as exc:
             raise RuntimeError("YouTube Analytics returned an invalid numeric metric") from exc
-        return max(0.0, value)
+        return max(0.0, result)
