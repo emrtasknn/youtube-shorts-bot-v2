@@ -207,11 +207,14 @@ def test_production_snapshot_can_be_captured_before_metrics_exist() -> None:
             assert captured.features.topic == "M8.2 linking test"
             assert captured.features.hook == "How did this happen?"
             assert captured.features.visual_providers == ("pexels",)
-            assert session.scalar(
-                select(PerformanceProductionSnapshotModel).where(
-                    PerformanceProductionSnapshotModel.publication_id == publication.id
+            assert (
+                session.scalar(
+                    select(PerformanceProductionSnapshotModel).where(
+                        PerformanceProductionSnapshotModel.publication_id == publication.id
+                    )
                 )
-            ) is not None
+                is not None
+            )
             session.rollback()
     finally:
         engine.dispose()
