@@ -7,7 +7,7 @@ from app.application.services.custom_short_support import parse_script, validate
 from app.application.services.hook_engine import HookEngine
 from app.application.services.scene_contract import build_scene_contract
 from app.application.services.scene_timing import SceneTimingAllocator
-from app.application.services.video_quality import VideoQualityGate, VideoQualityExpectation
+from app.application.services.video_quality import VideoQualityExpectation, VideoQualityGate
 
 
 def _script_payload() -> dict[str, object]:
@@ -81,16 +81,14 @@ def test_scene_timing_regression_preserves_total_duration() -> None:
 
 
 def test_quality_gate_regression_rejects_wrong_vertical_output() -> None:
-    report = VideoQualityGate(
-        VideoQualityExpectation(width=1080, height=1920, fps=30.0)
-    ).evaluate(
+    report = VideoQualityGate().evaluate(
         duration_seconds=30.0,
         width=1920,
         height=1080,
         fps=30.0,
         has_audio=True,
-        subtitle_path=None,
         expected_duration=30.0,
+        expected=VideoQualityExpectation(width=1080, height=1920, fps=30.0),
         scene_count=3,
         asset_count=3,
     )
