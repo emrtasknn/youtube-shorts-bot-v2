@@ -10,4 +10,4 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir .
-CMD ["python","-m","app"]
+CMD ["sh","-c","alembic upgrade head && python -m app telegram-webhook"]
