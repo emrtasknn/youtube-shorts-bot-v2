@@ -10,6 +10,7 @@ from app.application.ports.video_engine import (
     VideoRenderResult,
 )
 from app.application.services.audio_ducking import AudioDucking, DuckingConfig
+from app.application.services.scene_timing import SceneTimingAllocator
 from app.application.services.subtitles import write_ass
 
 
@@ -175,10 +176,10 @@ class FFmpegVideoEngine:
             audio_duration = await self._probe_duration(request.voiceover_path)
 
         scene_durations = tuple(scene.duration_seconds for scene in request.scenes)
-        total_scene_duration = sum(scene_durations)
-        if audio_duration > total_scene_duration:
-            scene_durations = scene_durations[:-1] + (
-                scene_durations[-1] + audio_duration - total_scene_duration,
+        if audio_duration:
+            scene_durations = SceneTimingAllocator().allocate(
+                scene_durations,
+                audio_duration,
             )
 
         subtitle_path: Path | None = None
