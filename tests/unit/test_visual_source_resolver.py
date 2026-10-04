@@ -24,7 +24,7 @@ def test_resolver_returns_stock_plan_without_calling_provider() -> None:
 
     assert plan.kind == "stock"
     assert plan.exact_query == "Roman Forum ancient Rome ruins"
-    assert "Rome historical illustration" in plan.broader_queries
+    assert "ancient Rome historical illustration" in plan.broader_queries
     assert "historical illustration" in plan.broader_queries
     assert plan.reason == "stock_selected_with_explicit_must_show_constraints"
 
