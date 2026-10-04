@@ -48,9 +48,7 @@ def test_build_scene_contract_preserves_structured_visual_constraints() -> None:
 
 def test_build_scene_contract_rejects_missing_required_fields() -> None:
     with pytest.raises(ValueError, match="visual_query"):
-        build_scene_contract(
-            {"narration": "Text", "visual_goal": "Goal", "visual_query": ""}
-        )
+        build_scene_contract({"narration": "Text", "visual_goal": "Goal", "visual_query": ""})
 
 
 def test_build_scene_contract_rejects_non_list_constraints() -> None:
