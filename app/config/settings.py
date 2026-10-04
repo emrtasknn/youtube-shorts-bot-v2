@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     telegram_admin_chat_id: int = 0
     telegram_admin_user_id: int = 0
     telegram_timeout_seconds: float = 60.0
+    telegram_webhook_secret: str = ""
+    telegram_webhook_path: str = "/telegram/webhook"
     youtube_client_id: str = ""
     youtube_client_secret: str = ""
     youtube_refresh_token: str = ""

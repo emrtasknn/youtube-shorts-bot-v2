@@ -36,6 +36,15 @@ class TelegramBot:
         )
         return cast(list[dict[str, Any]], result)
 
+    async def set_webhook(self, url: str, *, secret_token: str = "") -> dict[str, Any]:
+        payload: dict[str, Any] = {"url": url, "allowed_updates": ["message", "callback_query"]}
+        if secret_token:
+            payload["secret_token"] = secret_token
+        return await self._call("setWebhook", json=payload)
+
+    async def delete_webhook(self) -> dict[str, Any]:
+        return await self._call("deleteWebhook", json={})
+
     async def answer_callback(self, callback_query_id: str, text: str) -> None:
         await self._call(
             "answerCallbackQuery",
