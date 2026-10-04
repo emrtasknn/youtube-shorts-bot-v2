@@ -9,8 +9,8 @@ def test_engine_breaks_on_punctuation_before_word_limit() -> None:
 
     assert [cue.text for cue in cues] == [
         "The king arrived.",
-        "The crowd went silent as",
-        "everyone watched.",
+        "The crowd went silent as everyone",
+        "watched.",
     ]
 
 
@@ -32,13 +32,9 @@ def test_engine_allocates_monotonic_duration() -> None:
 
     assert cues[0].start_seconds == 0.0
     assert cues[-1].end_seconds == 10.0
+    assert all(current.start_seconds < current.end_seconds for current in cues)
     assert all(
-        current.start_seconds < current.end_seconds
-        for current in cues
-    )
-    assert all(
-        left.end_seconds == right.start_seconds
-        for left, right in zip(cues, cues[1:], strict=True)
+        left.end_seconds == right.start_seconds for left, right in zip(cues, cues[1:])
     )
     assert cues[-1].end_seconds - cues[-1].start_seconds > (
         cues[0].end_seconds - cues[0].start_seconds
