@@ -20,7 +20,9 @@ from app.runtime import build_runtime
 def _build_worker() -> TelegramWorker:
     settings = get_settings()
     session = get_session()
-    bot = TelegramBot(settings.telegram_bot_token, timeout_seconds=settings.telegram_timeout_seconds)
+    bot = TelegramBot(
+        settings.telegram_bot_token, timeout_seconds=settings.telegram_timeout_seconds
+    )
     runtime = build_runtime(settings)
     generator = GenerateCustomShort(
         session=session,
@@ -99,7 +101,9 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
 def run() -> None:
     settings = get_settings()
-    bot = TelegramBot(settings.telegram_bot_token, timeout_seconds=settings.telegram_timeout_seconds)
+    bot = TelegramBot(
+        settings.telegram_bot_token, timeout_seconds=settings.telegram_timeout_seconds
+    )
     public_url = os.environ.get("RENDER_EXTERNAL_URL", "").rstrip("/")
     if not public_url:
         raise RuntimeError("RENDER_EXTERNAL_URL is required for Telegram webhook")
