@@ -22,11 +22,7 @@ def _normalize_list(values: Any) -> tuple[str, ...]:
         return ()
     if not isinstance(values, list | tuple):
         raise ValueError("Event memory list fields must be lists")
-    return tuple(
-        normalized
-        for item in values
-        if (normalized := str(item).strip())
-    )
+    return tuple(normalized for item in values if (normalized := str(item).strip()))
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,9 +41,7 @@ class EventMemoryCandidate:
     status: EventMemoryStatus = "UNCERTAIN"
 
     @classmethod
-    def from_payload(
-        cls, payload: dict[str, Any], *, fallback_title: str
-    ) -> EventMemoryCandidate:
+    def from_payload(cls, payload: dict[str, Any], *, fallback_title: str) -> EventMemoryCandidate:
         canonical_title = str(payload.get("canonical_title") or fallback_title).strip()
         if not canonical_title:
             raise ValueError("Event memory canonical_title must not be empty")
@@ -72,26 +66,20 @@ class EventMemoryCandidate:
             location=str(payload["location"]).strip() if payload.get("location") else None,
             entities=_normalize_list(payload.get("entities")),
             event_summary=(
-                str(payload["event_summary"]).strip()
-                if payload.get("event_summary")
-                else None
+                str(payload["event_summary"]).strip() if payload.get("event_summary") else None
             ),
             core_facts=_normalize_list(payload.get("core_facts")),
             claims=_normalize_list(payload.get("claims")),
             sources=_normalize_list(payload.get("sources")),
             first_video_id=(
-                str(payload["first_video_id"]).strip()
-                if payload.get("first_video_id")
-                else None
+                str(payload["first_video_id"]).strip() if payload.get("first_video_id") else None
             ),
             status=status,  # type: ignore[arg-type]
         )
 
     @staticmethod
     def build_event_id(*, canonical_title: str, date: str, location: str) -> str:
-        key = "|".join(
-            _normalize_text(value) for value in (canonical_title, date, location)
-        )
+        key = "|".join(_normalize_text(value) for value in (canonical_title, date, location))
         return f"evt_{sha256(key.encode('utf-8')).hexdigest()[:16]}"
 
     def to_dict(self) -> dict[str, Any]:
@@ -125,9 +113,7 @@ class EventMemoryService:
         if limit <= 0:
             raise ValueError("Event memory limit must be positive")
         models = self._session.scalars(
-            select(EventMemoryModel)
-            .order_by(EventMemoryModel.created_at.desc())
-            .limit(limit)
+            select(EventMemoryModel).order_by(EventMemoryModel.created_at.desc()).limit(limit)
         ).all()
         return tuple(self._to_candidate(model) for model in models)
 
@@ -177,11 +163,7 @@ class EventMemoryService:
         model.location = existing.location or candidate.location
         model.event_summary = existing.event_summary or candidate.event_summary
         model.first_video_id = existing.first_video_id or candidate.first_video_id
-        model.status = (
-            "USED"
-            if "USED" in {existing.status, candidate.status}
-            else candidate.status
-        )
+        model.status = "USED" if "USED" in {existing.status, candidate.status} else candidate.status
         self._session.flush()
         return self._to_candidate(model)
 
