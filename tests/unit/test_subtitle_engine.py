@@ -34,7 +34,7 @@ def test_engine_allocates_monotonic_duration() -> None:
     assert cues[-1].end_seconds == 10.0
     assert all(current.start_seconds < current.end_seconds for current in cues)
     assert all(
-        left.end_seconds == right.start_seconds for left, right in zip(cues, cues[1:])
+        left.end_seconds == right.start_seconds for left, right in zip(cues, cues[1:], strict=False)
     )
     assert cues[-1].end_seconds - cues[-1].start_seconds > (
         cues[0].end_seconds - cues[0].start_seconds
