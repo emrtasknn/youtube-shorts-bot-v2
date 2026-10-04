@@ -177,7 +177,6 @@ class FFmpegVideoEngine:
 
         scene_durations = self._resolve_scene_durations(request, audio_duration)
 
-
         subtitle_path: Path | None = None
         if request.subtitle_text:
             subtitle_duration = audio_duration or sum(scene_durations)
