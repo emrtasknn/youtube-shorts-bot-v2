@@ -69,7 +69,7 @@ class PerformanceMemoryService:
             select(func.count(SceneModel.id)).where(SceneModel.script_id == script.id)
         )
 
-        visual_providers = self._session.scalars(
+        visual_providers_raw = self._session.scalars(
             select(AssetModel.provider)
             .join(AssetUsageModel, AssetUsageModel.asset_id == AssetModel.id)
             .join(SceneModel, SceneModel.id == AssetUsageModel.scene_id)
@@ -80,6 +80,9 @@ class PerformanceMemoryService:
             )
             .distinct()
         ).all()
+        visual_providers = tuple(
+            provider for provider in visual_providers_raw if provider is not None
+        )
 
         features = PerformanceProductionFeatures(
             category=str(content.category),
