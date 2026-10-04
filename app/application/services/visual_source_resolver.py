@@ -52,11 +52,10 @@ class VisualSourceResolver:
     ) -> tuple[str, ...]:
         candidates = (
             scene.visual_goal.strip(),
-            (
-                f"{scene.era.strip()} {scene.location.strip()} historical illustration"
-                if scene.era.strip() and scene.location.strip()
-                else ""
-            ),
+            f"{scene.era.strip()} historical illustration" if scene.era.strip() else "",
+            f"{scene.location.strip()} historical illustration"
+            if scene.location.strip()
+            else "",
             "historical illustration",
         )
         unique: list[str] = []
