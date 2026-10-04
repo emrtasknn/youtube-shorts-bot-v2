@@ -152,20 +152,20 @@ class EventMemoryService:
             self._session.flush()
             return candidate
 
-        model = self._session.get(EventMemoryModel, candidate.event_id)
-        assert model is not None
-        model.aliases = sorted(set(existing.aliases) | set(candidate.aliases))
-        model.entities = sorted(set(existing.entities) | set(candidate.entities))
-        model.core_facts = sorted(set(existing.core_facts) | set(candidate.core_facts))
-        model.claims = sorted(set(existing.claims) | set(candidate.claims))
-        model.sources = sorted(set(existing.sources) | set(candidate.sources))
-        model.event_date = existing.date or candidate.date
-        model.location = existing.location or candidate.location
-        model.event_summary = existing.event_summary or candidate.event_summary
-        model.first_video_id = existing.first_video_id or candidate.first_video_id
-        model.status = "USED" if "USED" in {existing.status, candidate.status} else candidate.status
+        stored_model = self._session.get(EventMemoryModel, candidate.event_id)
+        assert stored_model is not None
+        stored_model.aliases = sorted(set(existing.aliases) | set(candidate.aliases))
+        stored_model.entities = sorted(set(existing.entities) | set(candidate.entities))
+        stored_model.core_facts = sorted(set(existing.core_facts) | set(candidate.core_facts))
+        stored_model.claims = sorted(set(existing.claims) | set(candidate.claims))
+        stored_model.sources = sorted(set(existing.sources) | set(candidate.sources))
+        stored_model.event_date = existing.date or candidate.date
+        stored_model.location = existing.location or candidate.location
+        stored_model.event_summary = existing.event_summary or candidate.event_summary
+        stored_model.first_video_id = existing.first_video_id or candidate.first_video_id
+        stored_model.status = "USED" if "USED" in {existing.status, candidate.status} else candidate.status
         self._session.flush()
-        return self._to_candidate(model)
+        return self._to_candidate(stored_model)
 
     @staticmethod
     def _to_candidate(model: EventMemoryModel) -> EventMemoryCandidate:
