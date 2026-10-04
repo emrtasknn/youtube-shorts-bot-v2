@@ -12,6 +12,7 @@ from app.application.ports.video_engine import (
 from app.application.services.audio_ducking import AudioDucking, DuckingConfig
 from app.application.services.scene_timing import SceneTimingAllocator
 from app.application.services.subtitles import write_ass
+from app.application.services.video_quality import VideoQualityGate
 
 
 class MediaProbe(TypedDict):
@@ -213,8 +214,20 @@ class FFmpegVideoEngine:
             raise RuntimeError("Rendered video dimensions do not match the requested 9:16 output")
         if metadata["fps"] <= 0:
             raise RuntimeError("Rendered video has an invalid frame rate")
-        if request.voiceover_path is not None and not metadata["has_audio"]:
-            raise RuntimeError("Rendered video is missing its audio stream")
+        quality_report = VideoQualityGate().evaluate(
+            duration_seconds=metadata["duration"],
+            width=metadata["width"],
+            height=metadata["height"],
+            fps=metadata["fps"],
+            has_audio=metadata["has_audio"],
+            expected_duration=audio_duration or sum(scene_durations),
+            require_audio=request.voiceover_path is not None,
+            subtitle_path_exists=subtitle_path is not None and subtitle_path.is_file(),
+            subtitles_expected=request.subtitle_text is not None,
+            scene_count=len(request.scenes),
+            asset_count=len(request.scenes),
+        )
+        quality_report.ensure_passed()
 
         return VideoRenderResult(
             output_path=request.output_path,
