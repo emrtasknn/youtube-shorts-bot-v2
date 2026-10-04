@@ -7,6 +7,7 @@ from app.application.ports.stock_media import (
     StockMediaStrategy,
 )
 from app.application.services.stock_media_selector import ScoredStockMedia, StockMediaSelector
+from app.application.services.visual_relevance import VisualRelevanceContext
 
 
 class SearchStockMedia:
@@ -57,6 +58,7 @@ class SearchStockMedia:
         selector: StockMediaSelector,
         used_provider_asset_ids: set[str] | None = None,
         metadata: dict[str, object] | None = None,
+        relevance_context: VisualRelevanceContext | None = None,
     ) -> tuple[StockMediaSearchResult, ScoredStockMedia]:
         if not strategies:
             raise ValueError("At least one stock media strategy is required")
@@ -78,12 +80,14 @@ class SearchStockMedia:
                 result.items,
                 query=strategy.query,
                 used_provider_asset_ids=used_provider_asset_ids,
+                relevance_context=relevance_context,
             )
             selected = selector.select(
                 result.items,
                 query=strategy.query,
                 used_provider_asset_ids=used_provider_asset_ids,
                 min_relevance=strategy.min_relevance,
+                relevance_context=relevance_context,
             )
             if selected is not None:
                 return result, selected
