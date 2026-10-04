@@ -28,6 +28,70 @@ class PerformanceMemoryService:
     def __init__(self, session: Session) -> None:
         self._session = session
 
+    def save_production_snapshot(self, memory: PerformanceMemory) -> PerformanceMemory:
+        from app.infrastructure.database.models import PerformanceProductionSnapshotModel
+
+        existing = self._session.scalar(
+            select(PerformanceProductionSnapshotModel).where(
+                PerformanceProductionSnapshotModel.publication_id == memory.publication_id
+            )
+        )
+        if existing is not None:
+            return self._to_memory(existing)
+
+        features = memory.features
+        snapshot = PerformanceProductionSnapshotModel(
+            publication_id=memory.publication_id,
+            run_id=memory.run_id,
+            content_id=memory.content_id,
+            script_id=memory.script_id,
+            platform=memory.platform,
+            platform_post_id=memory.platform_post_id,
+            published_at=memory.published_at,
+            category=features.category,
+            language=features.language,
+            topic=features.topic,
+            angle=features.angle,
+            hook=features.hook,
+            duration_target_seconds=features.duration_target_seconds,
+            word_count=features.word_count,
+            scene_count=features.scene_count,
+            visual_providers=list(features.visual_providers),
+            tts_provider=features.tts_provider,
+            production_strategy=features.production_strategy,
+        )
+        self._session.add(snapshot)
+        self._session.flush()
+        return memory
+
+    @staticmethod
+    def _to_memory(snapshot: "PerformanceProductionSnapshotModel") -> PerformanceMemory:
+        features = PerformanceProductionFeatures(
+            category=snapshot.category,
+            language=snapshot.language,
+            topic=snapshot.topic,
+            angle=snapshot.angle,
+            hook=snapshot.hook,
+            duration_target_seconds=snapshot.duration_target_seconds,
+            word_count=snapshot.word_count,
+            scene_count=snapshot.scene_count,
+            visual_providers=tuple(
+                provider for provider in snapshot.visual_providers if isinstance(provider, str)
+            ),
+            tts_provider=snapshot.tts_provider,
+            production_strategy=snapshot.production_strategy,
+        )
+        return PerformanceMemory(
+            publication_id=snapshot.publication_id,
+            run_id=snapshot.run_id,
+            content_id=snapshot.content_id,
+            script_id=snapshot.script_id,
+            platform=snapshot.platform,
+            platform_post_id=snapshot.platform_post_id,
+            published_at=snapshot.published_at,
+            features=features,
+        )
+
     def get_for_publication(self, publication_id: UUID) -> PerformanceMemory:
         publication = self._session.get(PublicationModel, publication_id)
         if publication is None:
