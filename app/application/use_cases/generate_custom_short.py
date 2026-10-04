@@ -286,6 +286,7 @@ class GenerateCustomShort:
             request_id=f"{run.id}:scene:{scene.scene_index}",
             strategies=strategies,
             selector=StockMediaSelector(StockMediaScorer()),
+            relevance_context=VisualRelevanceContext.from_scene(scene_contract),
         )
         item = selected.item
         url = str(item.get("download_url") or "").strip()
