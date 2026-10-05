@@ -46,8 +46,7 @@ def test_assignment_is_deterministic() -> None:
 def test_assignment_changes_with_run_key() -> None:
     service = ExperimentAssignmentService()
     assignments = {
-        service.assign(_experiment(), run_key=f"run-{index}").variant_id
-        for index in range(20)
+        service.assign(_experiment(), run_key=f"run-{index}").variant_id for index in range(20)
     }
 
     assert assignments == {VARIANT_A, VARIANT_B}
