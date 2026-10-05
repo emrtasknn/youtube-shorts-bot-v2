@@ -35,6 +35,8 @@ def test_production_decision_validates_bounded_values() -> None:
         angle="surprising fact",
         duration_target_seconds=Decimal("30"),
         production_strategy="balanced",
+        input_recommendation_ids=(recommendation_id,),
+        eligible_recommendation_ids=(recommendation_id,),
         applied_recommendation_ids=(recommendation_id,),
         rationale=("High-confidence positive signal.",),
         created_at=datetime(2026, 10, 5, 12, tzinfo=UTC),

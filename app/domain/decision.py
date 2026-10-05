@@ -45,6 +45,8 @@ class ProductionDecision:
     angle: str | None = None
     duration_target_seconds: Decimal | None = None
     production_strategy: str | None = None
+    input_recommendation_ids: tuple[UUID, ...] = ()
+    eligible_recommendation_ids: tuple[UUID, ...] = ()
     applied_recommendation_ids: tuple[UUID, ...] = ()
     rejected_recommendation_ids: tuple[UUID, ...] = ()
     rationale: tuple[str, ...] = ()
@@ -59,6 +61,12 @@ class ProductionDecision:
             raise ValueError("decision rationale entries must not be blank")
         if set(self.applied_recommendation_ids) & set(self.rejected_recommendation_ids):
             raise ValueError("a recommendation cannot be both applied and rejected")
+        if not set(self.applied_recommendation_ids).issubset(self.eligible_recommendation_ids):
+            raise ValueError("applied recommendations must be eligible")
+        if set(self.applied_recommendation_ids) & set(self.rejected_recommendation_ids):
+            raise ValueError("a recommendation cannot be both applied and rejected")
+        if not set(self.eligible_recommendation_ids).issubset(self.input_recommendation_ids):
+            raise ValueError("eligible recommendations must be inputs")
 
     @classmethod
     def empty(

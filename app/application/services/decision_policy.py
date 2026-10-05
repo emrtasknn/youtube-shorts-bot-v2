@@ -44,11 +44,12 @@ class DecisionPolicyEngine:
         *,
         created_at: datetime | None = None,
     ) -> ProductionDecision:
+        recommendation_list = tuple(recommendations)
         candidates: list[tuple[Recommendation, DecisionDimension, str | Decimal]] = []
         rejected: list[UUID] = []
         rationale: list[str] = []
 
-        for recommendation in recommendations:
+        for recommendation in recommendation_list:
             candidate = self._candidate(recommendation)
             if candidate is None:
                 rejected.append(recommendation.recommendation_id)
@@ -86,6 +87,7 @@ class DecisionPolicyEngine:
             for dimension in self._policy.allowed_dimensions
             if dimension in winners
         )
+        eligible = tuple(recommendation.recommendation_id for recommendation, _, _ in candidates)
         rejected_tuple = tuple(sorted(set(rejected), key=str))
         rationale.extend(
             self._application_reason(recommendation, dimension)
@@ -100,7 +102,13 @@ class DecisionPolicyEngine:
             duration_target_seconds=self._optional_decimal(
                 values, DecisionDimension.DURATION_TARGET_SECONDS
             ),
-            production_strategy=self._optional_value(values, DecisionDimension.PRODUCTION_STRATEGY),
+            production_strategy=self._optional_value(
+                values, DecisionDimension.PRODUCTION_STRATEGY
+            ),
+            input_recommendation_ids=tuple(
+                recommendation.recommendation_id for recommendation in recommendation_list
+            ),
+            eligible_recommendation_ids=eligible,
             applied_recommendation_ids=applied,
             rejected_recommendation_ids=rejected_tuple,
             rationale=tuple(rationale),
@@ -223,7 +231,9 @@ class DecisionPolicyEngine:
         )
 
     @staticmethod
-    def _application_reason(recommendation: Recommendation, dimension: DecisionDimension) -> str:
+    def _application_reason(
+        recommendation: Recommendation, dimension: DecisionDimension
+    ) -> str:
         return (
             f"Applied {recommendation.recommendation_id} to {dimension}: "
             f"{recommendation.signal.feature}='{recommendation.signal.feature_value}' "
