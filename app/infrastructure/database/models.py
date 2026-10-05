@@ -500,6 +500,7 @@ class TopicSelectionDecisionModel(Base):
     rationale: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
     created_at: Mapped[datetime] = created_at()
 
+
 class ExperimentModel(Base):
     __tablename__ = "experiments"
     __table_args__ = (
