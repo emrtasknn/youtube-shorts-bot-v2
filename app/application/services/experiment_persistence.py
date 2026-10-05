@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import select
@@ -9,6 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.domain.experimentation import (
     Experiment,
+    ExperimentAssignmentStatus,
+    ExperimentDimension,
     ExperimentAssignment,
     ExperimentOutcome,
     ExperimentStatus,
@@ -119,9 +120,7 @@ class ExperimentPersistenceService:
             ExperimentVariant(
                 variant_id=UUID(item["variant_id"]),
                 label=item["label"],
-                dimension=__import__(
-                    "app.domain.experimentation", fromlist=["ExperimentDimension"]
-                ).ExperimentDimension(item["dimension"]),
+                dimension=ExperimentDimension(item["dimension"]),
                 value=item["value"],
             )
             for item in row.variants
@@ -130,17 +129,13 @@ class ExperimentPersistenceService:
             experiment_id=row.experiment_id,
             name=row.name,
             status=ExperimentStatus(row.status),
-            dimension=__import__(
-                "app.domain.experimentation", fromlist=["ExperimentDimension"]
-            ).ExperimentDimension(row.dimension),
+            dimension=ExperimentDimension(row.dimension),
             variants=variants,
             minimum_sample_size=row.minimum_sample_size,
         )
 
     @staticmethod
     def _to_assignment(row: ExperimentAssignmentModel) -> ExperimentAssignment:
-        from app.domain.experimentation import ExperimentAssignmentStatus
-
         return ExperimentAssignment(
             assignment_id=row.assignment_id,
             experiment_id=row.experiment_id,
