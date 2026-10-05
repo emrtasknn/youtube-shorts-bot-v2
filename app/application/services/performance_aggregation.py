@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from decimal import Decimal
+from typing import cast
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -88,12 +89,12 @@ class PerformanceAggregationService:
             production_strategy=(
                 str(production_strategy) if production_strategy is not None else None
             ),
-            sample_count=int(sample_count),
-            views_total=int(views_total),
-            likes_total=int(likes_total),
-            comments_total=int(comments_total),
-            shares_total=int(shares_total),
-            subscribers_gained_total=int(subscribers_gained_total),
+            sample_count=cast(int, sample_count),
+            views_total=cast(int, views_total),
+            likes_total=cast(int, likes_total),
+            comments_total=cast(int, comments_total),
+            shares_total=cast(int, shares_total),
+            subscribers_gained_total=cast(int, subscribers_gained_total),
             average_view_duration_seconds=(
                 Decimal(str(average_view_duration_seconds))
                 if average_view_duration_seconds is not None
