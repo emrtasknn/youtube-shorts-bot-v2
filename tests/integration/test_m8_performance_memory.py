@@ -543,15 +543,15 @@ def test_performance_query_matches_baseline_by_production_strategy() -> None:
 
             memory_service = PerformanceMemoryService(session)
             memory_service.capture_production_snapshot(first.id)
-            memory_service.capture_production_snapshot(second.id)
 
             first_run = session.get(RunModel, first.run_id)
             second_run = session.get(RunModel, second.run_id)
             assert first_run is not None
             assert second_run is not None
             second_run.strategy = "alternative_strategy"
-
             session.flush()
+
+            memory_service.capture_production_snapshot(second.id)
 
             first_snapshot = session.scalar(
                 select(PerformanceSnapshotModel).where(
