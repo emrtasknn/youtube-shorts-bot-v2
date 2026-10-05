@@ -213,7 +213,10 @@ class DecisionPolicyEngine:
                 f"Rejected {recommendation.recommendation_id}: recommendation "
                 f"status is {recommendation.status.value}."
             )
-        if signal.feature == "duration_bucket" and signal.feature_value not in self._DURATION_BUCKET_TARGETS:
+        if (
+            signal.feature == "duration_bucket"
+            and signal.feature_value not in self._DURATION_BUCKET_TARGETS
+        ):
             return (
                 f"Rejected {recommendation.recommendation_id}: duration bucket "
                 f"'{signal.feature_value}' has no bounded target mapping."
