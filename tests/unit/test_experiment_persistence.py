@@ -1,15 +1,15 @@
 from unittest.mock import MagicMock
+from uuid import UUID
 
 import pytest
-from uuid import UUID
 
 from app.application.services.experiment_persistence import ExperimentPersistenceService
 from app.domain.experimentation import (
     Experiment,
     ExperimentAssignment,
     ExperimentAssignmentStatus,
-    ExperimentOutcome,
     ExperimentDimension,
+    ExperimentOutcome,
     ExperimentStatus,
     ExperimentVariant,
 )
