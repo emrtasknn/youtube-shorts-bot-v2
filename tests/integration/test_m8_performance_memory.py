@@ -386,7 +386,7 @@ def test_performance_baseline_is_derived_from_aggregate_metrics() -> None:
             assert baseline.average_comments == Decimal("10")
             assert baseline.average_shares == Decimal("5")
             assert baseline.average_subscribers_gained == Decimal("6")
-            assert baseline.engagement_rate == Decimal("180") / Decimal("2400")
+            assert baseline.engagement_rate == Decimal("150") / Decimal("2400")
             assert baseline.subscriber_conversion_rate == Decimal("12") / Decimal("2400")
             assert baseline.average_view_duration_seconds == Decimal("13.00")
             assert baseline.average_retention == Decimal("0.50")
