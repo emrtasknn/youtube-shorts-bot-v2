@@ -17,6 +17,8 @@ from app.application.services.custom_short_support import parse_script, validate
 from app.application.services.event_memory import EventMemoryCandidate, EventMemoryService
 from app.application.services.experiment_persistence import ExperimentPersistenceService
 from app.application.services.experiment_production_adapter import ExperimentProductionAdapter
+from app.application.services.optimization_persistence import OptimizationDecisionPersistenceService
+from app.application.services.optimization_production_adapter import OptimizationProductionAdapter
 from app.application.services.hook_engine import HookEngine
 from app.application.services.novelty_hardening import NoveltyHardeningService
 from app.application.services.production_decision_adapter import ProductionDecisionAdapter
@@ -42,6 +44,7 @@ from app.domain.enums import (
     ScriptStatus,
 )
 from app.domain.experimentation import ExperimentAssignment, ExperimentVariant
+from app.domain.optimization import OptimizationDecision
 from app.domain.topic_optimization import TopicSelectionDecision
 from app.infrastructure.database.models import (
     ApprovalModel,
@@ -64,6 +67,7 @@ class CustomShortRequest:
     topic_selection_decision: TopicSelectionDecision | None = None
     experiment_variant: ExperimentVariant | None = None
     experiment_assignment: ExperimentAssignment | None = None
+    optimization_decision: OptimizationDecision | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,13 +119,26 @@ class GenerateCustomShort:
             if request.experiment_variant is not None
             else None
         )
+        optimization_override = (
+            OptimizationProductionAdapter().resolve(
+                request.optimization_decision,
+                production_decision=request.production_decision,
+                topic_selection_decision=request.topic_selection_decision,
+            )
+            if request.optimization_decision is not None
+            else None
+        )
         selected_topic = TopicSelectionProductionAdapter(
             request.topic_selection_decision
         ).resolve_topic(request.topic)
         topic = (
             experiment_override.topic
             if experiment_override is not None and experiment_override.topic is not None
-            else selected_topic
+            else (
+                optimization_override.topic
+                if optimization_override is not None and optimization_override.topic is not None
+                else selected_topic
+            )
         )
         decision_adapter = ProductionDecisionAdapter(request.production_decision)
         if not topic:
@@ -131,6 +148,10 @@ class GenerateCustomShort:
         if request.experiment_assignment is not None:
             ExperimentPersistenceService(self._session).save_assignment(
                 request.experiment_assignment
+            )
+        if request.optimization_decision is not None:
+            OptimizationDecisionPersistenceService(self._session).save(
+                request.optimization_decision
             )
         content = ContentModel(
             content_key=f"custom:{request.run_key}",
@@ -164,6 +185,7 @@ class GenerateCustomShort:
                 request.language,
                 decision_adapter,
                 experiment_override,
+                optimization_override,
             )
             if event_candidate is not None:
                 novelty = NoveltyHardeningService(EventMemoryService(self._session)).evaluate(
@@ -261,6 +283,7 @@ class GenerateCustomShort:
         language: str,
         decision_adapter: ProductionDecisionAdapter,
         experiment_override: Any | None = None,
+        optimization_override: Any | None = None,
     ) -> tuple[ScriptModel, dict[str, Any], EventMemoryCandidate | None]:
         constraints = decision_adapter.script_constraints()
         if experiment_override is not None:
@@ -270,6 +293,14 @@ class GenerateCustomShort:
                 constraints = (
                     f"{constraints} Experiment duration target: "
                     f"{experiment_override.duration_target_seconds:g} seconds."
+                )
+        if optimization_override is not None:
+            if optimization_override.angle is not None:
+                constraints = f"{constraints} Optimization angle: {optimization_override.angle}."
+            if optimization_override.duration_target_seconds is not None:
+                constraints = (
+                    f"{constraints} Optimization duration target: "
+                    f"{optimization_override.duration_target_seconds:g} seconds."
                 )
         result = await self._text.generate(
             TextGenerationRequest(
@@ -331,7 +362,12 @@ class GenerateCustomShort:
                     experiment_override.duration_target_seconds
                     if experiment_override is not None
                     and experiment_override.duration_target_seconds is not None
-                    else decision_adapter.duration_target_seconds or data["duration_target"]
+                    else (
+                        optimization_override.duration_target_seconds
+                        if optimization_override is not None
+                        and optimization_override.duration_target_seconds is not None
+                        else decision_adapter.duration_target_seconds or data["duration_target"]
+                    )
                 )
             ),
             word_count=len(str(data["body"]).split()),
