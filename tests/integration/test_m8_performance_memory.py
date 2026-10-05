@@ -581,3 +581,91 @@ def test_performance_query_matches_baseline_by_production_strategy() -> None:
             session.rollback()
     finally:
         engine.dispose()
+
+
+def test_m8_performance_memory_pipeline_is_end_to_end_deterministic() -> None:
+    engine = create_engine(database_url())
+    try:
+        with Session(engine) as session:
+            first = create_memory_fixture(session)
+            second = create_memory_fixture(session)
+
+            memory_service = PerformanceMemoryService(session)
+            first_memory = memory_service.capture_production_snapshot(first.id)
+            second_memory = memory_service.capture_production_snapshot(second.id)
+
+            assert first_memory.features.category == second_memory.features.category
+            assert first_memory.features.production_strategy == second_memory.features.production_strategy
+
+            first_snapshot = session.scalar(
+                select(PerformanceSnapshotModel).where(
+                    PerformanceSnapshotModel.publication_id == first.id
+                )
+            )
+            second_snapshot = session.scalar(
+                select(PerformanceSnapshotModel).where(
+                    PerformanceSnapshotModel.publication_id == second.id
+                )
+            )
+            assert first_snapshot is not None
+            assert second_snapshot is not None
+
+            first_snapshot.views = 1000
+            first_snapshot.likes = 50
+            first_snapshot.comments = 8
+            first_snapshot.shares = 4
+            first_snapshot.subscribers_gained = 5
+            first_snapshot.average_view_duration_seconds = Decimal("12.00")
+            first_snapshot.retention = Decimal("0.40")
+
+            second_snapshot.views = 2000
+            second_snapshot.likes = 100
+            second_snapshot.comments = 16
+            second_snapshot.shares = 8
+            second_snapshot.subscribers_gained = 10
+            second_snapshot.average_view_duration_seconds = Decimal("16.00")
+            second_snapshot.retention = Decimal("0.60")
+
+            second_time = first.published_at
+            assert second_time is not None
+            follow_up = PerformanceSnapshotModel(
+                publication_id=first.id,
+                platform="YOUTUBE",
+                platform_post_id=first.platform_post_id,
+                measured_at=second_time + timedelta(hours=6),
+                views=1500,
+                likes=75,
+                comments=12,
+                shares=6,
+                subscribers_gained=8,
+                average_view_duration_seconds=Decimal("14.00"),
+                retention=Decimal("0.50"),
+            )
+            session.add(follow_up)
+            session.flush()
+
+            result = PerformanceQueryService(session).get_for_publication(first.id)
+
+            assert result.memory.content_id == first_memory.content_id
+            assert result.baseline is not None
+            assert result.baseline.sample_count == 2
+            assert result.baseline.average_views == Decimal("1500")
+            assert result.baseline.average_likes == Decimal("75")
+            assert result.baseline.average_retention == Decimal("0.50")
+            assert len(result.time_series) == 2
+            assert result.time_series[0].views == 1000
+            assert result.time_series[0].views_delta is None
+            assert result.time_series[1].views == 1500
+            assert result.time_series[1].views_delta == 500
+            assert result.time_series[1].views_per_hour == Decimal("500") / Decimal("6")
+            assert result.time_series[1].views_growth_rate == Decimal("0.5")
+            assert result.quality is not None
+            assert result.quality.confidence == "HIGH"
+            assert result.quality.quality_score == Decimal("1.0")
+            assert result.quality.snapshot_count == 2
+            assert result.quality.production_feature_completeness == Decimal("1")
+            assert result.quality.metric_completeness == Decimal("1")
+            assert result.quality.issues == ()
+            session.rollback()
+    finally:
+        engine.dispose()
