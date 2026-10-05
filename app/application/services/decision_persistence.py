@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -39,7 +42,7 @@ class DecisionPersistenceService:
                 str(item) for item in decision.rejected_recommendation_ids
             ],
             rationale=list(decision.rationale),
-            created_at=decision.created_at,
+            created_at=decision.created_at or datetime.now(UTC),
         )
         self._session.add(model)
         self._session.flush()
@@ -53,30 +56,24 @@ class DecisionPersistenceService:
             angle=model.angle,
             duration_target_seconds=model.duration_target_seconds,
             production_strategy=model.production_strategy,
-            input_recommendation_ids=tuple(
-                ProductionDecisionPersistence.parse_uuid_list(model.input_recommendation_ids)
+            input_recommendation_ids=DecisionPersistenceService.parse_uuid_list(
+                model.input_recommendation_ids
             ),
-            eligible_recommendation_ids=tuple(
-                ProductionDecisionPersistence.parse_uuid_list(model.eligible_recommendation_ids)
+            eligible_recommendation_ids=DecisionPersistenceService.parse_uuid_list(
+                model.eligible_recommendation_ids
             ),
-            applied_recommendation_ids=tuple(
-                ProductionDecisionPersistence.parse_uuid_list(model.applied_recommendation_ids)
+            applied_recommendation_ids=DecisionPersistenceService.parse_uuid_list(
+                model.applied_recommendation_ids
             ),
-            rejected_recommendation_ids=tuple(
-                ProductionDecisionPersistence.parse_uuid_list(model.rejected_recommendation_ids)
+            rejected_recommendation_ids=DecisionPersistenceService.parse_uuid_list(
+                model.rejected_recommendation_ids
             ),
             rationale=tuple(item for item in model.rationale if isinstance(item, str)),
             created_at=model.created_at,
         )
 
-
-class ProductionDecisionPersistence:
-    """Parsing helpers kept separate from database mapping."""
-
     @staticmethod
-    def parse_uuid_list(values: list[object]) -> tuple:
-        from uuid import UUID
-
+    def parse_uuid_list(values: list[object]) -> tuple[UUID, ...]:
         try:
             return tuple(UUID(str(value)) for value in values)
         except (TypeError, ValueError) as exc:
