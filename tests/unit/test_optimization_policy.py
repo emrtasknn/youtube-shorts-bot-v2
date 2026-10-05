@@ -103,9 +103,9 @@ def test_rejects_below_uplift_gate() -> None:
             ),
         ),
     )
-    decision = OptimizationPolicyService(
-        OptimizationPolicy(policy_version="m13-v1")
-    ).evaluate(_experiment(), _analysis(), outcomes, control_variant_id=CONTROL_ID)
+    decision = OptimizationPolicyService(OptimizationPolicy(policy_version="m13-v1")).evaluate(
+        _experiment(), _analysis(), outcomes, control_variant_id=CONTROL_ID
+    )
 
     assert decision.status is OptimizationDecisionStatus.NO_PROMOTION
     assert decision.winner_variant_id is None
@@ -132,16 +132,20 @@ def test_not_ready_analysis_cannot_promote() -> None:
         total_samples=10,
         rationale=("waiting",),
     )
-    decision = OptimizationPolicyService(
-        OptimizationPolicy(policy_version="m13-v1")
-    ).evaluate(_experiment(), analysis, _outcomes(), control_variant_id=CONTROL_ID)
+    decision = OptimizationPolicyService(OptimizationPolicy(policy_version="m13-v1")).evaluate(
+        _experiment(), analysis, _outcomes(), control_variant_id=CONTROL_ID
+    )
 
     assert decision.status is OptimizationDecisionStatus.NO_PROMOTION
 
 
 def test_promotion_decision_is_deterministic() -> None:
     service = OptimizationPolicyService(OptimizationPolicy(policy_version="m13-v1"))
-    first = service.evaluate(_experiment(), _analysis(), _outcomes(), control_variant_id=CONTROL_ID)
-    second = service.evaluate(_experiment(), _analysis(), _outcomes(), control_variant_id=CONTROL_ID)
+    first = service.evaluate(
+        _experiment(), _analysis(), _outcomes(), control_variant_id=CONTROL_ID
+    )
+    second = service.evaluate(
+        _experiment(), _analysis(), _outcomes(), control_variant_id=CONTROL_ID
+    )
 
     assert first.decision_id == second.decision_id
