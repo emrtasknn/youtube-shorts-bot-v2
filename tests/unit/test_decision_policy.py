@@ -12,6 +12,7 @@ from app.domain.learning import (
     RecommendationStatus,
     SignalDirection,
 )
+
 CREATED_AT = datetime(2026, 10, 5, tzinfo=UTC)
 
 
