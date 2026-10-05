@@ -127,15 +127,18 @@ class PerformanceBaseline:
             raise ValueError("language is required")
         if self.sample_count <= 0:
             raise ValueError("sample_count must be positive")
-        if min(
-            self.average_views,
-            self.average_likes,
-            self.average_comments,
-            self.average_shares,
-            self.average_subscribers_gained,
-            self.engagement_rate,
-            self.subscriber_conversion_rate,
-        ) < 0:
+        if (
+            min(
+                self.average_views,
+                self.average_likes,
+                self.average_comments,
+                self.average_shares,
+                self.average_subscribers_gained,
+                self.engagement_rate,
+                self.subscriber_conversion_rate,
+            )
+            < 0
+        ):
             raise ValueError("baseline metrics must be non-negative")
         if self.average_retention is not None and not 0 <= self.average_retention <= 1:
             raise ValueError("average_retention must be between 0 and 1")
