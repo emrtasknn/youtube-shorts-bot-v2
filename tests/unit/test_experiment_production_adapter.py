@@ -24,7 +24,12 @@ def test_topic_variant_produces_explicit_topic_override() -> None:
 
 def test_angle_variant_cannot_bypass_m10_angle() -> None:
     variant = ExperimentVariant(ANGLE_ID, "B", ExperimentDimension.ANGLE, "contradiction")
-    decision = ProductionDecision(angle="curiosity gap")
+    decision = ProductionDecision.empty(policy_version="m10-v1")
+    decision = ProductionDecision(
+        decision_id=decision.decision_id,
+        policy_version=decision.policy_version,
+        angle="curiosity gap",
+    )
 
     with pytest.raises(ValueError, match="conflicts"):
         ExperimentProductionAdapter().resolve(variant, production_decision=decision)
