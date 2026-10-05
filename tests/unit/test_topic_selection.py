@@ -9,10 +9,10 @@ from app.application.services.topic_selection import (
 )
 from app.domain.topic_optimization import (
     TopicCandidate,
+    TopicDecisionStatus,
     TopicEvidence,
     TopicEvidenceType,
     TopicScore,
-    TopicDecisionStatus,
 )
 
 
