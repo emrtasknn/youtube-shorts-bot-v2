@@ -17,12 +17,14 @@ from app.application.services.custom_short_support import parse_script, validate
 from app.application.services.event_memory import EventMemoryCandidate, EventMemoryService
 from app.application.services.hook_engine import HookEngine
 from app.application.services.novelty_hardening import NoveltyHardeningService
+from app.application.services.production_decision_adapter import ProductionDecisionAdapter
 from app.application.services.scene_contract import build_scene_contract
 from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.visual_relevance import VisualRelevanceContext
 from app.application.services.visual_source_resolver import VisualSourceResolver
 from app.application.use_cases.search_stock_media import SearchStockMedia
+from app.domain.decision import ProductionDecision
 from app.domain.enums import (
     ApprovalStatus,
     AssetStatus,
@@ -51,6 +53,7 @@ class CustomShortRequest:
     language: str = "tr"
     requested_by: str = "manual"
     output_path: Path = Path("storage/renders/custom.mp4")
+    production_decision: ProductionDecision | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,6 +88,7 @@ class GenerateCustomShort:
 
     async def execute(self, request: CustomShortRequest) -> CustomShortResult:
         topic = request.topic.strip()
+        decision_adapter = ProductionDecisionAdapter(request.production_decision)
         if not topic:
             raise ValueError("Custom topic must not be empty")
         if self._session.query(RunModel).filter_by(run_key=request.run_key).first() is not None:
@@ -105,7 +109,7 @@ class GenerateCustomShort:
             status=RunStatus.CREATED,
             requested_by=request.requested_by,
             language=request.language,
-            strategy="custom_single_vertical_slice",
+            strategy=decision_adapter.production_strategy or "custom_single_vertical_slice",
         )
         self._session.add(run)
         self._session.flush()
@@ -116,7 +120,7 @@ class GenerateCustomShort:
             run.status = RunStatus.TOPIC_VALIDATION
             run.status = RunStatus.SCRIPTING
             script, script_data, event_candidate = await self._create_script(
-                run, topic, request.language
+                run, topic, request.language, decision_adapter
             )
             if event_candidate is not None:
                 novelty = NoveltyHardeningService(EventMemoryService(self._session)).evaluate(
@@ -208,7 +212,11 @@ class GenerateCustomShort:
             raise
 
     async def _create_script(
-        self, run: RunModel, topic: str, language: str
+        self,
+        run: RunModel,
+        topic: str,
+        language: str,
+        decision_adapter: ProductionDecisionAdapter,
     ) -> tuple[ScriptModel, dict[str, Any], EventMemoryCandidate | None]:
         result = await self._text.generate(
             TextGenerationRequest(
@@ -216,7 +224,7 @@ class GenerateCustomShort:
                 request_id=f"{run.id}:script",
                 prompt=(
                     f"Create a {language} YouTube Short about: {topic}. "
-                    "Target 25-40 seconds. Return JSON with hook, body, cta, "
+                    f"{decision_adapter.script_constraints()} Return JSON with hook, body, cta, "
                     "duration_target, event_memory, scenes. For historical topics, "
                     "event_memory must contain canonical_title, aliases, date, location, "
                     "entities, event_summary, core_facts, claims, sources, and status. "
@@ -265,7 +273,9 @@ class GenerateCustomShort:
             hook=str(data["hook"]),
             body=str(data["body"]),
             cta=str(data.get("cta") or "") or None,
-            duration_target=Decimal(str(data["duration_target"])),
+            duration_target=Decimal(
+                str(decision_adapter.duration_target_seconds or data["duration_target"])
+            ),
             word_count=len(str(data["body"]).split()),
             status=ScriptStatus.DRAFT,
         )
