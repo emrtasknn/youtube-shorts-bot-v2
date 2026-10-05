@@ -1,4 +1,5 @@
 from decimal import Decimal
+from uuid import uuid4
 
 from app.application.services.production_decision_adapter import ProductionDecisionAdapter
 from app.domain.decision import ProductionDecision
@@ -15,7 +16,7 @@ def test_adapter_preserves_legacy_defaults_without_decision() -> None:
 
 def test_adapter_maps_controlled_decision_to_generation_inputs() -> None:
     decision = ProductionDecision(
-        decision_id=__import__("uuid").uuid4(),
+        decision_id=uuid4(),
         policy_version="m10-v1",
         angle="curiosity gap",
         duration_target_seconds=Decimal("35"),
