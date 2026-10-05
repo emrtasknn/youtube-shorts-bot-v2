@@ -499,3 +499,54 @@ class TopicSelectionDecisionModel(Base):
     selected_score: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     rationale: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
     created_at: Mapped[datetime] = created_at()
+
+
+class ExperimentModel(Base):
+    __tablename__ = "experiments"
+    __table_args__ = (
+        UniqueConstraint("experiment_id", name="uq_experiments_experiment_id"),
+        Index("ix_experiments_status_created", "status", "created_at"),
+    )
+    id: Mapped[UUID] = uuid_pk()
+    experiment_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    dimension: Mapped[str] = mapped_column(String(64), nullable=False)
+    variants: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    minimum_sample_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = created_at()
+
+
+class ExperimentAssignmentModel(Base):
+    __tablename__ = "experiment_assignments"
+    __table_args__ = (
+        UniqueConstraint("assignment_id", name="uq_experiment_assignments_assignment_id"),
+        UniqueConstraint(
+            "experiment_id", "run_key", name="uq_experiment_assignments_experiment_run"
+        ),
+        Index("ix_experiment_assignments_experiment_status", "experiment_id", "status"),
+    )
+    id: Mapped[UUID] = uuid_pk()
+    assignment_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    experiment_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    variant_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    run_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_at: Mapped[datetime] = created_at()
+
+
+class ExperimentOutcomeModel(Base):
+    __tablename__ = "experiment_outcomes"
+    __table_args__ = (
+        UniqueConstraint("assignment_id", name="uq_experiment_outcomes_assignment_id"),
+        Index("ix_experiment_outcomes_experiment", "experiment_id"),
+    )
+    id: Mapped[UUID] = uuid_pk()
+    assignment_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    experiment_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    variant_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    sample_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    average_views: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    average_retention: Mapped[Decimal | None] = mapped_column(Numeric(8, 5))
+    engagement_rate: Mapped[Decimal | None] = mapped_column(Numeric(8, 5))
+    created_at: Mapped[datetime] = created_at()
