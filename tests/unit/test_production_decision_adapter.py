@@ -39,4 +39,7 @@ def test_adapter_uses_only_present_decision_dimensions() -> None:
         angle="contradiction",
     )
 
-    assert ProductionDecisionAdapter(decision).script_constraints() == "Use this content angle: contradiction."
+    assert (
+        ProductionDecisionAdapter(decision).script_constraints()
+        == "Use this content angle: contradiction."
+    )
