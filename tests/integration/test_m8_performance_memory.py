@@ -5,7 +5,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session
 
 from app.application.services.performance_memory import (
@@ -26,6 +26,7 @@ from app.infrastructure.database.models import (
     AssetModel,
     AssetUsageModel,
     ContentModel,
+    PerformanceProductionSnapshotModel,
     PerformanceSnapshotModel,
     PublicationModel,
     RunModel,
@@ -185,6 +186,81 @@ def test_performance_memory_requires_performance_snapshot() -> None:
 
             with pytest.raises(PerformanceMemoryNotFoundError, match="performance snapshot"):
                 PerformanceMemoryService(session).get_for_publication(publication.id)
+            session.rollback()
+    finally:
+        engine.dispose()
+
+
+def test_production_snapshot_can_be_captured_before_metrics_exist() -> None:
+    engine = create_engine(database_url())
+    try:
+        with Session(engine) as session:
+            publication = create_memory_fixture(session)
+            session.query(PerformanceSnapshotModel).filter(
+                PerformanceSnapshotModel.publication_id == publication.id
+            ).delete(synchronize_session=False)
+            session.flush()
+
+            service = PerformanceMemoryService(session)
+            captured = service.capture_production_snapshot(publication.id)
+
+            assert captured.features.topic == "M8.2 linking test"
+            assert captured.features.hook == "How did this happen?"
+            assert captured.features.visual_providers == ("pexels",)
+            assert (
+                session.scalar(
+                    select(PerformanceProductionSnapshotModel).where(
+                        PerformanceProductionSnapshotModel.publication_id == publication.id
+                    )
+                )
+                is not None
+            )
+            session.rollback()
+    finally:
+        engine.dispose()
+
+
+def test_production_snapshot_is_immutable_and_idempotent() -> None:
+    engine = create_engine(database_url())
+    try:
+        with Session(engine) as session:
+            publication = create_memory_fixture(session)
+            service = PerformanceMemoryService(session)
+
+            memory = service.get_for_publication(publication.id)
+            saved = service.save_production_snapshot(memory)
+
+            assert saved.features.topic == "M8.2 linking test"
+            snapshot = session.scalar(
+                select(PerformanceProductionSnapshotModel).where(
+                    PerformanceProductionSnapshotModel.publication_id == publication.id
+                )
+            )
+            assert snapshot is not None
+            assert snapshot.visual_providers == ["pexels"]
+
+            content = session.get(ContentModel, memory.content_id)
+            assert content is not None
+            content.topic = "Changed after publication"
+
+            script = session.get(ScriptModel, memory.script_id)
+            assert script is not None
+            script.hook = "Changed hook after publication"
+            session.flush()
+
+            second = service.save_production_snapshot(service.get_for_publication(publication.id))
+
+            assert second.features.topic == "M8.2 linking test"
+            assert second.features.hook == "How did this happen?"
+            assert second.features.visual_providers == ("pexels",)
+            assert (
+                session.scalar(
+                    select(func.count(PerformanceProductionSnapshotModel.id)).where(
+                        PerformanceProductionSnapshotModel.publication_id == publication.id
+                    )
+                )
+                == 1
+            )
             session.rollback()
     finally:
         engine.dispose()

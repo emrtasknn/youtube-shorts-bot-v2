@@ -280,6 +280,43 @@ class PublicationModel(Base):
     updated_at: Mapped[datetime] = updated_at()
 
 
+class PerformanceProductionSnapshotModel(Base):
+    __tablename__ = "performance_production_snapshots"
+    __table_args__ = (
+        UniqueConstraint("publication_id", name="uq_performance_production_snapshot_publication"),
+        Index("ix_performance_production_snapshot_content", "content_id"),
+        Index("ix_performance_production_snapshot_category", "category"),
+    )
+    id: Mapped[UUID] = uuid_pk()
+    publication_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("publications.id", ondelete="CASCADE"), nullable=False
+    )
+    run_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("runs.id", ondelete="CASCADE"), nullable=False
+    )
+    content_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("contents.id", ondelete="CASCADE"), nullable=False
+    )
+    script_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("scripts.id", ondelete="CASCADE"), nullable=False
+    )
+    platform: Mapped[str] = mapped_column(String(32), nullable=False)
+    platform_post_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    category: Mapped[str] = mapped_column(String(32), nullable=False)
+    language: Mapped[str] = mapped_column(String(16), nullable=False)
+    topic: Mapped[str] = mapped_column(String(500), nullable=False)
+    angle: Mapped[str | None] = mapped_column(String(500))
+    hook: Mapped[str | None] = mapped_column(Text)
+    duration_target_seconds: Mapped[Decimal | None] = mapped_column(Numeric(8, 2))
+    word_count: Mapped[int | None] = mapped_column(Integer)
+    scene_count: Mapped[int | None] = mapped_column(Integer)
+    visual_providers: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    tts_provider: Mapped[str | None] = mapped_column(String(100))
+    production_strategy: Mapped[str | None] = mapped_column(String(255))
+    created_at: Mapped[datetime] = created_at()
+
+
 class PerformanceSnapshotModel(Base):
     __tablename__ = "performance_snapshots"
     __table_args__ = (
