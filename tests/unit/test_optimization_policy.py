@@ -147,3 +147,14 @@ def test_promotion_decision_is_deterministic() -> None:
     )
 
     assert first.decision_id == second.decision_id
+
+
+def test_promoted_decision_can_be_rolled_back_without_mutating_original() -> None:
+    service = OptimizationPolicyService(OptimizationPolicy(policy_version="m13-v1"))
+    promoted = service.evaluate(_experiment(), _analysis(), _outcomes(), control_variant_id=CONTROL_ID)
+    rollback = promoted.rollback(promoted, policy_version="m13-v1")
+
+    assert promoted.status is OptimizationDecisionStatus.PROMOTED
+    assert rollback.status is OptimizationDecisionStatus.ROLLED_BACK
+    assert rollback.experiment_id == promoted.experiment_id
+    assert rollback.decision_id != promoted.decision_id
