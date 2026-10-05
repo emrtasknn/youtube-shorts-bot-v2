@@ -36,9 +36,7 @@ class PerformanceAggregationService:
                 func.coalesce(func.sum(PerformanceSnapshotModel.likes), 0),
                 func.coalesce(func.sum(PerformanceSnapshotModel.comments), 0),
                 func.coalesce(func.sum(PerformanceSnapshotModel.shares), 0),
-                func.coalesce(
-                    func.sum(PerformanceSnapshotModel.subscribers_gained), 0
-                ),
+                func.coalesce(func.sum(PerformanceSnapshotModel.subscribers_gained), 0),
                 func.avg(PerformanceSnapshotModel.average_view_duration_seconds),
                 func.avg(PerformanceSnapshotModel.retention),
             )
@@ -102,8 +100,6 @@ class PerformanceAggregationService:
                 else None
             ),
             average_retention=(
-                Decimal(str(average_retention))
-                if average_retention is not None
-                else None
+                Decimal(str(average_retention)) if average_retention is not None else None
             ),
         )
