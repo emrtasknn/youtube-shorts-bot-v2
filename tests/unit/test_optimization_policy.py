@@ -1,8 +1,6 @@
 from decimal import Decimal
 from uuid import UUID
 
-import pytest
-
 from app.application.services.optimization_policy import OptimizationPolicyService
 from app.domain.experimentation import (
     Experiment,
