@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -8,10 +9,6 @@ from app.application.services.performance_baseline import PerformanceBaselineSer
 from app.application.services.performance_memory import PerformanceMemoryService
 from app.application.services.performance_time_series import PerformanceTimeSeriesService
 from app.domain.performance_memory import PerformanceBaseline, PerformanceQueryResult
-
-
-class PerformanceQueryNotFoundError(LookupError):
-    """Raised when the published performance memory cannot be assembled."""
 
 
 class PerformanceQueryService:
@@ -44,7 +41,7 @@ class PerformanceQueryService:
 
     @staticmethod
     def _find_matching_baseline(
-        baselines: tuple[PerformanceBaseline, ...] | list[PerformanceBaseline],
+        baselines: Sequence[PerformanceBaseline],
         production_strategy: str | None,
     ) -> PerformanceBaseline | None:
         for baseline in baselines:
