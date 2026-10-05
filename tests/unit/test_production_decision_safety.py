@@ -1,6 +1,6 @@
-from uuid import UUID
-
 import pytest
+
+from uuid import UUID
 
 from app.application.services.production_decision_safety import ProductionDecisionSafety
 from app.domain.decision import ProductionDecision
