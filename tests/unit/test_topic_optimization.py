@@ -1,5 +1,5 @@
 from decimal import Decimal
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -103,3 +103,41 @@ def test_selected_decision_rejects_missing_score() -> None:
             selected_candidate_id=uuid4(),
             selected_topic="A topic",
         )
+
+
+def test_selected_decision_rejects_score_for_different_candidate() -> None:
+    candidate_id = uuid4()
+    with pytest.raises(ValueError, match="selected score"):
+        TopicSelectionDecision(
+            decision_id=uuid4(),
+            status=TopicDecisionStatus.SELECTED,
+            selected_candidate_id=candidate_id,
+            selected_topic="A topic",
+            candidate_ids=(candidate_id,),
+            selected_score=TopicScore(
+                candidate_id=uuid4(),
+                total=Decimal("0.9"),
+            ),
+        )
+
+
+def test_selected_decision_requires_selected_candidate_in_candidate_ids() -> None:
+    candidate_id = uuid4()
+    with pytest.raises(ValueError, match="candidate_ids"):
+        TopicSelectionDecision(
+            decision_id=uuid4(),
+            status=TopicDecisionStatus.SELECTED,
+            selected_candidate_id=candidate_id,
+            selected_topic="A topic",
+            candidate_ids=(uuid4(),),
+            selected_score=TopicScore(
+                candidate_id=candidate_id,
+                total=Decimal("0.9"),
+            ),
+        )
+
+
+def test_no_selection_accepts_deterministic_decision_id() -> None:
+    decision_id = UUID("00000000-0000-0000-0000-000000000001")
+    decision = TopicSelectionDecision.no_selection(decision_id=decision_id)
+    assert decision.decision_id == decision_id
