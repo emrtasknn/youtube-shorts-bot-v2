@@ -9,6 +9,7 @@ from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session
 
 from app.application.services.performance_aggregation import PerformanceAggregationService
+from app.application.services.performance_baseline import PerformanceBaselineService
 from app.application.services.performance_memory import (
     PerformanceMemoryNotFoundError,
     PerformanceMemoryService,
@@ -325,6 +326,71 @@ def test_performance_aggregation_groups_by_production_strategy() -> None:
             assert aggregate.average_view_duration_seconds == Decimal("13.00")
             assert aggregate.average_retention == Decimal("0.50")
             assert aggregate.production_strategy == "custom_single_vertical_slice"
+            session.rollback()
+    finally:
+        engine.dispose()
+
+
+def test_performance_baseline_is_derived_from_aggregate_metrics() -> None:
+    engine = create_engine(database_url())
+    try:
+        with Session(engine) as session:
+            first = create_memory_fixture(session)
+            second = create_memory_fixture(session)
+
+            memory_service = PerformanceMemoryService(session)
+            memory_service.capture_production_snapshot(first.id)
+            memory_service.capture_production_snapshot(second.id)
+
+            first_snapshot = session.scalar(
+                select(PerformanceSnapshotModel).where(
+                    PerformanceSnapshotModel.publication_id == first.id
+                )
+            )
+            second_snapshot = session.scalar(
+                select(PerformanceSnapshotModel).where(
+                    PerformanceSnapshotModel.publication_id == second.id
+                )
+            )
+            assert first_snapshot is not None
+            assert second_snapshot is not None
+
+            first_snapshot.views = 1000
+            first_snapshot.likes = 50
+            first_snapshot.comments = 8
+            first_snapshot.shares = 4
+            first_snapshot.subscribers_gained = 5
+            first_snapshot.average_view_duration_seconds = Decimal("12.00")
+            first_snapshot.retention = Decimal("0.40")
+
+            second_snapshot.views = 1400
+            second_snapshot.likes = 70
+            second_snapshot.comments = 12
+            second_snapshot.shares = 6
+            second_snapshot.subscribers_gained = 7
+            second_snapshot.average_view_duration_seconds = Decimal("14.00")
+            second_snapshot.retention = Decimal("0.60")
+            session.flush()
+
+            baselines = PerformanceBaselineService(session).build_baseline(
+                category="HISTORY_FACT",
+                language="en",
+                platform="YOUTUBE",
+            )
+
+            assert len(baselines) == 1
+            baseline = baselines[0]
+            assert baseline.sample_count == 2
+            assert baseline.average_views == Decimal("1200")
+            assert baseline.average_likes == Decimal("60")
+            assert baseline.average_comments == Decimal("10")
+            assert baseline.average_shares == Decimal("5")
+            assert baseline.average_subscribers_gained == Decimal("6")
+            assert baseline.engagement_rate == Decimal("150") / Decimal("2400")
+            assert baseline.subscriber_conversion_rate == Decimal("12") / Decimal("2400")
+            assert baseline.average_view_duration_seconds == Decimal("13.00")
+            assert baseline.average_retention == Decimal("0.50")
+            assert baseline.production_strategy == "custom_single_vertical_slice"
             session.rollback()
     finally:
         engine.dispose()

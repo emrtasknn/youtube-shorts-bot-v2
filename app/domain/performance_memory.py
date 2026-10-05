@@ -100,3 +100,45 @@ class PerformanceAggregate:
             raise ValueError("average_view_duration_seconds must be non-negative")
         if self.average_retention is not None and not 0 <= self.average_retention <= 1:
             raise ValueError("average_retention must be between 0 and 1")
+
+
+@dataclass(frozen=True, slots=True)
+class PerformanceBaseline:
+    """Deterministic baseline metrics for a stable production cohort."""
+
+    category: str
+    language: str
+    production_strategy: str | None
+    sample_count: int
+    average_views: Decimal
+    average_likes: Decimal
+    average_comments: Decimal
+    average_shares: Decimal
+    average_subscribers_gained: Decimal
+    engagement_rate: Decimal
+    subscriber_conversion_rate: Decimal
+    average_view_duration_seconds: Decimal | None = None
+    average_retention: Decimal | None = None
+
+    def __post_init__(self) -> None:
+        if not self.category:
+            raise ValueError("category is required")
+        if not self.language:
+            raise ValueError("language is required")
+        if self.sample_count <= 0:
+            raise ValueError("sample_count must be positive")
+        if (
+            min(
+                self.average_views,
+                self.average_likes,
+                self.average_comments,
+                self.average_shares,
+                self.average_subscribers_gained,
+                self.engagement_rate,
+                self.subscriber_conversion_rate,
+            )
+            < 0
+        ):
+            raise ValueError("baseline metrics must be non-negative")
+        if self.average_retention is not None and not 0 <= self.average_retention <= 1:
+            raise ValueError("average_retention must be between 0 and 1")
