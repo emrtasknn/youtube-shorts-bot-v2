@@ -142,3 +142,34 @@ def test_selection_is_explainable() -> None:
 
     assert decision.rationale
     assert all(item.strip() for item in decision.rationale)
+
+
+def test_same_inputs_produce_same_decision_id() -> None:
+    candidate_id = UUID("00000000-0000-0000-0000-000000000001")
+    candidates = (candidate(candidate_id, "Same"),)
+    scores = (score(candidate_id, "0.75", "0.80"),)
+
+    first = TopicSelectionService().select(candidates, scores)
+    second = TopicSelectionService().select(candidates, scores)
+
+    assert first.decision_id == second.decision_id
+
+
+def test_duplicate_candidate_ids_are_rejected() -> None:
+    candidate_id = uuid4()
+
+    with pytest.raises(ValueError, match="candidate IDs"):
+        TopicSelectionService().select(
+            (candidate(candidate_id), candidate(candidate_id, "Duplicate")),
+            (score(candidate_id, "0.80"),),
+        )
+
+
+def test_duplicate_scores_are_rejected() -> None:
+    candidate_id = uuid4()
+
+    with pytest.raises(ValueError, match="topic scores"):
+        TopicSelectionService().select(
+            (candidate(candidate_id),),
+            (score(candidate_id, "0.80"), score(candidate_id, "0.80")),
+        )
