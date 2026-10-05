@@ -92,6 +92,18 @@ def test_missing_candidate_metadata_is_cold_start_safe() -> None:
     assert score.total == Decimal("0.0000")
 
 
+def test_missing_performance_does_not_penalize_metadata_score() -> None:
+    score = TopicScoringService().score(candidate())
+    expected = (
+        Decimal("0.8") * Decimal("0.30")
+        + Decimal("0.9") * Decimal("0.30")
+        + Decimal("0.6") * Decimal("0.15")
+        + Decimal("0.7") * Decimal("0.10")
+    ) / Decimal("0.85")
+
+    assert score.total == expected.quantize(Decimal("0.0001"))
+
+
 def test_performance_requires_normalized_bounded_input() -> None:
     with pytest.raises(ValueError, match="between 0 and 1"):
         TopicPerformanceEvidence(
