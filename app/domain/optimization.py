@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import StrEnum
 from uuid import UUID, uuid4
 
-from app.domain.experimentation import ExperimentAnalysis, ExperimentDimension
+from app.domain.experimentation import ExperimentDimension
 from app.domain.learning import ConfidenceLevel
 
 
