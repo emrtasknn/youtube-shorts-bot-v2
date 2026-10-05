@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import uuid4
 
@@ -34,7 +34,7 @@ def _result(
         script_id=uuid4(),
         platform="youtube",
         platform_post_id=str(uuid4()),
-        published_at=datetime(2026, 10, 1, tzinfo=timezone.utc),
+        published_at=datetime(2026, 10, 1, tzinfo=UTC),
         features=PerformanceProductionFeatures(
             category=category,
             language="en",
