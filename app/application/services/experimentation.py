@@ -57,7 +57,11 @@ class ExperimentAnalysisService:
             for variant_id, items in by_variant.items()
         }
         total_samples = sum(totals.values())
-        eligible = [variant_id for variant_id, count in totals.items() if count >= experiment.minimum_sample_size]
+        eligible = [
+            variant_id
+            for variant_id, count in totals.items()
+            if count >= experiment.minimum_sample_size
+        ]
         if not eligible:
             return ExperimentAnalysis(
                 experiment_id=experiment.experiment_id,
