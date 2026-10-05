@@ -67,6 +67,30 @@ class OptimizationDecision:
             raise ValueError("optimization rationale is required")
 
     @classmethod
+    def rollback(
+        cls,
+        original: OptimizationDecision,
+        *,
+        policy_version: str,
+        decision_id: UUID | None = None,
+    ) -> OptimizationDecision:
+        return cls(
+            decision_id=decision_id or uuid4(),
+            policy_version=policy_version,
+            status=OptimizationDecisionStatus.ROLLED_BACK,
+            experiment_id=original.experiment_id,
+            dimension=original.dimension,
+            winner_variant_id=original.winner_variant_id,
+            value=original.value,
+            control_variant_id=original.control_variant_id,
+            uplift=original.uplift,
+            confidence=original.confidence,
+            rationale=(
+                f"Rollback of optimization decision {original.decision_id}.",
+            ),
+        )
+
+    @classmethod
     def no_promotion(
         cls,
         *,
