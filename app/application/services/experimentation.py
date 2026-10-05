@@ -12,6 +12,7 @@ from app.domain.experimentation import (
     ExperimentAssignmentStatus,
     ExperimentOutcome,
     ExperimentVariant,
+    ExperimentStatus,
 )
 
 
@@ -20,7 +21,7 @@ class ExperimentAssignmentService:
     namespace: UUID = UUID("8d8c3d7a-0a4b-5e45-8d1d-4f4e2a4d3c11")
 
     def assign(self, experiment: Experiment, *, run_key: str) -> ExperimentAssignment:
-        if experiment.status is not experiment.status.ACTIVE:
+        if experiment.status is not ExperimentStatus.ACTIVE:
             raise ValueError("experiment must be ACTIVE")
         key = f"{experiment.experiment_id}:{run_key}"
         digest = sha256(key.encode("utf-8")).digest()
