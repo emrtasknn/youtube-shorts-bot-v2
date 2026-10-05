@@ -40,13 +40,11 @@ class PerformanceBaselineService:
 
         if aggregate.views_total:
             engagement_rate = Decimal(
-                aggregate.likes_total
-                + aggregate.comments_total
-                + aggregate.shares_total
+                aggregate.likes_total + aggregate.comments_total + aggregate.shares_total
             ) / Decimal(aggregate.views_total)
-            subscriber_conversion_rate = Decimal(
-                aggregate.subscribers_gained_total
-            ) / Decimal(aggregate.views_total)
+            subscriber_conversion_rate = Decimal(aggregate.subscribers_gained_total) / Decimal(
+                aggregate.views_total
+            )
         else:
             engagement_rate = Decimal("0")
             subscriber_conversion_rate = Decimal("0")
