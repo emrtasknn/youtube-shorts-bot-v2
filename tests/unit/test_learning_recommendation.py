@@ -87,8 +87,7 @@ def test_learning_recommendation_service_composes_deterministic_pipeline() -> No
     matching = [
         recommendation
         for recommendation in recommendations
-        if recommendation.signal.feature == "angle"
-        and recommendation.signal.metric == "views"
+        if recommendation.signal.feature == "angle" and recommendation.signal.metric == "views"
     ]
     assert len(matching) == 1
     recommendation = matching[0]
