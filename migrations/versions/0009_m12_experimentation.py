@@ -4,8 +4,8 @@ Revision ID: 0009_m12_experimentation
 Revises: 0008_m11_topic_select_decisions
 """
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 
