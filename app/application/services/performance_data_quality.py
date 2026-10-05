@@ -44,17 +44,13 @@ class PerformanceDataQualityService:
         )
 
         snapshot_count = len(result.time_series)
-        metric_total = Decimal(5 + len(_OPTIONAL_METRIC_FIELDS)) * Decimal(
-            snapshot_count
-        )
+        metric_total = Decimal(5 + len(_OPTIONAL_METRIC_FIELDS)) * Decimal(snapshot_count)
         metric_present = Decimal(5 * snapshot_count)
         for point in result.time_series:
             metric_present += sum(
                 getattr(point, field) is not None for field in _OPTIONAL_METRIC_FIELDS
             )
-        metric_completeness = (
-            metric_present / metric_total if metric_total else Decimal("0")
-        )
+        metric_completeness = metric_present / metric_total if metric_total else Decimal("0")
 
         issues: list[str] = []
         if not result.time_series:
