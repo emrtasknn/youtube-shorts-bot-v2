@@ -28,8 +28,7 @@ def test_adapter_maps_controlled_decision_to_generation_inputs() -> None:
     assert adapter.duration_target_seconds == Decimal("35")
     assert adapter.production_strategy == "custom_single_vertical_slice"
     assert adapter.script_constraints() == (
-        "Use this content angle: curiosity gap. "
-        "Target approximately 35 seconds."
+        "Use this content angle: curiosity gap. Target approximately 35 seconds."
     )
 
 
@@ -40,6 +39,4 @@ def test_adapter_uses_only_present_decision_dimensions() -> None:
         angle="contradiction",
     )
 
-    assert ProductionDecisionAdapter(decision).script_constraints() == (
-        "Use this content angle: contradiction."
-    )
+    assert ProductionDecisionAdapter(decision).script_constraints() == "Use this content angle: contradiction."
