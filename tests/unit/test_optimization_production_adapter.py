@@ -74,3 +74,23 @@ def test_optimization_topic_cannot_override_m11() -> None:
             _decision(ExperimentDimension.TOPIC, "optimized topic"),
             topic_selection_decision=topic_decision,
         )
+
+
+def test_stale_optimization_policy_is_rejected() -> None:
+    with pytest.raises(ValueError, match="stale"):
+        OptimizationProductionAdapter().resolve(
+            _decision(ExperimentDimension.ANGLE, "optimized angle")
+            .__class__(
+                decision_id=_decision(ExperimentDimension.ANGLE, "optimized angle").decision_id,
+                policy_version="m13-v0",
+                status=OptimizationDecisionStatus.PROMOTED,
+                experiment_id=_decision(ExperimentDimension.ANGLE, "optimized angle").experiment_id,
+                dimension=ExperimentDimension.ANGLE,
+                winner_variant_id=_decision(ExperimentDimension.ANGLE, "optimized angle").winner_variant_id,
+                value="optimized angle",
+                control_variant_id=_decision(ExperimentDimension.ANGLE, "optimized angle").control_variant_id,
+                uplift=Decimal("0.2"),
+                confidence=ConfidenceLevel.HIGH,
+                rationale=("promoted",),
+            )
+        )
