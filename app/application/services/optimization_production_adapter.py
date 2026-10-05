@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from app.domain.decision import ProductionDecision
 from app.application.services.optimization_safety import OptimizationDecisionSafety
+from app.domain.decision import ProductionDecision
 from app.domain.optimization import OptimizationDecision, OptimizationDecisionStatus
 from app.domain.topic_optimization import TopicDecisionStatus, TopicSelectionDecision
 
