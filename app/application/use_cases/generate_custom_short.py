@@ -30,7 +30,6 @@ from app.application.services.visual_relevance import VisualRelevanceContext
 from app.application.services.visual_source_resolver import VisualSourceResolver
 from app.application.use_cases.search_stock_media import SearchStockMedia
 from app.domain.decision import ProductionDecision
-from app.domain.experimentation import ExperimentAssignment, ExperimentVariant
 from app.domain.enums import (
     ApprovalStatus,
     AssetStatus,
@@ -42,6 +41,7 @@ from app.domain.enums import (
     SceneStatus,
     ScriptStatus,
 )
+from app.domain.experimentation import ExperimentAssignment, ExperimentVariant
 from app.domain.topic_optimization import TopicSelectionDecision
 from app.infrastructure.database.models import (
     ApprovalModel,
