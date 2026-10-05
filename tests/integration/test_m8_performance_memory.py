@@ -9,6 +9,7 @@ from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session
 
 from app.application.services.performance_aggregation import PerformanceAggregationService
+from app.application.services.performance_baseline import PerformanceBaselineService
 from app.application.services.performance_memory import (
     PerformanceMemoryNotFoundError,
     PerformanceMemoryService,
@@ -331,8 +332,6 @@ def test_performance_aggregation_groups_by_production_strategy() -> None:
 
 
 def test_performance_baseline_is_derived_from_aggregate_metrics() -> None:
-    from app.application.services.performance_baseline import PerformanceBaselineService
-
     engine = create_engine(database_url())
     try:
         with Session(engine) as session:
@@ -343,31 +342,34 @@ def test_performance_baseline_is_derived_from_aggregate_metrics() -> None:
             memory_service.capture_production_snapshot(first.id)
             memory_service.capture_production_snapshot(second.id)
 
-            snapshots = [
-                session.scalar(
-                    select(PerformanceSnapshotModel).where(
-                        PerformanceSnapshotModel.publication_id == publication_id
-                    )
+            first_snapshot = session.scalar(
+                select(PerformanceSnapshotModel).where(
+                    PerformanceSnapshotModel.publication_id == first.id
                 )
-                for publication_id in (first.id, second.id)
-            ]
-            assert all(snapshot is not None for snapshot in snapshots)
+            )
+            second_snapshot = session.scalar(
+                select(PerformanceSnapshotModel).where(
+                    PerformanceSnapshotModel.publication_id == second.id
+                )
+            )
+            assert first_snapshot is not None
+            assert second_snapshot is not None
 
-            snapshots[0].views = 1000
-            snapshots[0].likes = 50
-            snapshots[0].comments = 8
-            snapshots[0].shares = 4
-            snapshots[0].subscribers_gained = 5
-            snapshots[0].average_view_duration_seconds = Decimal("12.00")
-            snapshots[0].retention = Decimal("0.40")
+            first_snapshot.views = 1000
+            first_snapshot.likes = 50
+            first_snapshot.comments = 8
+            first_snapshot.shares = 4
+            first_snapshot.subscribers_gained = 5
+            first_snapshot.average_view_duration_seconds = Decimal("12.00")
+            first_snapshot.retention = Decimal("0.40")
 
-            snapshots[1].views = 1400
-            snapshots[1].likes = 70
-            snapshots[1].comments = 12
-            snapshots[1].shares = 6
-            snapshots[1].subscribers_gained = 7
-            snapshots[1].average_view_duration_seconds = Decimal("14.00")
-            snapshots[1].retention = Decimal("0.60")
+            second_snapshot.views = 1400
+            second_snapshot.likes = 70
+            second_snapshot.comments = 12
+            second_snapshot.shares = 6
+            second_snapshot.subscribers_gained = 7
+            second_snapshot.average_view_duration_seconds = Decimal("14.00")
+            second_snapshot.retention = Decimal("0.60")
             session.flush()
 
             baselines = PerformanceBaselineService(session).build_baseline(
