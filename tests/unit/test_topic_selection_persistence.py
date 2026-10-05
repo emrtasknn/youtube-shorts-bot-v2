@@ -54,9 +54,7 @@ def _model_from_decision(decision: TopicSelectionDecision) -> TopicSelectionDeci
         selected_candidate_id=decision.selected_candidate_id,
         selected_topic=decision.selected_topic,
         candidate_ids=[str(item) for item in decision.candidate_ids],
-        selected_score=TopicSelectionPersistenceService._score_to_payload(
-            decision.selected_score
-        ),
+        selected_score=TopicSelectionPersistenceService._score_to_payload(decision.selected_score),
         rationale=list(decision.rationale),
     )
 
