@@ -35,15 +35,9 @@ def _model_from_decision(decision: ProductionDecision) -> ProductionDecisionMode
         duration_target_seconds=decision.duration_target_seconds,
         production_strategy=decision.production_strategy,
         input_recommendation_ids=[str(item) for item in decision.input_recommendation_ids],
-        eligible_recommendation_ids=[
-            str(item) for item in decision.eligible_recommendation_ids
-        ],
-        applied_recommendation_ids=[
-            str(item) for item in decision.applied_recommendation_ids
-        ],
-        rejected_recommendation_ids=[
-            str(item) for item in decision.rejected_recommendation_ids
-        ],
+        eligible_recommendation_ids=[str(item) for item in decision.eligible_recommendation_ids],
+        applied_recommendation_ids=[str(item) for item in decision.applied_recommendation_ids],
+        rejected_recommendation_ids=[str(item) for item in decision.rejected_recommendation_ids],
         rationale=list(decision.rationale),
         created_at=decision.created_at,
     )
