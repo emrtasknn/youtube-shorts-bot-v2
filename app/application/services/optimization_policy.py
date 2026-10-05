@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from uuid import NAMESPACE_URL, UUID, uuid5
 
-from app.domain.experimentation import Experiment, ExperimentAnalysis, ExperimentOutcome
+from app.domain.experimentation import Experiment, ExperimentAnalysis, ExperimentOutcome, ExperimentVariant
 from app.domain.learning import ConfidenceLevel
 from app.domain.optimization import (
     OptimizationDecision,
@@ -24,7 +24,7 @@ class OptimizationPolicyService:
         self,
         experiment: Experiment,
         analysis: ExperimentAnalysis,
-        outcomes: tuple[tuple[object, ExperimentOutcome], ...],
+        outcomes: tuple[tuple[ExperimentVariant, ExperimentOutcome], ...],
         *,
         control_variant_id: UUID,
     ) -> OptimizationDecision:
@@ -107,7 +107,7 @@ class OptimizationPolicyService:
 
     @staticmethod
     def _averages(
-        outcomes: tuple[tuple[object, ExperimentOutcome], ...],
+        outcomes: tuple[tuple[ExperimentVariant, ExperimentOutcome], ...],
     ) -> tuple[dict[UUID, Decimal], dict[UUID, int]]:
         totals: dict[UUID, Decimal] = {}
         samples: dict[UUID, int] = {}
