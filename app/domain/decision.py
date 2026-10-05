@@ -61,7 +61,9 @@ class ProductionDecision:
             raise ValueError("a recommendation cannot be both applied and rejected")
 
     @classmethod
-    def empty(cls, *, policy_version: str, created_at: datetime | None = None) -> ProductionDecision:
+    def empty(
+        cls, *, policy_version: str, created_at: datetime | None = None
+    ) -> ProductionDecision:
         return cls(
             decision_id=uuid4(),
             policy_version=policy_version,
