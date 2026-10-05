@@ -1,4 +1,3 @@
-from decimal import Decimal
 from unittest.mock import MagicMock
 from uuid import UUID
 
@@ -8,7 +7,6 @@ from app.domain.experimentation import (
     ExperimentAssignment,
     ExperimentAssignmentStatus,
     ExperimentDimension,
-    ExperimentOutcome,
     ExperimentStatus,
     ExperimentVariant,
 )
