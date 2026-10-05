@@ -10,9 +10,9 @@ from app.application.services.experimentation import (
 from app.domain.experimentation import (
     Experiment,
     ExperimentDimension,
+    ExperimentOutcome,
     ExperimentStatus,
     ExperimentVariant,
-    ExperimentOutcome,
 )
 
 EXPERIMENT_ID = UUID("00000000-0000-0000-0000-000000000301")
