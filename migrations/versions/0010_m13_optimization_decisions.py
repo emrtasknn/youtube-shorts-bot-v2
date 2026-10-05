@@ -32,9 +32,7 @@ def upgrade() -> None:
         sa.Column(
             "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
         ),
-        sa.UniqueConstraint(
-            "decision_id", name="uq_optimization_decisions_decision_id"
-        ),
+        sa.UniqueConstraint("decision_id", name="uq_optimization_decisions_decision_id"),
         sa.Index(
             "ix_optimization_decisions_experiment_created",
             "experiment_id",
