@@ -41,7 +41,7 @@ class OptimizationDecisionPersistenceService:
             uplift=decision.uplift,
             confidence=decision.confidence.value,
             rationale=list(decision.rationale),
-            created_at=decision.created_at or datetime.now(UTC),
+            created_at=datetime.now(UTC),
         )
         self.session.add(model)
         self.session.flush()
