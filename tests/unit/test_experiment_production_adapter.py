@@ -8,7 +8,7 @@ from app.application.services.experiment_production_adapter import (
 )
 from app.domain.decision import ProductionDecision
 from app.domain.experimentation import ExperimentDimension, ExperimentVariant
-from app.domain.topic_optimization import TopicDecisionStatus, TopicSelectionDecision
+from app.domain.topic_optimization import TopicDecisionStatus, TopicScore, TopicSelectionDecision
 
 ANGLE_ID = UUID("00000000-0000-0000-0000-000000000401")
 DURATION_ID = UUID("00000000-0000-0000-0000-000000000402")
@@ -68,7 +68,11 @@ def test_topic_variant_cannot_bypass_selected_topic_decision() -> None:
         selected_candidate_id=UUID("00000000-0000-0000-0000-000000000405"),
         selected_topic="Roman Empire",
         candidate_ids=(UUID("00000000-0000-0000-0000-000000000405"),),
-        selected_score=None,
+        selected_score=TopicScore(
+            candidate_id=UUID("00000000-0000-0000-0000-000000000405"),
+            total=Decimal("0.8"),
+            rationale=("Selected by topic policy.",),
+        ),
         rationale=("Selected by topic policy.",),
     )
 
