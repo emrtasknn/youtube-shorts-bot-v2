@@ -105,3 +105,30 @@ def test_analysis_selects_highest_weighted_average() -> None:
     assert analysis.ready is True
     assert analysis.winner_variant_id == VARIANT_B
     assert analysis.total_samples == 4
+
+def test_analysis_waits_until_all_variants_reach_minimum_sample() -> None:
+    experiment = _experiment()
+    outcomes = (
+        (
+            experiment.variants[0],
+            ExperimentOutcome(
+                assignment_id=UUID("00000000-0000-0000-0000-000000000306"),
+                sample_count=2,
+                average_views=Decimal("200"),
+            ),
+        ),
+        (
+            experiment.variants[1],
+            ExperimentOutcome(
+                assignment_id=UUID("00000000-0000-0000-0000-000000000307"),
+                sample_count=1,
+                average_views=Decimal("300"),
+            ),
+        ),
+    )
+
+    analysis = ExperimentAnalysisService().analyze(experiment, outcomes)
+
+    assert analysis.ready is False
+    assert analysis.winner_variant_id is None
+    assert "every variant" in analysis.rationale[0]
