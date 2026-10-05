@@ -12,4 +12,5 @@ pip install -e ".[dev]"
 docker compose up -d postgres
 alembic upgrade head
 pytest -q
+pre-commit install
 ```
