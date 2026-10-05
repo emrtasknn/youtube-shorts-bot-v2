@@ -14,6 +14,7 @@ from app.application.services.performance_memory import (
     PerformanceMemoryNotFoundError,
     PerformanceMemoryService,
 )
+from app.application.services.performance_query import PerformanceQueryService
 from app.application.services.performance_time_series import (
     PerformanceTimeSeriesNotFoundError,
     PerformanceTimeSeriesService,
@@ -473,6 +474,107 @@ def test_performance_time_series_requires_snapshot() -> None:
                 match="performance snapshots",
             ):
                 PerformanceTimeSeriesService(session).get_for_publication(publication.id)
+            session.rollback()
+    finally:
+        engine.dispose()
+
+
+def test_performance_query_returns_unified_memory_baseline_and_time_series() -> None:
+    engine = create_engine(database_url())
+    try:
+        with Session(engine) as session:
+            first = create_memory_fixture(session)
+            second = create_memory_fixture(session)
+
+            memory_service = PerformanceMemoryService(session)
+            memory_service.capture_production_snapshot(first.id)
+            memory_service.capture_production_snapshot(second.id)
+
+            first_snapshot = session.scalar(
+                select(PerformanceSnapshotModel).where(
+                    PerformanceSnapshotModel.publication_id == first.id
+                )
+            )
+            second_snapshot = session.scalar(
+                select(PerformanceSnapshotModel).where(
+                    PerformanceSnapshotModel.publication_id == second.id
+                )
+            )
+            assert first_snapshot is not None
+            assert second_snapshot is not None
+
+            first_snapshot.views = 1000
+            first_snapshot.likes = 50
+            first_snapshot.comments = 8
+            first_snapshot.shares = 4
+            first_snapshot.subscribers_gained = 5
+
+            second_snapshot.views = 1400
+            second_snapshot.likes = 70
+            second_snapshot.comments = 12
+            second_snapshot.shares = 6
+            second_snapshot.subscribers_gained = 7
+            session.flush()
+
+            result = PerformanceQueryService(session).get_for_publication(first.id)
+
+            assert result.memory.publication_id == first.id
+            assert result.memory.features.category == "HISTORY_FACT"
+            assert result.memory.features.production_strategy == "custom_single_vertical_slice"
+            assert result.baseline is not None
+            assert result.baseline.sample_count == 2
+            assert result.baseline.average_views == Decimal("1200")
+            assert result.baseline.average_likes == Decimal("60")
+            assert result.baseline.engagement_rate == Decimal("150") / Decimal("2400")
+            assert len(result.time_series) == 1
+            assert result.time_series[0].views == 1000
+            assert result.time_series[0].views_delta is None
+            session.rollback()
+    finally:
+        engine.dispose()
+
+
+def test_performance_query_matches_baseline_by_production_strategy() -> None:
+    engine = create_engine(database_url())
+    try:
+        with Session(engine) as session:
+            first = create_memory_fixture(session)
+            second = create_memory_fixture(session)
+
+            memory_service = PerformanceMemoryService(session)
+            memory_service.capture_production_snapshot(first.id)
+
+            first_run = session.get(RunModel, first.run_id)
+            second_run = session.get(RunModel, second.run_id)
+            assert first_run is not None
+            assert second_run is not None
+            second_run.strategy = "alternative_strategy"
+            session.flush()
+
+            memory_service.capture_production_snapshot(second.id)
+
+            first_snapshot = session.scalar(
+                select(PerformanceSnapshotModel).where(
+                    PerformanceSnapshotModel.publication_id == first.id
+                )
+            )
+            second_snapshot = session.scalar(
+                select(PerformanceSnapshotModel).where(
+                    PerformanceSnapshotModel.publication_id == second.id
+                )
+            )
+            assert first_snapshot is not None
+            assert second_snapshot is not None
+            first_snapshot.views = 1000
+            second_snapshot.views = 2000
+            session.flush()
+
+            result = PerformanceQueryService(session).get_for_publication(first.id)
+
+            assert result.baseline is not None
+            assert result.baseline.production_strategy == "custom_single_vertical_slice"
+            assert result.baseline.sample_count == 1
+            assert result.baseline.average_views == Decimal("1000")
             session.rollback()
     finally:
         engine.dispose()
