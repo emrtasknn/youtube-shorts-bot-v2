@@ -21,6 +21,9 @@ from app.application.services.production_decision_adapter import ProductionDecis
 from app.application.services.scene_contract import build_scene_contract
 from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
+from app.application.services.topic_selection_production_adapter import (
+    TopicSelectionProductionAdapter,
+)
 from app.application.services.visual_relevance import VisualRelevanceContext
 from app.application.services.visual_source_resolver import VisualSourceResolver
 from app.application.use_cases.search_stock_media import SearchStockMedia
@@ -36,6 +39,7 @@ from app.domain.enums import (
     SceneStatus,
     ScriptStatus,
 )
+from app.domain.topic_optimization import TopicSelectionDecision
 from app.infrastructure.database.models import (
     ApprovalModel,
     AssetModel,
@@ -54,6 +58,7 @@ class CustomShortRequest:
     requested_by: str = "manual"
     output_path: Path = Path("storage/renders/custom.mp4")
     production_decision: ProductionDecision | None = None
+    topic_selection_decision: TopicSelectionDecision | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,7 +92,9 @@ class GenerateCustomShort:
         self._storage_root = storage_root
 
     async def execute(self, request: CustomShortRequest) -> CustomShortResult:
-        topic = request.topic.strip()
+        topic = TopicSelectionProductionAdapter(request.topic_selection_decision).resolve_topic(
+            request.topic
+        )
         decision_adapter = ProductionDecisionAdapter(request.production_decision)
         if not topic:
             raise ValueError("Custom topic must not be empty")
