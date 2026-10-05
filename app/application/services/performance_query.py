@@ -6,6 +6,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.application.services.performance_baseline import PerformanceBaselineService
+from app.application.services.performance_data_quality import PerformanceDataQualityService
 from app.application.services.performance_memory import PerformanceMemoryService
 from app.application.services.performance_time_series import PerformanceTimeSeriesService
 from app.domain.performance_memory import PerformanceBaseline, PerformanceQueryResult
@@ -18,6 +19,7 @@ class PerformanceQueryService:
         self._memory = PerformanceMemoryService(session)
         self._baseline = PerformanceBaselineService(session)
         self._time_series = PerformanceTimeSeriesService(session)
+        self._quality = PerformanceDataQualityService()
 
     def get_for_publication(self, publication_id: UUID) -> PerformanceQueryResult:
         memory = self._memory.get_for_publication(publication_id)
@@ -33,10 +35,16 @@ class PerformanceQueryService:
             memory.features.production_strategy,
         )
 
-        return PerformanceQueryResult(
+        query_result = PerformanceQueryResult(
             memory=memory,
             baseline=baseline,
             time_series=time_series,
+        )
+        return PerformanceQueryResult(
+            memory=query_result.memory,
+            baseline=query_result.baseline,
+            time_series=query_result.time_series,
+            quality=self._quality.evaluate(query_result),
         )
 
     @staticmethod
