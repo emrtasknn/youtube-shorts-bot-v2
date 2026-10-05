@@ -6,7 +6,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.application.services.performance_aggregation import PerformanceAggregationService
-from app.domain.performance_memory import PerformanceBaseline, PerformanceAggregate
+from app.domain.performance_memory import PerformanceAggregate, PerformanceBaseline
 
 
 class PerformanceBaselineService:
