@@ -61,16 +61,13 @@ class OptimizationPolicyService:
                 decision_id=decision_id,
             )
 
-        uplift = ((winner_average - control_average) / control_average).quantize(
-            Decimal("0.0001")
-        )
+        uplift = ((winner_average - control_average) / control_average).quantize(Decimal("0.0001"))
         if uplift < self.policy.minimum_uplift:
             return OptimizationDecision.no_promotion(
                 experiment_id=experiment.experiment_id,
                 policy_version=self.policy.policy_version,
                 rationale=(
-                    f"Winner uplift {uplift} is below policy minimum "
-                    f"{self.policy.minimum_uplift}.",
+                    f"Winner uplift {uplift} is below policy minimum {self.policy.minimum_uplift}.",
                 ),
                 decision_id=decision_id,
             )
