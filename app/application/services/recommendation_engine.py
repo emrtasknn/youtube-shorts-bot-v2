@@ -66,7 +66,10 @@ class RecommendationEngine:
         )
         recommendation_id = uuid5(
             NAMESPACE_URL,
-            f"recommendation:{signal.signal_id}:{signal.feature}:{signal.feature_value}:{signal.metric}",
+            (
+                f"recommendation:{signal.signal_id}:{signal.feature}:"
+                f"{signal.feature_value}:{signal.metric}"
+            ),
         )
         return Recommendation(
             recommendation_id=recommendation_id,
