@@ -142,3 +142,43 @@ class PerformanceBaseline:
             raise ValueError("baseline metrics must be non-negative")
         if self.average_retention is not None and not 0 <= self.average_retention <= 1:
             raise ValueError("average_retention must be between 0 and 1")
+
+
+@dataclass(frozen=True, slots=True)
+class PerformanceTimeSeriesPoint:
+    """Deterministic point-in-time and growth features for a publication."""
+
+    publication_id: UUID
+    measured_at: datetime
+    elapsed_hours: Decimal
+    views: int
+    likes: int
+    comments: int
+    shares: int
+    subscribers_gained: int
+    views_delta: int | None = None
+    likes_delta: int | None = None
+    comments_delta: int | None = None
+    shares_delta: int | None = None
+    subscribers_gained_delta: int | None = None
+    views_per_hour: Decimal | None = None
+    views_growth_rate: Decimal | None = None
+    average_view_duration_seconds: Decimal | None = None
+    retention: Decimal | None = None
+
+    def __post_init__(self) -> None:
+        if self.elapsed_hours < 0:
+            raise ValueError("elapsed_hours must be non-negative")
+        if min(self.views, self.likes, self.comments, self.shares, self.subscribers_gained) < 0:
+            raise ValueError("snapshot counts must be non-negative")
+        if self.elapsed_hours == 0 and self.views_per_hour is not None:
+            raise ValueError("views_per_hour requires positive elapsed time")
+        if self.views_growth_rate is not None and self.views_growth_rate < -1:
+            raise ValueError("views_growth_rate cannot be less than -1")
+        if (
+            self.average_view_duration_seconds is not None
+            and self.average_view_duration_seconds < 0
+        ):
+            raise ValueError("average_view_duration_seconds must be non-negative")
+        if self.retention is not None and not 0 <= self.retention <= 1:
+            raise ValueError("retention must be between 0 and 1")

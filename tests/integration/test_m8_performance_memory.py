@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
@@ -13,6 +13,10 @@ from app.application.services.performance_baseline import PerformanceBaselineSer
 from app.application.services.performance_memory import (
     PerformanceMemoryNotFoundError,
     PerformanceMemoryService,
+)
+from app.application.services.performance_time_series import (
+    PerformanceTimeSeriesNotFoundError,
+    PerformanceTimeSeriesService,
 )
 from app.domain.enums import (
     AssetStatus,
@@ -391,6 +395,84 @@ def test_performance_baseline_is_derived_from_aggregate_metrics() -> None:
             assert baseline.average_view_duration_seconds == Decimal("13.00")
             assert baseline.average_retention == Decimal("0.50")
             assert baseline.production_strategy == "custom_single_vertical_slice"
+            session.rollback()
+    finally:
+        engine.dispose()
+
+
+def test_performance_time_series_builds_deterministic_growth_features() -> None:
+    engine = create_engine(database_url())
+    try:
+        with Session(engine) as session:
+            publication = create_memory_fixture(session)
+            first = session.scalar(
+                select(PerformanceSnapshotModel).where(
+                    PerformanceSnapshotModel.publication_id == publication.id
+                )
+            )
+            assert first is not None
+            first.views = 1000
+            first.likes = 50
+            first.comments = 8
+            first.shares = 4
+            first.subscribers_gained = 5
+
+            second_time = publication.published_at
+            assert second_time is not None
+            second = PerformanceSnapshotModel(
+                publication_id=publication.id,
+                platform="YOUTUBE",
+                platform_post_id=publication.platform_post_id,
+                measured_at=second_time + timedelta(hours=6),
+                views=1500,
+                likes=75,
+                comments=12,
+                shares=6,
+                subscribers_gained=8,
+                average_view_duration_seconds=Decimal("14.00"),
+                retention=Decimal("0.50"),
+            )
+            session.add(second)
+            session.flush()
+
+            points = PerformanceTimeSeriesService(session).get_for_publication(publication.id)
+
+            assert len(points) == 2
+            assert points[0].elapsed_hours == Decimal("0")
+            assert points[0].views_delta is None
+            assert points[0].views_per_hour is None
+
+            assert points[1].elapsed_hours == Decimal("6")
+            assert points[1].views == 1500
+            assert points[1].views_delta == 500
+            assert points[1].likes_delta == 25
+            assert points[1].comments_delta == 4
+            assert points[1].shares_delta == 2
+            assert points[1].subscribers_gained_delta == 3
+            assert points[1].views_per_hour == Decimal("500") / Decimal("6")
+            assert points[1].views_growth_rate == Decimal("0.5")
+            assert points[1].average_view_duration_seconds == Decimal("14.00")
+            assert points[1].retention == Decimal("0.50")
+            session.rollback()
+    finally:
+        engine.dispose()
+
+
+def test_performance_time_series_requires_snapshot() -> None:
+    engine = create_engine(database_url())
+    try:
+        with Session(engine) as session:
+            publication = create_memory_fixture(session)
+            session.query(PerformanceSnapshotModel).filter(
+                PerformanceSnapshotModel.publication_id == publication.id
+            ).delete(synchronize_session=False)
+            session.flush()
+
+            with pytest.raises(
+                PerformanceTimeSeriesNotFoundError,
+                match="performance snapshots",
+            ):
+                PerformanceTimeSeriesService(session).get_for_publication(publication.id)
             session.rollback()
     finally:
         engine.dispose()
