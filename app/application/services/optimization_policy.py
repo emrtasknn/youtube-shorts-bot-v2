@@ -5,7 +5,12 @@ from dataclasses import dataclass
 from decimal import Decimal
 from uuid import NAMESPACE_URL, UUID, uuid5
 
-from app.domain.experimentation import Experiment, ExperimentAnalysis, ExperimentOutcome, ExperimentVariant
+from app.domain.experimentation import (
+    Experiment,
+    ExperimentAnalysis,
+    ExperimentOutcome,
+    ExperimentVariant,
+)
 from app.domain.learning import ConfidenceLevel
 from app.domain.optimization import (
     OptimizationDecision,
