@@ -182,3 +182,16 @@ class PerformanceTimeSeriesPoint:
             raise ValueError("average_view_duration_seconds must be non-negative")
         if self.retention is not None and not 0 <= self.retention <= 1:
             raise ValueError("retention must be between 0 and 1")
+
+
+@dataclass(frozen=True, slots=True)
+class PerformanceQueryResult:
+    """Unified deterministic performance memory for downstream consumers."""
+
+    memory: PerformanceMemory
+    baseline: PerformanceBaseline | None
+    time_series: tuple[PerformanceTimeSeriesPoint, ...]
+
+    def __post_init__(self) -> None:
+        if not self.time_series:
+            raise ValueError("time_series must contain at least one point")
