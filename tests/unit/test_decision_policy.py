@@ -32,7 +32,7 @@ def _recommendation(
         feature=feature,
         feature_value=feature_value,
         metric="views",
-        observed_value=Decimal("110") if delta >= 0 else Decimal("90"),
+        observed_value=Decimal("100") + delta,
         baseline_value=Decimal("100"),
         delta=delta,
         evidence=LearningEvidence(
