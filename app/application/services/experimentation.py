@@ -68,9 +68,7 @@ class ExperimentAnalysisService:
                 ready=False,
                 winner_variant_id=None,
                 total_samples=total_samples,
-                rationale=(
-                    "Analysis waits until every variant reaches the minimum sample size.",
-                ),
+                rationale=("Analysis waits until every variant reaches the minimum sample size.",),
             )
 
         averages: dict[UUID, Decimal] = {}
