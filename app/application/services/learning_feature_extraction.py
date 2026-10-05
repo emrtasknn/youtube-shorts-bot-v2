@@ -30,7 +30,10 @@ class LearningFeatureExtractionService:
             feature_values = (
                 (LearningFeature.CATEGORY, features.category),
                 (LearningFeature.ANGLE, features.angle),
-                (LearningFeature.DURATION_BUCKET, duration_bucket(features.duration_target_seconds)),
+                (
+                    LearningFeature.DURATION_BUCKET,
+                    duration_bucket(features.duration_target_seconds),
+                ),
                 (LearningFeature.TOPIC, features.topic),
             )
 
