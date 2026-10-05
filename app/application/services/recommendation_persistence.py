@@ -30,7 +30,7 @@ class RecommendationPersistenceService:
             )
         )
         if existing is not None:
-            return self._to_recommendation(existing)
+            return self.to_recommendation(existing)
 
         signal = recommendation.signal
         model = RecommendationModel(
