@@ -100,9 +100,7 @@ class DecisionPolicyEngine:
             duration_target_seconds=self._optional_decimal(
                 values, DecisionDimension.DURATION_TARGET_SECONDS
             ),
-            production_strategy=self._optional_value(
-                values, DecisionDimension.PRODUCTION_STRATEGY
-            ),
+            production_strategy=self._optional_value(values, DecisionDimension.PRODUCTION_STRATEGY),
             applied_recommendation_ids=applied,
             rejected_recommendation_ids=rejected_tuple,
             rationale=tuple(rationale),
@@ -153,9 +151,7 @@ class DecisionPolicyEngine:
         return None
 
     @classmethod
-    def _priority_key(
-        cls, recommendation: Recommendation
-    ) -> tuple[int, Decimal, str]:
+    def _priority_key(cls, recommendation: Recommendation) -> tuple[int, Decimal, str]:
         delta = recommendation.signal.delta or Decimal("0")
         return (
             cls._CONFIDENCE_RANK[recommendation.signal.confidence],
@@ -227,9 +223,7 @@ class DecisionPolicyEngine:
         )
 
     @staticmethod
-    def _application_reason(
-        recommendation: Recommendation, dimension: DecisionDimension
-    ) -> str:
+    def _application_reason(recommendation: Recommendation, dimension: DecisionDimension) -> str:
         return (
             f"Applied {recommendation.recommendation_id} to {dimension}: "
             f"{recommendation.signal.feature}='{recommendation.signal.feature_value}' "
