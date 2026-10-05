@@ -71,9 +71,7 @@ class TopicScoringService:
             ("evergreen", candidate.evergreen_score, self.policy.evergreen_weight),
         )
         available = [
-            (name, value, weight)
-            for name, value, weight in components
-            if value is not None
+            (name, value, weight) for name, value, weight in components if value is not None
         ]
         if performance is not None and performance.comparable_observations > 0:
             available.append(
@@ -86,8 +84,7 @@ class TopicScoringService:
 
         total_weight = sum((weight for _, _, weight in available), Decimal("0"))
         total = (
-            sum((value * weight for _, value, weight in available), Decimal("0"))
-            / total_weight
+            sum((value * weight for _, value, weight in available), Decimal("0")) / total_weight
             if total_weight
             else Decimal("0")
         )
@@ -107,11 +104,7 @@ class TopicScoringService:
                     if name == "performance" and performance
                     else 0
                 ),
-                (
-                    performance.confidence
-                    if name == "performance" and performance
-                    else Decimal("0")
-                ),
+                (performance.confidence if name == "performance" and performance else Decimal("0")),
             )
             for name, value, _ in available
         )
@@ -133,9 +126,7 @@ class TopicScoringService:
         if candidate.novelty_score is not None:
             rationale.append("Novelty is included explicitly.")
         if performance is None or performance.comparable_observations == 0:
-            rationale.append(
-                "Historical performance is unavailable; no historical signal is used."
-            )
+            rationale.append("Historical performance is unavailable; no historical signal is used.")
         else:
             rationale.append(
                 f"Historical performance uses "
