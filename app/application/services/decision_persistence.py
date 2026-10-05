@@ -35,9 +35,7 @@ class DecisionPersistenceService:
             eligible_recommendation_ids=[
                 str(item) for item in decision.eligible_recommendation_ids
             ],
-            applied_recommendation_ids=[
-                str(item) for item in decision.applied_recommendation_ids
-            ],
+            applied_recommendation_ids=[str(item) for item in decision.applied_recommendation_ids],
             rejected_recommendation_ids=[
                 str(item) for item in decision.rejected_recommendation_ids
             ],
