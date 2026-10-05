@@ -33,6 +33,13 @@ class ExperimentPersistenceService:
             select(ExperimentModel).where(ExperimentModel.experiment_id == experiment.experiment_id)
         )
         if existing is not None:
+            if (
+                existing.name != experiment.name
+                or existing.status != experiment.status.value
+                or existing.dimension != experiment.dimension.value
+                or existing.minimum_sample_size != experiment.minimum_sample_size
+            ):
+                raise ValueError("existing experiment conflicts with supplied definition")
             return self._to_experiment(existing)
         row = ExperimentModel(
             id=uuid4(),
@@ -62,6 +69,13 @@ class ExperimentPersistenceService:
             )
         )
         if existing is not None:
+            if (
+                existing.experiment_id != assignment.experiment_id
+                or existing.variant_id != assignment.variant_id
+                or existing.run_key != assignment.run_key
+                or existing.status != assignment.status.value
+            ):
+                raise ValueError("existing assignment conflicts with supplied definition")
             return self._to_assignment(existing)
         row = ExperimentAssignmentModel(
             id=uuid4(),
@@ -91,6 +105,15 @@ class ExperimentPersistenceService:
             )
         )
         if existing is not None:
+            if (
+                existing.experiment_id != experiment.experiment_id
+                or existing.variant_id != assignment.variant_id
+                or existing.sample_count != outcome.sample_count
+                or existing.average_views != outcome.average_views
+                or existing.average_retention != outcome.average_retention
+                or existing.engagement_rate != outcome.engagement_rate
+            ):
+                raise ValueError("existing outcome conflicts with supplied definition")
             return self._to_outcome(existing)
         row = ExperimentOutcomeModel(
             id=uuid4(),
