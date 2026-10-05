@@ -77,9 +77,7 @@ class RecommendationPersistenceService:
             metric=model.metric,
             observed_value=Decimal(str(model.observed_value)),
             baseline_value=(
-                Decimal(str(model.baseline_value))
-                if model.baseline_value is not None
-                else None
+                Decimal(str(model.baseline_value)) if model.baseline_value is not None else None
             ),
             delta=Decimal(str(model.delta)) if model.delta is not None else None,
             evidence=evidence,
