@@ -35,9 +35,15 @@ def _model_from_decision(decision: ProductionDecision) -> ProductionDecisionMode
         duration_target_seconds=decision.duration_target_seconds,
         production_strategy=decision.production_strategy,
         input_recommendation_ids=[str(item) for item in decision.input_recommendation_ids],
-        eligible_recommendation_ids=[str(item) for item in decision.eligible_recommendation_ids],
-        applied_recommendation_ids=[str(item) for item in decision.applied_recommendation_ids],
-        rejected_recommendation_ids=[str(item) for item in decision.rejected_recommendation_ids],
+        eligible_recommendation_ids=[
+            str(item) for item in decision.eligible_recommendation_ids
+        ],
+        applied_recommendation_ids=[
+            str(item) for item in decision.applied_recommendation_ids
+        ],
+        rejected_recommendation_ids=[
+            str(item) for item in decision.rejected_recommendation_ids
+        ],
         rationale=list(decision.rationale),
         created_at=decision.created_at,
     )
@@ -55,7 +61,9 @@ def test_save_persists_complete_decision_audit() -> None:
     assert isinstance(model, ProductionDecisionModel)
     assert model.decision_id == decision.decision_id
     assert model.policy_version == "m10-v1"
-    assert model.input_recommendation_ids == [str(item) for item in decision.input_recommendation_ids]
+    assert model.input_recommendation_ids == [
+        str(item) for item in decision.input_recommendation_ids
+    ]
     assert model.eligible_recommendation_ids == [
         str(item) for item in decision.eligible_recommendation_ids
     ]
