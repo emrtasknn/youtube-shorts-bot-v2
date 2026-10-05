@@ -273,7 +273,9 @@ class GenerateCustomShort:
             hook=str(data["hook"]),
             body=str(data["body"]),
             cta=str(data.get("cta") or "") or None,
-            duration_target=Decimal(str(decision_adapter.duration_target_seconds or data["duration_target"])),
+            duration_target=Decimal(
+                str(decision_adapter.duration_target_seconds or data["duration_target"])
+            ),
             word_count=len(str(data["body"]).split()),
             status=ScriptStatus.DRAFT,
         )
