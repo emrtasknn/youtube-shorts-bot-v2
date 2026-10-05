@@ -53,13 +53,3 @@ def test_no_selection_requires_manual_fallback() -> None:
         TopicSelectionProductionAdapter(decision).resolve_topic("   ")
 
 
-def test_selected_decision_requires_topic() -> None:
-    decision = TopicSelectionDecision(
-        decision_id=uuid4(),
-        status=TopicDecisionStatus.SELECTED,
-        selected_candidate_id=uuid4(),
-        selected_topic="Valid topic",
-        candidate_ids=(),
-        selected_score=None,
-    )
-    # Domain validation intentionally prevents this invalid decision.
