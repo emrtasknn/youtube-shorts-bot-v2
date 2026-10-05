@@ -18,15 +18,16 @@ from app.application.services.event_memory import EventMemoryCandidate, EventMem
 from app.application.services.hook_engine import HookEngine
 from app.application.services.novelty_hardening import NoveltyHardeningService
 from app.application.services.production_decision_adapter import ProductionDecisionAdapter
-from app.application.services.topic_selection_production_adapter import TopicSelectionProductionAdapter
 from app.application.services.scene_contract import build_scene_contract
 from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
+from app.application.services.topic_selection_production_adapter import (
+    TopicSelectionProductionAdapter,
+)
 from app.application.services.visual_relevance import VisualRelevanceContext
 from app.application.services.visual_source_resolver import VisualSourceResolver
 from app.application.use_cases.search_stock_media import SearchStockMedia
 from app.domain.decision import ProductionDecision
-from app.domain.topic_optimization import TopicSelectionDecision
 from app.domain.enums import (
     ApprovalStatus,
     AssetStatus,
@@ -38,6 +39,7 @@ from app.domain.enums import (
     SceneStatus,
     ScriptStatus,
 )
+from app.domain.topic_optimization import TopicSelectionDecision
 from app.infrastructure.database.models import (
     ApprovalModel,
     AssetModel,
