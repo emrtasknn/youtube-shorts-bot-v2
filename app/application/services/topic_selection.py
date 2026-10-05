@@ -37,24 +37,17 @@ class TopicSelectionService:
     ) -> TopicSelectionDecision:
         candidate_by_id = {candidate.candidate_id: candidate for candidate in candidates}
         score_by_id = {
-            score.candidate_id: score
-            for score in scores
-            if score.candidate_id in candidate_by_id
+            score.candidate_id: score for score in scores if score.candidate_id in candidate_by_id
         }
         eligible = [
-            score
-            for score in score_by_id.values()
-            if score.total >= self.policy.minimum_score
+            score for score in score_by_id.values() if score.total >= self.policy.minimum_score
         ]
 
         candidate_ids = tuple(sorted(candidate_by_id, key=str))
         if not eligible:
             return TopicSelectionDecision.no_selection(
                 candidate_ids=candidate_ids,
-                rationale=(
-                    f"No candidate reached the minimum score of "
-                    f"{self.policy.minimum_score}.",
-                ),
+                rationale=(f"No candidate reached the minimum score of {self.policy.minimum_score}.",),
             )
 
         winner = max(
