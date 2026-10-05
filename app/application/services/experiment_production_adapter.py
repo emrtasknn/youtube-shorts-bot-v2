@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from app.domain.decision import ProductionDecision
 from app.domain.experimentation import ExperimentDimension, ExperimentVariant
+from app.domain.topic_optimization import TopicDecisionStatus, TopicSelectionDecision
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,9 +24,15 @@ class ExperimentProductionAdapter:
         variant: ExperimentVariant,
         *,
         production_decision: ProductionDecision | None = None,
+        topic_selection_decision: TopicSelectionDecision | None = None,
     ) -> ExperimentProductionOverride:
         decision = production_decision
         if variant.dimension is ExperimentDimension.TOPIC:
+            if (
+                topic_selection_decision is not None
+                and topic_selection_decision.status is TopicDecisionStatus.SELECTED
+            ):
+                raise ValueError("experiment topic conflicts with TopicSelectionDecision")
             return ExperimentProductionOverride(topic=variant.value)
         if variant.dimension is ExperimentDimension.ANGLE:
             if decision is not None and decision.angle is not None:
