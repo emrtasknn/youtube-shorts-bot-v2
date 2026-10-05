@@ -59,9 +59,7 @@ class DecisionPolicyEngine:
         winners: dict[DecisionDimension, tuple[Recommendation, str | Decimal]] = {}
         for dimension in self._policy.allowed_dimensions:
             dimension_candidates = [
-                candidate
-                for candidate in candidates
-                if candidate[1] is dimension
+                candidate for candidate in candidates if candidate[1] is dimension
             ]
             if not dimension_candidates:
                 continue
@@ -94,9 +92,7 @@ class DecisionPolicyEngine:
             for dimension, (recommendation, _) in winners.items()
         )
 
-        values = {
-            dimension: value for dimension, (_, value) in winners.items()
-        }
+        values = {dimension: value for dimension, (_, value) in winners.items()}
         return ProductionDecision(
             decision_id=uuid4(),
             policy_version=self._policy.policy_version,
@@ -147,13 +143,13 @@ class DecisionPolicyEngine:
             if not feature_value.strip():
                 return None
             return DecisionDimension.ANGLE, feature_value.strip()
+
         if feature == "duration_bucket":
-            return (
-                DecisionDimension.DURATION_TARGET_SECONDS,
-                self._DURATION_BUCKET_TARGETS.get(feature_value)
-                if feature_value in self._DURATION_BUCKET_TARGETS
-                else None,
-            )
+            target = self._DURATION_BUCKET_TARGETS.get(feature_value)
+            if target is None:
+                return None
+            return DecisionDimension.DURATION_TARGET_SECONDS, target
+
         return None
 
     @classmethod
