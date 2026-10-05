@@ -12,7 +12,7 @@ from app.domain.learning import (
     SignalDirection,
 )
 from app.domain.learning_features import FeatureObservation, LearningFeature
-from app.domain.performance_memory import PerformanceQueryResult
+from app.domain.performance_memory import PerformanceBaseline, PerformanceQueryResult
 
 
 class LearningEvidenceService:
@@ -166,7 +166,7 @@ class LearningEvidenceService:
         )
 
     @staticmethod
-    def _baseline_metric(baseline: object, metric: str) -> Decimal | None:
+    def _baseline_metric(baseline: PerformanceBaseline, metric: str) -> Decimal | None:
         if metric == "views":
             return baseline.average_views
         if metric == "average_view_duration_seconds":
