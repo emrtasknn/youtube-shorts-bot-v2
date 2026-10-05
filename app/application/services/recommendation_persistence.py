@@ -63,7 +63,7 @@ class RecommendationPersistenceService:
         return tuple(self.save(recommendation) for recommendation in recommendations)
 
     @staticmethod
-    def _to_recommendation(model: RecommendationModel) -> Recommendation:
+    def to_recommendation(model: RecommendationModel) -> Recommendation:
         evidence = LearningEvidence(
             sample_size=model.sample_size,
             baseline_available=model.baseline_available,
