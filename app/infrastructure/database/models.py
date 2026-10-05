@@ -521,7 +521,9 @@ class ExperimentAssignmentModel(Base):
     __tablename__ = "experiment_assignments"
     __table_args__ = (
         UniqueConstraint("assignment_id", name="uq_experiment_assignments_assignment_id"),
-        UniqueConstraint("experiment_id", "run_key", name="uq_experiment_assignments_experiment_run"),
+        UniqueConstraint(
+            "experiment_id", "run_key", name="uq_experiment_assignments_experiment_run"
+        ),
         Index("ix_experiment_assignments_experiment_status", "experiment_id", "status"),
     )
     id: Mapped[UUID] = uuid_pk()
