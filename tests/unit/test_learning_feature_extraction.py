@@ -105,8 +105,7 @@ def test_extractor_skips_missing_optional_features_and_metrics() -> None:
 
     assert not any(item.feature is LearningFeature.ANGLE for item in observations)
     assert any(
-        item.feature is LearningFeature.DURATION_BUCKET
-        and item.feature_value == "30-39s"
+        item.feature is LearningFeature.DURATION_BUCKET and item.feature_value == "30-39s"
         for item in observations
     )
 
