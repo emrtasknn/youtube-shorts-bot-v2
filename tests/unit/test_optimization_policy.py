@@ -141,9 +141,7 @@ def test_not_ready_analysis_cannot_promote() -> None:
 
 def test_promotion_decision_is_deterministic() -> None:
     service = OptimizationPolicyService(OptimizationPolicy(policy_version="m13-v1"))
-    first = service.evaluate(
-        _experiment(), _analysis(), _outcomes(), control_variant_id=CONTROL_ID
-    )
+    first = service.evaluate(_experiment(), _analysis(), _outcomes(), control_variant_id=CONTROL_ID)
     second = service.evaluate(
         _experiment(), _analysis(), _outcomes(), control_variant_id=CONTROL_ID
     )
