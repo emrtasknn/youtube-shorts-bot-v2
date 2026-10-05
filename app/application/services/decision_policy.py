@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from datetime import datetime
 from decimal import Decimal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.domain.decision import (
     DecisionDimension,
@@ -65,6 +65,7 @@ class DecisionPolicyEngine:
             ]
             if not dimension_candidates:
                 continue
+
             winner = max(
                 dimension_candidates,
                 key=lambda candidate: self._priority_key(candidate[0]),
@@ -83,10 +84,9 @@ class DecisionPolicyEngine:
                 )
 
         applied = tuple(
-            recommendation.recommendation_id
+            winners[dimension][0].recommendation_id
             for dimension in self._policy.allowed_dimensions
             if dimension in winners
-            for recommendation, _ in (winners[dimension],)
         )
         rejected_tuple = tuple(sorted(set(rejected), key=str))
         rationale.extend(
@@ -98,10 +98,7 @@ class DecisionPolicyEngine:
             dimension: value for dimension, (_, value) in winners.items()
         }
         return ProductionDecision(
-            decision_id=ProductionDecision.empty(
-                policy_version=self._policy.policy_version,
-                created_at=created_at,
-            ).decision_id,
+            decision_id=uuid4(),
             policy_version=self._policy.policy_version,
             angle=self._optional_value(values, DecisionDimension.ANGLE),
             duration_target_seconds=self._optional_decimal(
@@ -125,39 +122,39 @@ class DecisionPolicyEngine:
             RecommendationStatus.ACTIVE,
         }:
             return None
-        if signal.confidence not in {
-            ConfidenceLevel.MEDIUM,
-            ConfidenceLevel.HIGH,
-        }:
+        if (
+            self._CONFIDENCE_RANK[signal.confidence]
+            < self._CONFIDENCE_RANK[self._policy.minimum_confidence]
+        ):
             return None
         if signal.direction is not SignalDirection.POSITIVE:
             return None
         if not signal.evidence.baseline_available or signal.delta is None:
             return None
 
-        dimension, value = self._map_feature(signal.feature, signal.feature_value)
+        mapped = self._map_feature(signal.feature, signal.feature_value)
+        if mapped is None:
+            return None
+        dimension, value = mapped
         if dimension not in self._policy.allowed_dimensions:
             return None
         return recommendation, dimension, value
 
     def _map_feature(
         self, feature: str, feature_value: str
-    ) -> tuple[DecisionDimension, str | Decimal]:
+    ) -> tuple[DecisionDimension, str | Decimal] | None:
         if feature == "angle":
             if not feature_value.strip():
-                raise ValueError("angle recommendation value must not be blank")
+                return None
             return DecisionDimension.ANGLE, feature_value.strip()
         if feature == "duration_bucket":
-            try:
-                return (
-                    DecisionDimension.DURATION_TARGET_SECONDS,
-                    self._DURATION_BUCKET_TARGETS[feature_value],
-                )
-            except KeyError as exc:
-                raise ValueError(
-                    f"Unsupported duration bucket: {feature_value}"
-                ) from exc
-        raise ValueError(f"Unsupported learning feature for M10 decisioning: {feature}")
+            return (
+                DecisionDimension.DURATION_TARGET_SECONDS,
+                self._DURATION_BUCKET_TARGETS.get(feature_value)
+                if feature_value in self._DURATION_BUCKET_TARGETS
+                else None,
+            )
+        return None
 
     @classmethod
     def _priority_key(
@@ -186,16 +183,16 @@ class DecisionPolicyEngine:
         value = values.get(dimension)
         return value if isinstance(value, Decimal) else None
 
-    @staticmethod
-    def _rejection_reason(recommendation: Recommendation) -> str:
+    def _rejection_reason(self, recommendation: Recommendation) -> str:
         signal = recommendation.signal
-        if signal.confidence in {
-            ConfidenceLevel.INSUFFICIENT,
-            ConfidenceLevel.LOW,
-        }:
+        if (
+            self._CONFIDENCE_RANK[signal.confidence]
+            < self._CONFIDENCE_RANK[self._policy.minimum_confidence]
+        ):
             return (
                 f"Rejected {recommendation.recommendation_id}: confidence "
-                f"{signal.confidence.value} is below the policy minimum."
+                f"{signal.confidence.value} is below the policy minimum "
+                f"{self._policy.minimum_confidence.value}."
             )
         if signal.direction is SignalDirection.NEGATIVE:
             return (
@@ -219,6 +216,11 @@ class DecisionPolicyEngine:
             return (
                 f"Rejected {recommendation.recommendation_id}: recommendation "
                 f"status is {recommendation.status.value}."
+            )
+        if signal.feature == "duration_bucket" and signal.feature_value not in self._DURATION_BUCKET_TARGETS:
+            return (
+                f"Rejected {recommendation.recommendation_id}: duration bucket "
+                f"'{signal.feature_value}' has no bounded target mapping."
             )
         return (
             f"Rejected {recommendation.recommendation_id}: feature "
