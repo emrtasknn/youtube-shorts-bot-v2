@@ -106,6 +106,7 @@ def test_analysis_selects_highest_weighted_average() -> None:
     assert analysis.winner_variant_id == VARIANT_B
     assert analysis.total_samples == 4
 
+
 def test_analysis_waits_until_all_variants_reach_minimum_sample() -> None:
     experiment = _experiment()
     outcomes = (
