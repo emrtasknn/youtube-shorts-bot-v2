@@ -44,7 +44,9 @@ class ExperimentAnalysisService:
         experiment: Experiment,
         outcomes: tuple[tuple[ExperimentVariant, ExperimentOutcome], ...],
     ) -> ExperimentAnalysis:
-        by_variant: dict[UUID, list[ExperimentOutcome]] = {v.variant_id: [] for v in experiment.variants}
+        by_variant: dict[UUID, list[ExperimentOutcome]] = {
+            v.variant_id: [] for v in experiment.variants
+        }
         for variant, outcome in outcomes:
             if variant.variant_id not in by_variant:
                 raise ValueError("outcome references an unknown experiment variant")
