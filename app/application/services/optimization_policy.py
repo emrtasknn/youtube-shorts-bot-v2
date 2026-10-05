@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from uuid import NAMESPACE_URL, UUID, uuid5
 
 from app.domain.experimentation import Experiment, ExperimentAnalysis, ExperimentOutcome
