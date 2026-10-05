@@ -10,7 +10,7 @@ from app.domain.decision import ProductionDecision
 from app.domain.experimentation import ExperimentDimension
 from app.domain.learning import ConfidenceLevel
 from app.domain.optimization import OptimizationDecision, OptimizationDecisionStatus
-from app.domain.topic_optimization import TopicDecisionStatus, TopicSelectionDecision, TopicScore
+from app.domain.topic_optimization import TopicDecisionStatus, TopicScore, TopicSelectionDecision
 
 
 def _decision(dimension: ExperimentDimension, value: str) -> OptimizationDecision:
