@@ -328,12 +328,10 @@ class GenerateCustomShort:
             cta=str(data.get("cta") or "") or None,
             duration_target=Decimal(
                 str(
-                    (
-                        experiment_override.duration_target_seconds
-                        if experiment_override is not None
-                        and experiment_override.duration_target_seconds is not None
-                        else decision_adapter.duration_target_seconds or data["duration_target"]
-                    )
+                    experiment_override.duration_target_seconds
+                    if experiment_override is not None
+                    and experiment_override.duration_target_seconds is not None
+                    else decision_adapter.duration_target_seconds or data["duration_target"]
                 )
             ),
             word_count=len(str(data["body"]).split()),
