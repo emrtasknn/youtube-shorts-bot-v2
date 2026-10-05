@@ -60,6 +60,7 @@ def test_invalid_duration_is_rejected() -> None:
     with pytest.raises(ValueError, match="numeric"):
         ExperimentProductionAdapter().resolve(variant)
 
+
 def test_topic_variant_cannot_bypass_selected_topic_decision() -> None:
     variant = ExperimentVariant(TOPIC_ID, "B", ExperimentDimension.TOPIC, "Ancient Rome")
     decision = TopicSelectionDecision(
