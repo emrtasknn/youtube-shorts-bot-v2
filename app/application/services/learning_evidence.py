@@ -60,11 +60,7 @@ class LearningEvidenceService:
         )
         quality_score = self._quality_score(matching)
         confidence = self._confidence(observation.sample_size, quality_score)
-        delta = (
-            observation.observed_value - baseline_value
-            if baseline_value is not None
-            else None
-        )
+        delta = observation.observed_value - baseline_value if baseline_value is not None else None
         direction = self._direction(delta)
         notes = [baseline_note]
         if quality_score is None:
@@ -131,7 +127,11 @@ class LearningEvidenceService:
         results: tuple[PerformanceQueryResult, ...],
     ) -> tuple[Decimal | None, bool, str]:
         if observation.feature is LearningFeature.CATEGORY:
-            return None, False, "category baseline is intentionally unavailable because M8 baseline is category-scoped"
+            return (
+                None,
+                False,
+                "category baseline is intentionally unavailable because M8 baseline is category-scoped",
+            )
 
         baselines = [
             result.baseline
@@ -148,7 +148,11 @@ class LearningEvidenceService:
             for baseline in baselines
         }
         if len(cohorts) != 1:
-            return None, False, "baseline unavailable because contributing publications use mixed baseline cohorts"
+            return (
+                None,
+                False,
+                "baseline unavailable because contributing publications use mixed baseline cohorts",
+            )
 
         values = [
             LearningEvidenceService._baseline_metric(baseline, observation.metric)
@@ -173,11 +177,7 @@ class LearningEvidenceService:
 
     @staticmethod
     def _quality_score(results: tuple[PerformanceQueryResult, ...]) -> Decimal | None:
-        scores = [
-            result.quality.quality_score
-            for result in results
-            if result.quality is not None
-        ]
+        scores = [result.quality.quality_score for result in results if result.quality is not None]
         if not scores:
             return None
         return min(scores)
