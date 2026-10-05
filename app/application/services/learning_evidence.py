@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from datetime import datetime
 from decimal import Decimal
-from uuid import NAMESPACE_URL, UUID, uuid5
+from uuid import NAMESPACE_URL, uuid5
 
 from app.domain.learning import (
     ConfidenceLevel,
@@ -155,7 +155,7 @@ class LearningEvidenceService:
             for baseline in baselines
         ]
         return (
-            sum(value for value in values if value is not None, Decimal("0"))
+            sum((value for value in values if value is not None), Decimal("0"))
             / Decimal(len(values)),
             True,
             "baseline is the M8 category/language/production-strategy cohort average",
