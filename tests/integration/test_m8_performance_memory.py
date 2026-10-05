@@ -328,3 +328,67 @@ def test_performance_aggregation_groups_by_production_strategy() -> None:
             session.rollback()
     finally:
         engine.dispose()
+
+
+def test_performance_baseline_is_derived_from_aggregate_metrics() -> None:
+    from app.application.services.performance_baseline import PerformanceBaselineService
+
+    engine = create_engine(database_url())
+    try:
+        with Session(engine) as session:
+            first = create_memory_fixture(session)
+            second = create_memory_fixture(session)
+
+            memory_service = PerformanceMemoryService(session)
+            memory_service.capture_production_snapshot(first.id)
+            memory_service.capture_production_snapshot(second.id)
+
+            snapshots = [
+                session.scalar(
+                    select(PerformanceSnapshotModel).where(
+                        PerformanceSnapshotModel.publication_id == publication_id
+                    )
+                )
+                for publication_id in (first.id, second.id)
+            ]
+            assert all(snapshot is not None for snapshot in snapshots)
+
+            snapshots[0].views = 1000
+            snapshots[0].likes = 50
+            snapshots[0].comments = 8
+            snapshots[0].shares = 4
+            snapshots[0].subscribers_gained = 5
+            snapshots[0].average_view_duration_seconds = Decimal("12.00")
+            snapshots[0].retention = Decimal("0.40")
+
+            snapshots[1].views = 1400
+            snapshots[1].likes = 70
+            snapshots[1].comments = 12
+            snapshots[1].shares = 6
+            snapshots[1].subscribers_gained = 7
+            snapshots[1].average_view_duration_seconds = Decimal("14.00")
+            snapshots[1].retention = Decimal("0.60")
+            session.flush()
+
+            baselines = PerformanceBaselineService(session).build_baseline(
+                category="HISTORY_FACT",
+                language="en",
+                platform="YOUTUBE",
+            )
+
+            assert len(baselines) == 1
+            baseline = baselines[0]
+            assert baseline.sample_count == 2
+            assert baseline.average_views == Decimal("1200")
+            assert baseline.average_likes == Decimal("60")
+            assert baseline.average_comments == Decimal("10")
+            assert baseline.average_shares == Decimal("5")
+            assert baseline.average_subscribers_gained == Decimal("6")
+            assert baseline.engagement_rate == Decimal("180") / Decimal("2400")
+            assert baseline.subscriber_conversion_rate == Decimal("12") / Decimal("2400")
+            assert baseline.average_view_duration_seconds == Decimal("13.00")
+            assert baseline.average_retention == Decimal("0.50")
+            assert baseline.production_strategy == "custom_single_vertical_slice"
+            session.rollback()
+    finally:
+        engine.dispose()
