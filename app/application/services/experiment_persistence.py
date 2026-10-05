@@ -83,6 +83,8 @@ class ExperimentPersistenceService:
     ) -> ExperimentOutcome:
         if assignment.experiment_id != experiment.experiment_id:
             raise ValueError("assignment does not belong to experiment")
+        if outcome.assignment_id != assignment.assignment_id:
+            raise ValueError("outcome does not belong to assignment")
         existing = self._session.scalar(
             select(ExperimentOutcomeModel).where(
                 ExperimentOutcomeModel.assignment_id == outcome.assignment_id
@@ -103,6 +105,26 @@ class ExperimentPersistenceService:
         self._session.add(row)
         self._session.flush()
         return outcome
+
+    def list_outcome_records(
+        self, experiment: Experiment
+    ) -> tuple[tuple[ExperimentVariant, ExperimentOutcome], ...]:
+        variants = {variant.variant_id: variant for variant in experiment.variants}
+        rows = self._session.scalars(
+            select(ExperimentOutcomeModel)
+            .where(ExperimentOutcomeModel.experiment_id == experiment.experiment_id)
+            .order_by(
+                ExperimentOutcomeModel.created_at.asc(),
+                ExperimentOutcomeModel.assignment_id.asc(),
+            )
+        ).all()
+        records: list[tuple[ExperimentVariant, ExperimentOutcome]] = []
+        for row in rows:
+            variant = variants.get(row.variant_id)
+            if variant is None:
+                raise ValueError("outcome references an unknown experiment variant")
+            records.append((variant, self._to_outcome(row)))
+        return tuple(records)
 
     def list_outcomes(self, experiment_id: UUID) -> tuple[ExperimentOutcome, ...]:
         rows = self._session.scalars(
