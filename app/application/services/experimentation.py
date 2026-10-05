@@ -62,13 +62,15 @@ class ExperimentAnalysisService:
             for variant_id, count in totals.items()
             if count >= experiment.minimum_sample_size
         ]
-        if not eligible:
+        if len(eligible) != len(experiment.variants):
             return ExperimentAnalysis(
                 experiment_id=experiment.experiment_id,
                 ready=False,
                 winner_variant_id=None,
                 total_samples=total_samples,
-                rationale=("Minimum sample size has not been reached for any variant.",),
+                rationale=(
+                    "Analysis waits until every variant reaches the minimum sample size.",
+                ),
             )
 
         averages: dict[UUID, Decimal] = {}
