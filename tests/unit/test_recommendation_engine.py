@@ -40,9 +40,9 @@ def _signal(
 
 
 def test_generates_positive_recommendation() -> None:
-    recommendation = RecommendationEngine().generate(
-        [_signal(direction=SignalDirection.POSITIVE)]
-    )[0]
+    recommendation = RecommendationEngine().generate([_signal(direction=SignalDirection.POSITIVE)])[
+        0
+    ]
 
     assert recommendation.status is RecommendationStatus.GENERATED
     assert "outperforms" in recommendation.text
