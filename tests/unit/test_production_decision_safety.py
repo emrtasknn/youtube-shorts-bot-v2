@@ -1,5 +1,4 @@
 from uuid import UUID
-
 import pytest
 
 from app.application.services.production_decision_safety import ProductionDecisionSafety
