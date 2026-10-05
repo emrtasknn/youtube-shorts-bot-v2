@@ -15,6 +15,8 @@ from app.application.ports.tts import TTSGateway, TTSRequest
 from app.application.ports.video_engine import VideoEngine, VideoRenderRequest, VideoSceneInput
 from app.application.services.custom_short_support import parse_script, validate_output
 from app.application.services.event_memory import EventMemoryCandidate, EventMemoryService
+from app.application.services.experiment_persistence import ExperimentPersistenceService
+from app.application.services.experiment_production_adapter import ExperimentProductionAdapter
 from app.application.services.hook_engine import HookEngine
 from app.application.services.novelty_hardening import NoveltyHardeningService
 from app.application.services.production_decision_adapter import ProductionDecisionAdapter
@@ -28,6 +30,7 @@ from app.application.services.visual_relevance import VisualRelevanceContext
 from app.application.services.visual_source_resolver import VisualSourceResolver
 from app.application.use_cases.search_stock_media import SearchStockMedia
 from app.domain.decision import ProductionDecision
+from app.domain.experimentation import ExperimentAssignment, ExperimentVariant
 from app.domain.enums import (
     ApprovalStatus,
     AssetStatus,
@@ -59,6 +62,8 @@ class CustomShortRequest:
     output_path: Path = Path("storage/renders/custom.mp4")
     production_decision: ProductionDecision | None = None
     topic_selection_decision: TopicSelectionDecision | None = None
+    experiment_variant: ExperimentVariant | None = None
+    experiment_assignment: ExperimentAssignment | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,14 +97,41 @@ class GenerateCustomShort:
         self._storage_root = storage_root
 
     async def execute(self, request: CustomShortRequest) -> CustomShortResult:
-        topic = TopicSelectionProductionAdapter(request.topic_selection_decision).resolve_topic(
+        if (request.experiment_variant is None) != (request.experiment_assignment is None):
+            raise ValueError("experiment variant and assignment must be provided together")
+        if (
+            request.experiment_variant is not None
+            and request.experiment_assignment is not None
+            and request.experiment_assignment.variant_id != request.experiment_variant.variant_id
+        ):
+            raise ValueError("experiment assignment variant does not match experiment variant")
+
+        experiment_override = (
+            ExperimentProductionAdapter().resolve(
+                request.experiment_variant,
+                production_decision=request.production_decision,
+                topic_selection_decision=request.topic_selection_decision,
+            )
+            if request.experiment_variant is not None
+            else None
+        )
+        selected_topic = TopicSelectionProductionAdapter(request.topic_selection_decision).resolve_topic(
             request.topic
+        )
+        topic = (
+            experiment_override.topic
+            if experiment_override is not None and experiment_override.topic is not None
+            else selected_topic
         )
         decision_adapter = ProductionDecisionAdapter(request.production_decision)
         if not topic:
             raise ValueError("Custom topic must not be empty")
         if self._session.query(RunModel).filter_by(run_key=request.run_key).first() is not None:
             raise ValueError(f"Run key already exists: {request.run_key}")
+        if request.experiment_assignment is not None:
+            ExperimentPersistenceService(self._session).save_assignment(
+                request.experiment_assignment
+            )
         content = ContentModel(
             content_key=f"custom:{request.run_key}",
             language=request.language,
@@ -127,7 +159,11 @@ class GenerateCustomShort:
             run.status = RunStatus.TOPIC_VALIDATION
             run.status = RunStatus.SCRIPTING
             script, script_data, event_candidate = await self._create_script(
-                run, topic, request.language, decision_adapter
+                run,
+                topic,
+                request.language,
+                decision_adapter,
+                experiment_override,
             )
             if event_candidate is not None:
                 novelty = NoveltyHardeningService(EventMemoryService(self._session)).evaluate(
@@ -224,14 +260,24 @@ class GenerateCustomShort:
         topic: str,
         language: str,
         decision_adapter: ProductionDecisionAdapter,
+        experiment_override: Any | None = None,
     ) -> tuple[ScriptModel, dict[str, Any], EventMemoryCandidate | None]:
+        constraints = decision_adapter.script_constraints()
+        if experiment_override is not None:
+            if experiment_override.angle is not None:
+                constraints = f"{constraints} Experiment angle: {experiment_override.angle}."
+            if experiment_override.duration_target_seconds is not None:
+                constraints = (
+                    f"{constraints} Experiment duration target: "
+                    f"{experiment_override.duration_target_seconds:g} seconds."
+                )
         result = await self._text.generate(
             TextGenerationRequest(
                 run_id=str(run.id),
                 request_id=f"{run.id}:script",
                 prompt=(
                     f"Create a {language} YouTube Short about: {topic}. "
-                    f"{decision_adapter.script_constraints()} Return JSON with hook, body, cta, "
+                    f"{constraints} Return JSON with hook, body, cta, "
                     "duration_target, event_memory, scenes. For historical topics, "
                     "event_memory must contain canonical_title, aliases, date, location, "
                     "entities, event_summary, core_facts, claims, sources, and status. "
