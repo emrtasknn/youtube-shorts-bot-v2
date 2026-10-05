@@ -148,7 +148,7 @@ def test_mixed_baseline_cohorts_are_not_compared() -> None:
     signal = LearningEvidenceService().evaluate(
         (observation,),
         (first, second),
-        created_at=datetime(2026, 10, 5, tzinfo=timezone.utc,
+        created_at=datetime(2026, 10, 5, tzinfo=timezone.utc),
     )[0]
 
     assert signal.baseline_value is None
