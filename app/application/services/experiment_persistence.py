@@ -30,9 +30,7 @@ class ExperimentPersistenceService:
 
     def save_experiment(self, experiment: Experiment) -> Experiment:
         existing = self._session.scalar(
-            select(ExperimentModel).where(
-                ExperimentModel.experiment_id == experiment.experiment_id
-            )
+            select(ExperimentModel).where(ExperimentModel.experiment_id == experiment.experiment_id)
         )
         if existing is not None:
             return self._to_experiment(existing)
@@ -110,7 +108,9 @@ class ExperimentPersistenceService:
         rows = self._session.scalars(
             select(ExperimentOutcomeModel)
             .where(ExperimentOutcomeModel.experiment_id == experiment_id)
-            .order_by(ExperimentOutcomeModel.created_at.asc(), ExperimentOutcomeModel.assignment_id.asc())
+            .order_by(
+                ExperimentOutcomeModel.created_at.asc(), ExperimentOutcomeModel.assignment_id.asc()
+            )
         ).all()
         return tuple(self._to_outcome(row) for row in rows)
 
