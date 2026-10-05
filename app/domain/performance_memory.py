@@ -197,7 +197,6 @@ class PerformanceQueryResult:
             raise ValueError("time_series must contain at least one point")
 
 
-
 @dataclass(frozen=True, slots=True)
 class PerformanceDataQuality:
     """Deterministic data quality and confidence assessment for performance memory."""
