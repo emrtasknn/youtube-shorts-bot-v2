@@ -33,6 +33,13 @@ class ExperimentPersistenceService:
             select(ExperimentModel).where(ExperimentModel.experiment_id == experiment.experiment_id)
         )
         if existing is not None:
+            if (
+                existing.name != experiment.name
+                or existing.status != experiment.status.value
+                or existing.dimension != experiment.dimension.value
+                or existing.minimum_sample_size != experiment.minimum_sample_size
+            ):
+                raise ValueError("existing experiment conflicts with supplied definition")
             return self._to_experiment(existing)
         row = ExperimentModel(
             id=uuid4(),
@@ -62,6 +69,13 @@ class ExperimentPersistenceService:
             )
         )
         if existing is not None:
+            if (
+                existing.experiment_id != assignment.experiment_id
+                or existing.variant_id != assignment.variant_id
+                or existing.run_key != assignment.run_key
+                or existing.status != assignment.status.value
+            ):
+                raise ValueError("existing assignment conflicts with supplied definition")
             return self._to_assignment(existing)
         row = ExperimentAssignmentModel(
             id=uuid4(),
@@ -83,12 +97,23 @@ class ExperimentPersistenceService:
     ) -> ExperimentOutcome:
         if assignment.experiment_id != experiment.experiment_id:
             raise ValueError("assignment does not belong to experiment")
+        if outcome.assignment_id != assignment.assignment_id:
+            raise ValueError("outcome does not belong to assignment")
         existing = self._session.scalar(
             select(ExperimentOutcomeModel).where(
                 ExperimentOutcomeModel.assignment_id == outcome.assignment_id
             )
         )
         if existing is not None:
+            if (
+                existing.experiment_id != experiment.experiment_id
+                or existing.variant_id != assignment.variant_id
+                or existing.sample_count != outcome.sample_count
+                or existing.average_views != outcome.average_views
+                or existing.average_retention != outcome.average_retention
+                or existing.engagement_rate != outcome.engagement_rate
+            ):
+                raise ValueError("existing outcome conflicts with supplied definition")
             return self._to_outcome(existing)
         row = ExperimentOutcomeModel(
             id=uuid4(),
@@ -103,6 +128,26 @@ class ExperimentPersistenceService:
         self._session.add(row)
         self._session.flush()
         return outcome
+
+    def list_outcome_records(
+        self, experiment: Experiment
+    ) -> tuple[tuple[ExperimentVariant, ExperimentOutcome], ...]:
+        variants = {variant.variant_id: variant for variant in experiment.variants}
+        rows = self._session.scalars(
+            select(ExperimentOutcomeModel)
+            .where(ExperimentOutcomeModel.experiment_id == experiment.experiment_id)
+            .order_by(
+                ExperimentOutcomeModel.created_at.asc(),
+                ExperimentOutcomeModel.assignment_id.asc(),
+            )
+        ).all()
+        records: list[tuple[ExperimentVariant, ExperimentOutcome]] = []
+        for row in rows:
+            variant = variants.get(row.variant_id)
+            if variant is None:
+                raise ValueError("outcome references an unknown experiment variant")
+            records.append((variant, self._to_outcome(row)))
+        return tuple(records)
 
     def list_outcomes(self, experiment_id: UUID) -> tuple[ExperimentOutcome, ...]:
         rows = self._session.scalars(
