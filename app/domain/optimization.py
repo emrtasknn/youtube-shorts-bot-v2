@@ -85,9 +85,7 @@ class OptimizationDecision:
             control_variant_id=original.control_variant_id,
             uplift=original.uplift,
             confidence=original.confidence,
-            rationale=(
-                f"Rollback of optimization decision {original.decision_id}.",
-            ),
+            rationale=(f"Rollback of optimization decision {original.decision_id}.",),
         )
 
     @classmethod
