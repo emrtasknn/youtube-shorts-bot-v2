@@ -651,7 +651,7 @@ def test_m8_performance_memory_pipeline_is_end_to_end_deterministic() -> None:
 
             assert result.memory.content_id == first_memory.content_id
             assert result.baseline is not None
-            assert result.baseline.sample_count == 2
+            assert result.baseline.sample_count == 3
             assert result.baseline.average_views == Decimal("1500")
             assert result.baseline.average_likes == Decimal("75")
             assert result.baseline.average_retention == Decimal("0.50")
