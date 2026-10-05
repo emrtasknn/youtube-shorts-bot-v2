@@ -47,7 +47,9 @@ class TopicSelectionService:
         if not eligible:
             return TopicSelectionDecision.no_selection(
                 candidate_ids=candidate_ids,
-                rationale=(f"No candidate reached the minimum score of {self.policy.minimum_score}.",),
+                rationale=(
+                    f"No candidate reached the minimum score of {self.policy.minimum_score}.",
+                ),
             )
 
         winner = max(
