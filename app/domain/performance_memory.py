@@ -195,3 +195,32 @@ class PerformanceQueryResult:
     def __post_init__(self) -> None:
         if not self.time_series:
             raise ValueError("time_series must contain at least one point")
+
+
+
+@dataclass(frozen=True, slots=True)
+class PerformanceDataQuality:
+    """Deterministic data quality and confidence assessment for performance memory."""
+
+    confidence: str
+    quality_score: Decimal
+    snapshot_count: int
+    production_feature_completeness: Decimal
+    metric_completeness: Decimal
+    has_baseline: bool
+    time_series_point_count: int
+    issues: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.confidence not in {"HIGH", "MEDIUM", "LOW", "INSUFFICIENT"}:
+            raise ValueError("confidence must be HIGH, MEDIUM, LOW, or INSUFFICIENT")
+        if not 0 <= self.quality_score <= 1:
+            raise ValueError("quality_score must be between 0 and 1")
+        if self.snapshot_count < 0:
+            raise ValueError("snapshot_count must be non-negative")
+        if not 0 <= self.production_feature_completeness <= 1:
+            raise ValueError("production_feature_completeness must be between 0 and 1")
+        if not 0 <= self.metric_completeness <= 1:
+            raise ValueError("metric_completeness must be between 0 and 1")
+        if self.time_series_point_count < 0:
+            raise ValueError("time_series_point_count must be non-negative")
