@@ -66,3 +66,12 @@ def test_unused_recommendations_remain_eligible_for_a_later_decision() -> None:
         decision,
         previously_applied_recommendation_ids=(str(FIRST_ID),),
     )
+
+
+def test_safety_validation_does_not_mutate_decision() -> None:
+    decision = _decision(applied_ids=(FIRST_ID, SECOND_ID))
+    before = decision
+
+    ProductionDecisionSafety(POLICY_VERSION).validate(decision)
+
+    assert decision == before
