@@ -2,8 +2,6 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
-from app.application.services.decision_policy import DecisionPolicyEngine
-from app.domain.decision import DecisionDimension, DecisionPolicy
 from app.domain.learning import (
     ConfidenceLevel,
     LearningEvidence,
@@ -12,6 +10,8 @@ from app.domain.learning import (
     RecommendationStatus,
     SignalDirection,
 )
+from app.application.services.decision_policy import DecisionPolicyEngine
+from app.domain.decision import DecisionDimension, DecisionPolicy
 
 
 CREATED_AT = datetime(2026, 10, 5, tzinfo=UTC)
