@@ -116,7 +116,6 @@ def test_extractor_skips_missing_optional_features_and_metrics() -> None:
 
 def test_extractor_does_not_treat_raw_hook_text_as_a_hook_type() -> None:
     result = make_result()
-    result.memory.features.__class__
     observations = LearningFeatureExtractionService().extract([result])
 
     assert not any(item.feature.value == "hook_type" for item in observations)
