@@ -115,9 +115,9 @@ class GenerateCustomShort:
             if request.experiment_variant is not None
             else None
         )
-        selected_topic = TopicSelectionProductionAdapter(request.topic_selection_decision).resolve_topic(
-            request.topic
-        )
+        selected_topic = TopicSelectionProductionAdapter(
+            request.topic_selection_decision
+        ).resolve_topic(request.topic)
         topic = (
             experiment_override.topic
             if experiment_override is not None and experiment_override.topic is not None
