@@ -102,9 +102,15 @@ class TopicSelectionDecision:
                 raise ValueError("selected decisions require a candidate and topic")
             if self.selected_score is None:
                 raise ValueError("selected decisions require a score")
+            if self.selected_score.candidate_id != self.selected_candidate_id:
+                raise ValueError("selected score must belong to the selected candidate")
+            if self.selected_candidate_id not in self.candidate_ids:
+                raise ValueError("selected candidate must be present in candidate_ids")
         elif self.status is TopicDecisionStatus.NO_SELECTION:
             if self.selected_candidate_id is not None or self.selected_topic is not None:
                 raise ValueError("no-selection decisions cannot select a topic")
+        if len(set(self.candidate_ids)) != len(self.candidate_ids):
+            raise ValueError("candidate_ids must be unique")
         if any(not item.strip() for item in self.rationale):
             raise ValueError("decision rationale entries must not be blank")
 
@@ -114,9 +120,10 @@ class TopicSelectionDecision:
         *,
         candidate_ids: tuple[UUID, ...] = (),
         rationale: tuple[str, ...] = (),
+        decision_id: UUID | None = None,
     ) -> TopicSelectionDecision:
         return cls(
-            decision_id=uuid4(),
+            decision_id=decision_id or uuid4(),
             status=TopicDecisionStatus.NO_SELECTION,
             selected_candidate_id=None,
             selected_topic=None,
