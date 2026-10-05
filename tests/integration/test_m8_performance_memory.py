@@ -575,9 +575,9 @@ def test_performance_query_matches_baseline_by_production_strategy() -> None:
             assert result.baseline.production_strategy == "custom_single_vertical_slice"
             assert result.baseline.sample_count == 1
             assert result.baseline.average_views == Decimal("1000")
-    assert result.quality is not None
-    assert result.quality.confidence == "LOW"
-    assert result.quality.has_baseline is True
+            assert result.quality is not None
+            assert result.quality.confidence == "LOW"
+            assert result.quality.has_baseline is True
             session.rollback()
     finally:
         engine.dispose()
