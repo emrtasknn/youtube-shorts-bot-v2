@@ -151,7 +151,7 @@ def test_existing_assignment_conflict_is_rejected() -> None:
         "run-1",
     )
     existing = ExperimentAssignmentModel(
-        id=UUID("00000000-0000-0000-000000000508".replace("-", "")),
+        id=UUID("00000000-0000-0000-0000-000000000508"),
         assignment_id=ASSIGNMENT_ID,
         experiment_id=EXPERIMENT_ID,
         variant_id=UUID("00000000-0000-0000-0000-000000000509"),
