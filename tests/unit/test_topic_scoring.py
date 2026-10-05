@@ -73,8 +73,7 @@ def test_comparable_performance_is_included() -> None:
     )
 
     assert any(
-        item.evidence_type is TopicEvidenceType.HISTORICAL_PERFORMANCE
-        for item in score.evidence
+        item.evidence_type is TopicEvidenceType.HISTORICAL_PERFORMANCE for item in score.evidence
     )
     assert any("12 comparable observations" in item for item in score.rationale)
 
