@@ -51,5 +51,3 @@ def test_no_selection_requires_manual_fallback() -> None:
 
     with pytest.raises(ValueError, match="fallback topic"):
         TopicSelectionProductionAdapter(decision).resolve_topic("   ")
-
-
