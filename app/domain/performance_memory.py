@@ -191,6 +191,7 @@ class PerformanceQueryResult:
     memory: PerformanceMemory
     baseline: PerformanceBaseline | None
     time_series: tuple[PerformanceTimeSeriesPoint, ...]
+    quality: PerformanceDataQuality | None = None
 
     def __post_init__(self) -> None:
         if not self.time_series:
