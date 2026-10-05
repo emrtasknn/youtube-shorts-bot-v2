@@ -236,11 +236,8 @@ class TelegramControlPlane:
             try:
                 PerformanceMemoryService(self._session).capture_production_snapshot(publication.id)
                 self._session.commit()
-            except Exception as snapshot_exc:
+            except Exception:
                 self._session.rollback()
-                raise RuntimeError(
-                    f"Published successfully, but production snapshot capture failed: {snapshot_exc}"
-                ) from snapshot_exc
 
             return f"Published: {result.url}"
         except Exception as exc:
