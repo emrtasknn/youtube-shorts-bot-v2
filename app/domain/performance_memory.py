@@ -82,13 +82,16 @@ class PerformanceAggregate:
             raise ValueError("language is required")
         if self.sample_count <= 0:
             raise ValueError("sample_count must be positive")
-        if min(
-            self.views_total,
-            self.likes_total,
-            self.comments_total,
-            self.shares_total,
-            self.subscribers_gained_total,
-        ) < 0:
+        if (
+            min(
+                self.views_total,
+                self.likes_total,
+                self.comments_total,
+                self.shares_total,
+                self.subscribers_gained_total,
+            )
+            < 0
+        ):
             raise ValueError("aggregate counts must be non-negative")
         if (
             self.average_view_duration_seconds is not None
