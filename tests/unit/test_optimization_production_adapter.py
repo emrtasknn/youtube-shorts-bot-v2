@@ -77,20 +77,20 @@ def test_optimization_topic_cannot_override_m11() -> None:
 
 
 def test_stale_optimization_policy_is_rejected() -> None:
+    decision = _decision(ExperimentDimension.ANGLE, "optimized angle")
+    stale = OptimizationDecision(
+        decision_id=decision.decision_id,
+        policy_version="m13-v0",
+        status=OptimizationDecisionStatus.PROMOTED,
+        experiment_id=decision.experiment_id,
+        dimension=decision.dimension,
+        winner_variant_id=decision.winner_variant_id,
+        value=decision.value,
+        control_variant_id=decision.control_variant_id,
+        uplift=decision.uplift,
+        confidence=decision.confidence,
+        rationale=decision.rationale,
+    )
+
     with pytest.raises(ValueError, match="stale"):
-        OptimizationProductionAdapter().resolve(
-            _decision(ExperimentDimension.ANGLE, "optimized angle")
-            .__class__(
-                decision_id=_decision(ExperimentDimension.ANGLE, "optimized angle").decision_id,
-                policy_version="m13-v0",
-                status=OptimizationDecisionStatus.PROMOTED,
-                experiment_id=_decision(ExperimentDimension.ANGLE, "optimized angle").experiment_id,
-                dimension=ExperimentDimension.ANGLE,
-                winner_variant_id=_decision(ExperimentDimension.ANGLE, "optimized angle").winner_variant_id,
-                value="optimized angle",
-                control_variant_id=_decision(ExperimentDimension.ANGLE, "optimized angle").control_variant_id,
-                uplift=Decimal("0.2"),
-                confidence=ConfidenceLevel.HIGH,
-                rationale=("promoted",),
-            )
-        )
+        OptimizationProductionAdapter().resolve(stale)
