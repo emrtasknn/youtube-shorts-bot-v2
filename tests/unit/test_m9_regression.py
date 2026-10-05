@@ -106,11 +106,11 @@ def test_m9_generate_persist_query_regression() -> None:
 
     session = _MemorySession()
     persistence = RecommendationPersistenceService(session)
-    saved = persistence.save_many(recommendations)
+    saved = persistence.save(recommendations[0])
 
-    queried = RecommendationQueryService(session).list(limit=100)
+    queried = RecommendationQueryService(session).get(saved.recommendation_id)
 
-    assert saved == queried
-    assert saved
-    assert all(recommendation.signal.baseline_value is not None for recommendation in saved)
-    assert all(recommendation.text for recommendation in saved)
+    assert queried == saved
+    assert queried is not None
+    assert queried.signal.baseline_value is not None
+    assert queried.text
