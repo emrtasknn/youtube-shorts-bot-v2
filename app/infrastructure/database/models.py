@@ -550,3 +550,24 @@ class ExperimentOutcomeModel(Base):
     average_retention: Mapped[Decimal | None] = mapped_column(Numeric(8, 5))
     engagement_rate: Mapped[Decimal | None] = mapped_column(Numeric(8, 5))
     created_at: Mapped[datetime] = created_at()
+
+
+class OptimizationDecisionModel(Base):
+    __tablename__ = "optimization_decisions"
+    __table_args__ = (
+        UniqueConstraint("decision_id", name="uq_optimization_decisions_decision_id"),
+        Index("ix_optimization_decisions_experiment_created", "experiment_id", "created_at"),
+    )
+    id: Mapped[UUID] = uuid_pk()
+    decision_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    policy_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    experiment_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    dimension: Mapped[str | None] = mapped_column(String(64))
+    winner_variant_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True))
+    value: Mapped[str | None] = mapped_column(String(500))
+    control_variant_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True))
+    uplift: Mapped[Decimal | None] = mapped_column(Numeric(8, 4))
+    confidence: Mapped[str] = mapped_column(String(32), nullable=False)
+    rationale: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = created_at()
