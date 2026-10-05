@@ -58,12 +58,9 @@ class RecommendationQueryService:
         if direction is not None:
             statement = statement.where(RecommendationModel.direction == direction.value)
 
-        statement = (
-            statement.order_by(
-                RecommendationModel.created_at.desc(),
-                RecommendationModel.recommendation_id.desc(),
-            )
-            .limit(limit)
-        )
+        statement = statement.order_by(
+            RecommendationModel.created_at.desc(),
+            RecommendationModel.recommendation_id.desc(),
+        ).limit(limit)
         models = self._session.scalars(statement).all()
         return tuple(RecommendationPersistenceService.to_recommendation(model) for model in models)
