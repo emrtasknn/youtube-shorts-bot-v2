@@ -25,9 +25,7 @@ class RecommendationEngine:
 
     def generate(self, signals: Iterable[LearningSignal]) -> tuple[Recommendation, ...]:
         recommendations = [
-            self._build_recommendation(signal)
-            for signal in signals
-            if self._is_actionable(signal)
+            self._build_recommendation(signal) for signal in signals if self._is_actionable(signal)
         ]
         return tuple(
             sorted(
