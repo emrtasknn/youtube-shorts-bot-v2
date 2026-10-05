@@ -595,7 +595,7 @@ def test_m8_performance_memory_pipeline_is_end_to_end_deterministic() -> None:
             second_memory = memory_service.capture_production_snapshot(second.id)
 
             assert first_memory.features.category == second_memory.features.category
-            assert first_memory.features.production_strategy == second_memory.features.production_strategy
+            assert (\n                first_memory.features.production_strategy\n                == second_memory.features.production_strategy\n            )
 
             first_snapshot = session.scalar(
                 select(PerformanceSnapshotModel).where(
