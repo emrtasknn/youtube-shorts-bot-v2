@@ -141,3 +141,24 @@ def test_list_outcome_records_rehydrates_variants() -> None:
 
     assert records[0][0] == experiment.variants[0]
     assert records[0][1].assignment_id == ASSIGNMENT_ID
+
+def test_existing_assignment_conflict_is_rejected() -> None:
+    session = MagicMock()
+    assignment = ExperimentAssignment(
+        ASSIGNMENT_ID,
+        EXPERIMENT_ID,
+        VARIANT_A,
+        "run-1",
+    )
+    existing = ExperimentAssignmentModel(
+        id=UUID("00000000-0000-0000-000000000508".replace("-", "")),
+        assignment_id=ASSIGNMENT_ID,
+        experiment_id=EXPERIMENT_ID,
+        variant_id=UUID("00000000-0000-0000-0000-000000000509"),
+        run_key="run-1",
+        status=ExperimentAssignmentStatus.ASSIGNED.value,
+    )
+    session.scalar.return_value = existing
+
+    with pytest.raises(ValueError, match="conflicts"):
+        ExperimentPersistenceService(session).save_assignment(assignment)
