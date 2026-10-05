@@ -51,7 +51,7 @@ class TopicSelectionService:
         eligible = [
             score for score in score_by_id.values() if score.total >= self.policy.minimum_score
         ]
-        decision_id = self._decision_id(candidate_ids, tuple(score_by_id.values()))
+        decision_id = self._decision_id(candidates, tuple(score_by_id.values()))
 
         if not eligible:
             return TopicSelectionDecision.no_selection(
@@ -87,12 +87,20 @@ class TopicSelectionService:
 
     def _decision_id(
         self,
-        candidate_ids: tuple[UUID, ...],
+        candidates: tuple[TopicCandidate, ...],
         scores: tuple[TopicScore, ...],
     ) -> UUID:
         payload = {
             "policy_minimum_score": str(self.policy.minimum_score),
-            "candidate_ids": [str(item) for item in candidate_ids],
+            "candidates": [
+                {
+                    "candidate_id": str(candidate.candidate_id),
+                    "title": candidate.title,
+                    "source": candidate.source,
+                    "angle": candidate.angle,
+                }
+                for candidate in sorted(candidates, key=lambda item: str(item.candidate_id))
+            ],
             "scores": [
                 {
                     "candidate_id": str(score.candidate_id),
