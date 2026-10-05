@@ -482,3 +482,20 @@ class EventMemoryModel(Base):
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
+
+
+class TopicSelectionDecisionModel(Base):
+    __tablename__ = "topic_selection_decisions"
+    __table_args__ = (
+        UniqueConstraint("decision_id", name="uq_topic_selection_decisions_decision_id"),
+        Index("ix_topic_selection_decisions_status_created", "status", "created_at"),
+    )
+    id: Mapped[UUID] = uuid_pk()
+    decision_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    selected_candidate_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True))
+    selected_topic: Mapped[str | None] = mapped_column(String(500))
+    candidate_ids: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    selected_score: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    rationale: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = created_at()
