@@ -57,3 +57,46 @@ class PerformanceMemory:
             raise ValueError("platform is required")
         if not self.platform_post_id:
             raise ValueError("platform_post_id is required")
+
+
+@dataclass(frozen=True, slots=True)
+class PerformanceAggregate:
+    """Aggregated measured performance for a stable production cohort."""
+
+    category: str
+    language: str
+    production_strategy: str | None
+    sample_count: int
+    views_total: int
+    likes_total: int
+    comments_total: int
+    shares_total: int
+    subscribers_gained_total: int
+    average_view_duration_seconds: Decimal | None = None
+    average_retention: Decimal | None = None
+
+    def __post_init__(self) -> None:
+        if not self.category:
+            raise ValueError("category is required")
+        if not self.language:
+            raise ValueError("language is required")
+        if self.sample_count <= 0:
+            raise ValueError("sample_count must be positive")
+        if (
+            min(
+                self.views_total,
+                self.likes_total,
+                self.comments_total,
+                self.shares_total,
+                self.subscribers_gained_total,
+            )
+            < 0
+        ):
+            raise ValueError("aggregate counts must be non-negative")
+        if (
+            self.average_view_duration_seconds is not None
+            and self.average_view_duration_seconds < 0
+        ):
+            raise ValueError("average_view_duration_seconds must be non-negative")
+        if self.average_retention is not None and not 0 <= self.average_retention <= 1:
+            raise ValueError("average_retention must be between 0 and 1")
