@@ -7,7 +7,6 @@ from app.application.services.production_decision_adapter import ProductionDecis
 from app.application.services.production_decision_safety import ProductionDecisionSafety
 from app.domain.decision import ProductionDecision
 
-
 POLICY_VERSION = "m10-v1"
 FIRST_ID = UUID("00000000-0000-0000-0000-000000000001")
 SECOND_ID = UUID("00000000-0000-0000-0000-000000000002")
