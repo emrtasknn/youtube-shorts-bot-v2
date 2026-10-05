@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
+from app.application.services.optimization_safety import OptimizationDecisionSafety
 from app.domain.decision import ProductionDecision
 from app.domain.optimization import OptimizationDecision, OptimizationDecisionStatus
 from app.domain.topic_optimization import TopicDecisionStatus, TopicSelectionDecision
@@ -19,6 +20,8 @@ class OptimizationProductionOverride:
 class OptimizationProductionAdapter:
     """Translate a promoted optimization decision into bounded generation input."""
 
+    current_policy_version: str = "m13-v1"
+
     def resolve(
         self,
         decision: OptimizationDecision,
@@ -26,6 +29,7 @@ class OptimizationProductionAdapter:
         production_decision: ProductionDecision | None = None,
         topic_selection_decision: TopicSelectionDecision | None = None,
     ) -> OptimizationProductionOverride:
+        OptimizationDecisionSafety(self.current_policy_version).validate(decision)
         if decision.status is not OptimizationDecisionStatus.PROMOTED:
             return OptimizationProductionOverride()
 
