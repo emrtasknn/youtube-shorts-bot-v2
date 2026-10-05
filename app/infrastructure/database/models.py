@@ -345,6 +345,33 @@ class PerformanceSnapshotModel(Base):
     created_at: Mapped[datetime] = created_at()
 
 
+class RecommendationModel(Base):
+    __tablename__ = "recommendations"
+    __table_args__ = (
+        UniqueConstraint("recommendation_id", name="uq_recommendations_recommendation_id"),
+        Index("ix_recommendations_status_created", "status", "created_at"),
+        Index("ix_recommendations_feature_metric", "feature", "metric"),
+    )
+    id: Mapped[UUID] = uuid_pk()
+    recommendation_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    signal_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    feature: Mapped[str] = mapped_column(String(100), nullable=False)
+    feature_value: Mapped[str] = mapped_column(String(500), nullable=False)
+    metric: Mapped[str] = mapped_column(String(100), nullable=False)
+    observed_value: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
+    baseline_value: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    delta: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    sample_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    baseline_available: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    data_quality_score: Mapped[Decimal] = mapped_column(Numeric(6, 5), nullable=False)
+    notes: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    confidence: Mapped[str] = mapped_column(String(32), nullable=False)
+    direction: Mapped[str] = mapped_column(String(32), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_at: Mapped[datetime] = created_at()
+
+
 class PublicationAttemptModel(Base):
     __tablename__ = "publication_attempts"
     __table_args__ = (
