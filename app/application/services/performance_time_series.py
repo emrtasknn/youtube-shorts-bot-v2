@@ -60,9 +60,7 @@ class PerformanceTimeSeriesService:
                 likes_delta = snapshot.likes - previous.likes
                 comments_delta = snapshot.comments - previous.comments
                 shares_delta = snapshot.shares - previous.shares
-                subscribers_gained_delta = (
-                    snapshot.subscribers_gained - previous.subscribers_gained
-                )
+                subscribers_gained_delta = snapshot.subscribers_gained - previous.subscribers_gained
 
                 if delta_hours > 0:
                     views_per_hour = Decimal(views_delta) / delta_hours
