@@ -522,7 +522,7 @@ def test_performance_query_returns_unified_memory_baseline_and_time_series() -> 
             assert result.memory.features.category == "HISTORY_FACT"
             assert result.memory.features.production_strategy == "custom_single_vertical_slice"
             assert result.baseline is not None
-            assert result.baseline.sample_count == 2
+            assert result.baseline.sample_count == 3
             assert result.baseline.average_views == Decimal("1200")
             assert result.baseline.average_likes == Decimal("60")
             assert result.baseline.engagement_rate == Decimal("150") / Decimal("2400")
