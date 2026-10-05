@@ -102,12 +102,16 @@ class TopicScoringService:
                     else TopicEvidenceType.CANDIDATE_METADATA
                 ),
                 value,
-                performance.comparable_observations
-                if name == "performance" and performance
-                else 0,
-                performance.confidence
-                if name == "performance" and performance
-                else Decimal("0"),
+                (
+                    performance.comparable_observations
+                    if name == "performance" and performance
+                    else 0
+                ),
+                (
+                    performance.confidence
+                    if name == "performance" and performance
+                    else Decimal("0")
+                ),
             )
             for name, value, _ in available
         )
@@ -129,9 +133,12 @@ class TopicScoringService:
         if candidate.novelty_score is not None:
             rationale.append("Novelty is included explicitly.")
         if performance is None or performance.comparable_observations == 0:
-            rationale.append("Historical performance is unavailable; no historical signal is used.")
+            rationale.append(
+                "Historical performance is unavailable; no historical signal is used."
+            )
         else:
             rationale.append(
-                f"Historical performance uses {performance.comparable_observations} comparable observations."
+                f"Historical performance uses "
+                f"{performance.comparable_observations} comparable observations."
             )
         return tuple(rationale)
