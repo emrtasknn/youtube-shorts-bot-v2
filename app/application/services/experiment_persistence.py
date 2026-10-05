@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.domain.experimentation import (
     Experiment,
+    ExperimentAssignment,
     ExperimentAssignmentStatus,
     ExperimentDimension,
-    ExperimentAssignment,
     ExperimentOutcome,
     ExperimentStatus,
     ExperimentVariant,
