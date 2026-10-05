@@ -104,6 +104,7 @@ def test_assignment_roundtrip() -> None:
     assert isinstance(row, ExperimentAssignmentModel)
     assert row.assignment_id == ASSIGNMENT_ID
 
+
 def test_outcome_must_match_assignment() -> None:
     session = MagicMock()
     session.scalar.return_value = None
@@ -141,6 +142,7 @@ def test_list_outcome_records_rehydrates_variants() -> None:
 
     assert records[0][0] == experiment.variants[0]
     assert records[0][1].assignment_id == ASSIGNMENT_ID
+
 
 def test_existing_assignment_conflict_is_rejected() -> None:
     session = MagicMock()
