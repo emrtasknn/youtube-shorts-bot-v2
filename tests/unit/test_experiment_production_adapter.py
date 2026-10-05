@@ -8,6 +8,7 @@ from app.application.services.experiment_production_adapter import (
 )
 from app.domain.decision import ProductionDecision
 from app.domain.experimentation import ExperimentDimension, ExperimentVariant
+from app.domain.topic_optimization import TopicDecisionStatus, TopicSelectionDecision
 
 ANGLE_ID = UUID("00000000-0000-0000-0000-000000000401")
 DURATION_ID = UUID("00000000-0000-0000-0000-000000000402")
@@ -58,3 +59,21 @@ def test_invalid_duration_is_rejected() -> None:
 
     with pytest.raises(ValueError, match="numeric"):
         ExperimentProductionAdapter().resolve(variant)
+
+def test_topic_variant_cannot_bypass_selected_topic_decision() -> None:
+    variant = ExperimentVariant(TOPIC_ID, "B", ExperimentDimension.TOPIC, "Ancient Rome")
+    decision = TopicSelectionDecision(
+        decision_id=UUID("00000000-0000-0000-0000-000000000404"),
+        status=TopicDecisionStatus.SELECTED,
+        selected_candidate_id=UUID("00000000-0000-0000-0000-000000000405"),
+        selected_topic="Roman Empire",
+        candidate_ids=(UUID("00000000-0000-0000-0000-000000000405"),),
+        selected_score=None,
+        rationale=("Selected by topic policy.",),
+    )
+
+    with pytest.raises(ValueError, match="TopicSelectionDecision"):
+        ExperimentProductionAdapter().resolve(
+            variant,
+            topic_selection_decision=decision,
+        )
