@@ -80,6 +80,7 @@ def test_selected_decision_requires_selection_contract() -> None:
         status=TopicDecisionStatus.SELECTED,
         selected_candidate_id=candidate_id,
         selected_topic="A topic",
+        candidate_ids=(candidate_id,),
         selected_score=score,
     )
 
