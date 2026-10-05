@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
@@ -423,7 +423,7 @@ def test_performance_time_series_builds_deterministic_growth_features() -> None:
                 publication_id=publication.id,
                 platform="YOUTUBE",
                 platform_post_id=publication.platform_post_id,
-                measured_at=second_time.replace(hour=1),
+                measured_at=second_time + timedelta(hours=6),
                 views=1500,
                 likes=75,
                 comments=12,
