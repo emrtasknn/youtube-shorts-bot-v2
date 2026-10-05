@@ -28,11 +28,19 @@ def test_topic_candidate_accepts_bounded_metadata_scores() -> None:
     assert candidate.relevance_score == Decimal("0.9")
 
 
-@pytest.mark.parametrize("field", ["relevance_score", "novelty_score", "trend_score", "evergreen_score"])
+@pytest.mark.parametrize(
+    "field",
+    ["relevance_score", "novelty_score", "trend_score", "evergreen_score"],
+)
 def test_topic_candidate_rejects_out_of_range_scores(field: str) -> None:
     values = {field: Decimal("1.1")}
     with pytest.raises(ValueError, match="between 0 and 1"):
-        TopicCandidate(candidate_id=uuid4(), title="Topic", source="research", **values)
+        TopicCandidate(
+            candidate_id=uuid4(),
+            title="Topic",
+            source="research",
+            **values,
+        )
 
 
 def test_topic_evidence_is_bounded_and_confidence_aware() -> None:
