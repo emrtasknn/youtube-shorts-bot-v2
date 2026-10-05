@@ -92,7 +92,9 @@ class GenerateCustomShort:
         self._storage_root = storage_root
 
     async def execute(self, request: CustomShortRequest) -> CustomShortResult:
-        topic = TopicSelectionProductionAdapter(request.topic_selection_decision).resolve_topic(request.topic)
+        topic = TopicSelectionProductionAdapter(request.topic_selection_decision).resolve_topic(
+            request.topic
+        )
         decision_adapter = ProductionDecisionAdapter(request.production_decision)
         if not topic:
             raise ValueError("Custom topic must not be empty")
