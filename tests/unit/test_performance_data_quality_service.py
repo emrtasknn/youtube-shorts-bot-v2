@@ -129,3 +129,46 @@ def test_data_quality_evaluator_flags_incomplete_production_features() -> None:
     assert quality.confidence == "MEDIUM"
     assert quality.production_feature_completeness == Decimal("3") / Decimal("7")
     assert "INCOMPLETE_PRODUCTION_FEATURES" in quality.issues
+
+
+def test_data_quality_keeps_zero_metrics_as_complete() -> None:
+    point = PerformanceTimeSeriesPoint(
+        publication_id=uuid4(),
+        measured_at=datetime.now(UTC),
+        elapsed_hours=Decimal("6"),
+        views=0,
+        likes=0,
+        comments=0,
+        shares=0,
+        subscribers_gained=0,
+        average_view_duration_seconds=Decimal("0"),
+        retention=Decimal("0"),
+    )
+    result = _result(baseline=_baseline(), points=(point, point))
+
+    quality = PerformanceDataQualityService().evaluate(result)
+
+    assert quality.metric_completeness == Decimal("1")
+    assert quality.confidence == "HIGH"
+
+
+def test_data_quality_flags_empty_visual_providers() -> None:
+    result = _result(
+        baseline=_baseline(),
+        points=(_point(), _point()),
+        features=PerformanceProductionFeatures(
+            category="HISTORY_FACT",
+            language="en",
+            topic="Roman Empire",
+            hook="The Roman Empire did this.",
+            scene_count=3,
+            visual_providers=(),
+            production_strategy="custom_single_vertical_slice",
+        ),
+    )
+
+    quality = PerformanceDataQualityService().evaluate(result)
+
+    assert quality.production_feature_completeness == Decimal("6") / Decimal("7")
+    assert quality.confidence == "MEDIUM"
+    assert "INCOMPLETE_PRODUCTION_FEATURES" in quality.issues
