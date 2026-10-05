@@ -8,10 +8,7 @@ from app.application.services.topic_scoring import (
     TopicScoringPolicy,
     TopicScoringService,
 )
-from app.domain.topic_optimization import (
-    TopicCandidate,
-    TopicEvidenceType,
-)
+from app.domain.topic_optimization import TopicCandidate, TopicEvidenceType
 
 
 def candidate(**overrides: object) -> TopicCandidate:
