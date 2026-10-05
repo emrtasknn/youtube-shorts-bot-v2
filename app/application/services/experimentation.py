@@ -9,10 +9,9 @@ from app.domain.experimentation import (
     Experiment,
     ExperimentAnalysis,
     ExperimentAssignment,
-    ExperimentAssignmentStatus,
     ExperimentOutcome,
-    ExperimentVariant,
     ExperimentStatus,
+    ExperimentVariant,
 )
 
 
@@ -86,6 +85,6 @@ class ExperimentAnalysisService:
             total_samples=total_samples,
             rationale=(
                 "Analysis uses weighted average views among variants meeting minimum sample size.",
-                f"Winner selected deterministically by highest average views, then variant ID.",
+                "Winner selected deterministically by highest average views, then variant ID.",
             ),
         )
