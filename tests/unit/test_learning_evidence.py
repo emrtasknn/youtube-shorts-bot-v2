@@ -60,7 +60,7 @@ def _result(
     )
     point = PerformanceTimeSeriesPoint(
         publication_id=publication_id,
-        measured_at=datetime(2026, 10, 2, tzinfo=timezone.utc),
+        measured_at=datetime(2026, 10, 2, tzinfo=UTC),
         elapsed_hours=Decimal("24"),
         views=views,
         likes=10,
@@ -100,7 +100,7 @@ def test_builds_positive_signal_against_single_comparable_baseline() -> None:
     signal = LearningEvidenceService().evaluate(
         (observation,),
         (result,),
-        created_at=datetime(2026, 10, 5, tzinfo=timezone.utc),
+        created_at=datetime(2026, 10, 5, tzinfo=UTC),
     )[0]
 
     assert signal.baseline_value == Decimal("1000")
@@ -124,7 +124,7 @@ def test_category_does_not_compare_against_its_own_category_baseline() -> None:
     signal = LearningEvidenceService().evaluate(
         (observation,),
         (result,),
-        created_at=datetime(2026, 10, 5, tzinfo=timezone.utc),
+        created_at=datetime(2026, 10, 5, tzinfo=UTC),
     )[0]
 
     assert signal.baseline_value is None
@@ -148,7 +148,7 @@ def test_mixed_baseline_cohorts_are_not_compared() -> None:
     signal = LearningEvidenceService().evaluate(
         (observation,),
         (first, second),
-        created_at=datetime(2026, 10, 5, tzinfo=timezone.utc),
+        created_at=datetime(2026, 10, 5, tzinfo=UTC),
     )[0]
 
     assert signal.baseline_value is None
@@ -169,7 +169,7 @@ def test_zero_quality_forces_insufficient_confidence() -> None:
     signal = LearningEvidenceService().evaluate(
         (observation,),
         (result,),
-        created_at=datetime(2026, 10, 5, tzinfo=timezone.utc),
+        created_at=datetime(2026, 10, 5, tzinfo=UTC),
     )[0]
 
     assert signal.confidence is ConfidenceLevel.INSUFFICIENT
