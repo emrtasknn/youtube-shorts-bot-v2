@@ -43,14 +43,17 @@ class PerformanceDataQualityService:
             len(_REQUIRED_PRODUCTION_FIELDS)
         )
 
-        metric_present = Decimal(5)
-        metric_total = Decimal(5 + len(_OPTIONAL_METRIC_FIELDS))
+        snapshot_count = len(result.time_series)
+        metric_total = Decimal(5 + len(_OPTIONAL_METRIC_FIELDS)) * Decimal(
+            snapshot_count
+        )
+        metric_present = Decimal(5 * snapshot_count)
         for point in result.time_series:
             metric_present += sum(
                 getattr(point, field) is not None for field in _OPTIONAL_METRIC_FIELDS
             )
-        metric_completeness = metric_present / (
-            metric_total * Decimal(len(result.time_series))
+        metric_completeness = (
+            metric_present / metric_total if metric_total else Decimal("0")
         )
 
         issues: list[str] = []
@@ -63,7 +66,6 @@ class PerformanceDataQualityService:
         if metric_completeness < 1:
             issues.append("INCOMPLETE_OPTIONAL_METRICS")
 
-        snapshot_count = len(result.time_series)
         if snapshot_count == 0:
             confidence = "INSUFFICIENT"
         elif snapshot_count == 1 or result.baseline is None:
