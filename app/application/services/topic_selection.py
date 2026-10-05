@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.domain.topic_optimization import (
     TopicCandidate,
     TopicDecisionStatus,
+    TopicEvidenceType,
     TopicScore,
     TopicSelectionDecision,
 )
@@ -67,7 +68,7 @@ class TopicSelectionService:
         candidate = candidate_by_id[winner.candidate_id]
 
         return TopicSelectionDecision(
-            decision_id=UUID(int=0),
+            decision_id=uuid4(),
             status=TopicDecisionStatus.SELECTED,
             selected_candidate_id=candidate.candidate_id,
             selected_topic=candidate.title,
@@ -82,7 +83,7 @@ class TopicSelectionService:
     @staticmethod
     def _novelty_value(score: TopicScore) -> Decimal:
         for evidence in score.evidence:
-            if evidence.evidence_type.value == "novelty":
+            if evidence.evidence_type is TopicEvidenceType.NOVELTY:
                 return evidence.value
         return Decimal("0")
 
