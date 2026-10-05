@@ -96,17 +96,14 @@ def test_topic_selection_does_not_bypass_m10_recommendation_reuse_guard() -> Non
     reused = ProductionDecision(
         decision_id=UUID("00000000-0000-0000-0000-000000000104"),
         policy_version=POLICY_VERSION,
-        applied_recommendation_ids=(
-            UUID("00000000-0000-0000-0000-000000000201"),
-        ),
+        applied_recommendation_ids=(UUID("00000000-0000-0000-0000-000000000201"),),
+        eligible_recommendation_ids=(UUID("00000000-0000-0000-0000-000000000201"),),
     )
 
     with pytest.raises(ValueError, match="reuses already applied"):
         ProductionDecisionSafety(POLICY_VERSION).validate(
             reused,
-            previously_applied_recommendation_ids=(
-                "00000000-0000-0000-0000-000000000201",
-            ),
+            previously_applied_recommendation_ids=("00000000-0000-0000-0000-000000000201",),
         )
 
     assert topic == "The history of a vanished city"
