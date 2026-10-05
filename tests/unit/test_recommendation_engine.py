@@ -19,12 +19,13 @@ def _signal(
     baseline_available: bool = True,
     delta: Decimal | None = Decimal("10"),
 ) -> LearningSignal:
+    observed_value = Decimal("110") if delta is None or delta >= 0 else Decimal("90")
     return LearningSignal(
         signal_id=uuid4(),
         feature="angle",
         feature_value="surprising",
         metric="views",
-        observed_value=Decimal("110"),
+        observed_value=observed_value,
         baseline_value=Decimal("100") if delta is not None else None,
         delta=delta,
         evidence=LearningEvidence(
