@@ -1,4 +1,6 @@
 from unittest.mock import MagicMock
+
+import pytest
 from uuid import UUID
 
 from app.application.services.experiment_persistence import ExperimentPersistenceService
