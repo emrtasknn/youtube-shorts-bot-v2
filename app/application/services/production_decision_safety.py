@@ -28,9 +28,7 @@ class ProductionDecisionSafety:
         conflict = current & previous
         if conflict:
             conflict_ids = ", ".join(sorted(conflict))
-            raise ValueError(
-                f"Decision reuses already applied recommendation IDs: {conflict_ids}"
-            )
+            raise ValueError(f"Decision reuses already applied recommendation IDs: {conflict_ids}")
 
     @staticmethod
     def rollback(*, policy_version: str) -> ProductionDecision:
