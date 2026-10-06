@@ -99,15 +99,17 @@ class YouTubePublisher:
         owned = self._client is None
         upload_url = request.upload_session_url
         try:
+            is_new_session = request.upload_session_url is None
             if upload_url is None:
                 upload_url = await self._initiate(client, token, metadata, total_bytes)
 
-            offset = await self._query_session(
-                client, token, upload_url, total_bytes, initial=request.upload_session_url is None
-            )
-            offset = offset or 0
+            offset = 0
+            if not is_new_session:
+                offset = (await self._query_session(
+                    client, token, upload_url, total_bytes, initial=False
+                )) or 0
 
-            if request.upload_session_url is not None and offset >= total_bytes:
+            if not is_new_session and offset >= total_bytes:
                 completed = await self._query_completion(
                     client, token, upload_url, total_bytes
                 )
