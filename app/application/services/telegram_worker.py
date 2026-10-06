@@ -35,14 +35,21 @@ class TelegramWorker:
 
     async def send_pending(self) -> int:
         approvals = self._session.scalars(
-            select(ApprovalModel).where(ApprovalModel.status == "PENDING")
+            select(ApprovalModel)
+            .where(ApprovalModel.status == "PENDING")
+            .order_by(ApprovalModel.requested_at.desc())
         ).all()
         sent = 0
         for approval in approvals:
             run = self._session.get(RunModel, approval.run_id)
-            if run and run.status == RunStatus.READY_FOR_APPROVAL:
+            if not run or run.status != RunStatus.READY_FOR_APPROVAL:
+                continue
+            try:
                 await self._control.send_review(self._admin_chat_id, run.id)
-                sent += 1
+            except FileNotFoundError:
+                # A stale pending approval must not block newer ready runs.
+                continue
+            sent += 1
         return sent
 
     async def run_forever(self) -> None:
