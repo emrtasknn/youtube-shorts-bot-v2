@@ -26,8 +26,8 @@ from app.application.services.optimization_persistence import OptimizationDecisi
 from app.application.services.optimization_production_adapter import OptimizationProductionAdapter
 from app.application.services.production_decision_adapter import ProductionDecisionAdapter
 from app.application.services.scene_contract import build_scene_contract
-from app.application.services.script_completeness import ScriptCompletenessGate
 from app.application.services.scene_timing import SceneTimingAllocator
+from app.application.services.script_completeness import ScriptCompletenessGate
 from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.topic_selection_production_adapter import (
