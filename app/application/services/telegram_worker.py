@@ -13,7 +13,8 @@ from app.infrastructure.database.models import (
     ApprovalModel,
     RunModel,
     TelegramUpdateReceiptModel,
-)from app.infrastructure.telegram.bot import TelegramBot
+)
+from app.infrastructure.telegram.bot import TelegramBot
 
 
 class TelegramWorker:
