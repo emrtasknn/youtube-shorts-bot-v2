@@ -6,11 +6,12 @@ from app.application.services.audio_ducking import AudioDucking, DuckingConfig
 def test_ducking_filter_uses_sidechain_compression() -> None:
     filter_graph = AudioDucking().build_filter()
 
-    assert "[bgm][voice]sidechaincompress=" in filter_graph
+    assert "[voice]asplit=2[voice_mix][voice_sidechain];" in filter_graph
+    assert "[bgm][voice_sidechain]sidechaincompress=" in filter_graph
     assert "ratio=8" in filter_graph
     assert "attack=20" in filter_graph
     assert "release=250" in filter_graph
-    assert "[voice][ducked]amix=inputs=2" in filter_graph
+    assert "[voice_mix][ducked]amix=inputs=2" in filter_graph
 
 
 def test_ducking_config_rejects_invalid_background_volume() -> None:
