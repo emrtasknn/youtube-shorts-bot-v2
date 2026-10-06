@@ -13,6 +13,7 @@ class PublicationRequest:
     description: str
     privacy_status: str = "public"
     category_id: str = "27"
+    upload_session_url: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
