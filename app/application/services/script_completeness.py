@@ -66,9 +66,7 @@ class ScriptCompletenessReport:
 
     def raise_if_failed(self) -> None:
         if not self.passed:
-            raise ValueError(
-                "Content completeness gate failed: " + "; ".join(self.failures)
-            )
+            raise ValueError("Content completeness gate failed: " + "; ".join(self.failures))
 
 
 class ScriptCompletenessGate:
