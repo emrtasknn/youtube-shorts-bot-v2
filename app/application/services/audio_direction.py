@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
+import re
 
 
 _SENTENCE_END_RE = re.compile(r"""([.!?])(["')\]]?)(?=\s|$)""")
@@ -41,19 +41,16 @@ class AudioDirector:
             parts.append(self._normalize(body))
         if cta and cta.strip():
             parts.append(self._normalize(cta))
-
         text = " ".join(part for part in parts if part)
         text = self._ensure_sentence_boundaries(text)
         sentences = self._split_sentences(text)
         emphasis_terms = self._extract_emphasis_terms(parts[0])
-
         if len(sentences) <= 2:
             energy = "high"
         elif len(sentences) <= 5:
             energy = "medium"
         else:
             energy = "low"
-
         return AudioDirection(
             tts_text=text,
             sentence_count=len(sentences),
@@ -64,8 +61,7 @@ class AudioDirector:
     @staticmethod
     def _normalize(value: str) -> str:
         text = value.replace("\u2014", ",").replace("\u2013", ",")
-        text = _MULTI_SPACE_RE.sub(" ", text).strip()
-        return text
+        return _MULTI_SPACE_RE.sub(" ", text).strip()
 
     @staticmethod
     def _ensure_sentence_boundaries(text: str) -> str:
@@ -79,11 +75,7 @@ class AudioDirector:
 
     @staticmethod
     def _split_sentences(text: str) -> list[str]:
-        return [
-            part.strip()
-            for part in re.split(r"(?<=[.!?])\s+", text)
-            if part.strip()
-        ]
+        return [part.strip() for part in re.split(r"(?<=[.!?])\s+", text) if part.strip()]
 
     @staticmethod
     def _extract_emphasis_terms(hook: str) -> tuple[str, ...]:
