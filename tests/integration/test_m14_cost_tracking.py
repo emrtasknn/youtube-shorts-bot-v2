@@ -1,7 +1,6 @@
 from decimal import Decimal
 
 import pytest
-
 from sqlalchemy import select
 
 from app.domain.enums import ContentCategory, RunStatus, RunType
