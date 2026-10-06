@@ -16,9 +16,12 @@ from app.infrastructure.providers.gateways import (
     ProviderTextGenerationGateway,
     ProviderTTSGateway,
 )
+from sqlalchemy.orm import Session
+
 from app.infrastructure.providers.reliability import (
     ConcurrencyLimiter,
     CostTracker,
+    DatabaseIdempotencyStore,
     IdempotencyStore,
     ProviderHealthManager,
     QuotaManager,
@@ -42,7 +45,7 @@ class RuntimeComponents:
     downloader: AssetDownloader
 
 
-def build_runtime(settings: Settings) -> RuntimeComponents:
+def build_runtime(settings: Settings, session: Session | None = None) -> RuntimeComponents:
     registry = build_provider_registry(settings)
     providers = registry.providers_by_capability()
 
@@ -68,7 +71,7 @@ def build_runtime(settings: Settings) -> RuntimeComponents:
     rate_limiter = RateLimiter()
     concurrency = ConcurrencyLimiter()
     quota = QuotaManager()
-    idempotency = IdempotencyStore()
+    idempotency = DatabaseIdempotencyStore(session) if session is not None else IdempotencyStore()
     costs = CostTracker()
 
     for provider in {name for names in providers.values() for name in names}:
