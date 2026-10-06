@@ -27,6 +27,7 @@ from app.application.services.optimization_production_adapter import Optimizatio
 from app.application.services.production_decision_adapter import ProductionDecisionAdapter
 from app.application.services.scene_contract import build_scene_contract
 from app.application.services.script_completeness import ScriptCompletenessGate
+from app.application.services.scene_timing import SceneTimingAllocator
 from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.topic_selection_production_adapter import (
@@ -471,6 +472,31 @@ class GenerateCustomShort:
             )
         )
         data["duration_target"] = float(effective_duration_target)
+
+        if isinstance(data.get("scenes"), list):
+            scenes = data["scenes"]
+            planned_durations = tuple(
+                float(scene.get("duration") or 6)
+                for scene in scenes
+                if isinstance(scene, dict)
+            )
+            narration_word_counts = tuple(
+                len(str(scene.get("narration") or "").split())
+                for scene in scenes
+                if isinstance(scene, dict)
+            )
+            if len(planned_durations) == len(scenes):
+                normalized_durations = SceneTimingAllocator().normalize_for_narration(
+                    planned_durations,
+                    narration_word_counts,
+                )
+                for scene, duration in zip(
+                    scenes,
+                    normalized_durations,
+                    strict=True,
+                ):
+                    scene["duration"] = duration
+
         ScriptCompletenessGate().evaluate(data).raise_if_failed()
 
         script = ScriptModel(
