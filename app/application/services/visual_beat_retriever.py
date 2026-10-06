@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from app.application.ports.stock_media import StockMediaGateway, StockMediaStrategy
 from app.application.services.scene_contract import SceneContract
@@ -17,7 +18,7 @@ class VisualBeatRetrievalResult:
     beat: VisualBeat
     provider: str
     query: str
-    item: dict
+    item: dict[str, Any]
     score: float
 
 
