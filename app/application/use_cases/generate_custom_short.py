@@ -323,11 +323,15 @@ class GenerateCustomShort:
                         "M15 audio QC failed after one bounded repair: "
                         + "; ".join(audio_qc.failures)
                     )
-            stage = self._session.query(StageExecutionModel).filter_by(
-                run_id=run.id,
-                stage=Stage.AUDIO_MIX,
-                attempt=1,
-            ).first()
+            stage = (
+                self._session.query(StageExecutionModel)
+                .filter_by(
+                    run_id=run.id,
+                    stage=Stage.AUDIO_MIX,
+                    attempt=1,
+                )
+                .first()
+            )
             if stage is not None:
                 stage.stage_metadata = {
                     **(stage.stage_metadata or {}),
