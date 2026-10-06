@@ -9,6 +9,7 @@ from app.infrastructure.providers.contracts import ProviderError, ProviderReques
 from app.infrastructure.providers.registry import ProviderRegistry
 from app.infrastructure.providers.reliability import (
     ConcurrencyLimiter,
+    CostBudgetExceeded,
     CostTracker,
     DatabaseIdempotencyStore,
     IdempotencyStore,
@@ -87,6 +88,19 @@ class ReliabilityExecutor:
                 metadata=request.metadata,
             )
             adapter = self.registry.get(provider_name)
+
+            try:
+                self.costs.ensure_budget(request.run_id)
+            except CostBudgetExceeded as error:
+                self.telemetry.emit(
+                    "provider.budget_exhausted",
+                    EventSeverity.ERROR,
+                    provider=provider_name,
+                    message=str(error),
+                    metadata={"request_id": request.request_id},
+                    run_id=request.run_id,
+                )
+                raise
 
             for attempt in range(1, min(request.max_attempts, self.retry.policy.max_attempts) + 1):
                 try:

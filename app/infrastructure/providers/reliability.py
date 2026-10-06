@@ -11,7 +11,7 @@ from decimal import Decimal
 from enum import StrEnum
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -399,6 +399,10 @@ class CostRecord:
     currency: str = "USD"
 
 
+class CostBudgetExceeded(RuntimeError):
+    """Raised when a run has exhausted its persisted budget."""
+
+
 class CostTracker:
     def __init__(self, session: Session | None = None) -> None:
         self._session = session
@@ -430,6 +434,29 @@ class CostTracker:
                 )
             )
             self._session.commit()
+
+    def budget_remaining(self, run_id: str, currency: str = "USD") -> Decimal | None:
+        if self._session is None:
+            return None
+        from app.infrastructure.database.models import CostEventModel, RunModel
+
+        run = self._session.get(RunModel, UUID(run_id))
+        if run is None or run.budget_target is None:
+            return None
+        spent = self._session.scalar(
+            select(func.coalesce(func.sum(CostEventModel.amount), 0)).where(
+                CostEventModel.run_id == UUID(run_id),
+                CostEventModel.currency == currency,
+            )
+        )
+        return max(Decimal("0"), Decimal(run.budget_target) - Decimal(spent or 0))
+
+    def ensure_budget(self, run_id: str, upcoming_cost: Decimal = Decimal("0")) -> None:
+        if upcoming_cost < 0:
+            raise ValueError("upcoming_cost must be non-negative")
+        remaining = self.budget_remaining(run_id)
+        if remaining is not None and (remaining <= 0 or upcoming_cost > remaining):
+            raise CostBudgetExceeded(f"Run budget exhausted: remaining={remaining}")
 
     def total(self, currency: str = "USD") -> Decimal:
         return sum(
