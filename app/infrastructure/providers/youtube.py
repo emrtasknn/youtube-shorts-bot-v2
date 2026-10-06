@@ -105,14 +105,12 @@ class YouTubePublisher:
 
             offset = 0
             if not is_new_session:
-                offset = (await self._query_session(
-                    client, token, upload_url, total_bytes, initial=False
-                )) or 0
+                offset = (
+                    await self._query_session(client, token, upload_url, total_bytes, initial=False)
+                ) or 0
 
             if not is_new_session and offset >= total_bytes:
-                completed = await self._query_completion(
-                    client, token, upload_url, total_bytes
-                )
+                completed = await self._query_completion(client, token, upload_url, total_bytes)
                 if completed is not None:
                     return self._result(completed, request)
 
@@ -253,9 +251,7 @@ class YouTubePublisher:
                 return total_bytes, payload
 
             if response.status_code == 308:
-                current_offset = self._range_offset(
-                    response.headers.get("range"), current_offset
-                )
+                current_offset = self._range_offset(response.headers.get("range"), current_offset)
                 if callback is not None:
                     callback(upload_url, current_offset, total_bytes)
                 return current_offset, None
