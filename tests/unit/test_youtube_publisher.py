@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from app.application.ports.publisher import PublicationRequest
-from app.infrastructure.providers.youtube import YouTubePublishError, YouTubePublisher
+from app.infrastructure.providers.youtube import YouTubePublisher, YouTubePublishError
 
 
 def request_for(path: Path, session_url: str | None = None, callback=None) -> PublicationRequest:
