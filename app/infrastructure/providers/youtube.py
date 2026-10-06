@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import cast
 
 import httpx
 
@@ -199,7 +200,7 @@ class YouTubePublisher:
                 "YouTube did not return a resumable upload URL",
                 retryable=False,
             )
-        return upload_url
+        return str(upload_url)
 
     async def _upload_chunk(
         self,
@@ -341,7 +342,7 @@ class YouTubePublisher:
         except (httpx.TimeoutException, httpx.NetworkError):
             return None
         if response.status_code in {200, 201}:
-            return response.json()
+            return cast(dict[str, object], response.json())
         if response.status_code == 308:
             return None
         if response.status_code == 404:
