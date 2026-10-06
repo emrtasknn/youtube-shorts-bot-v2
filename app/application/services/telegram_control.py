@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.application.ports.publisher import PublicationRequest, Publisher
@@ -28,6 +28,7 @@ from app.domain.state_machine import (
 from app.infrastructure.database.models import (
     ApprovalModel,
     ContentModel,
+    PublicationAttemptModel,
     PublicationModel,
     RunModel,
 )
@@ -177,13 +178,17 @@ class TelegramControlPlane:
             return "Approve the Short before publishing."
 
         publication = self._session.scalar(
-            select(PublicationModel).where(
+            select(PublicationModel)
+            .where(
                 PublicationModel.run_id == run_id,
                 PublicationModel.platform == PublicationPlatform.YOUTUBE,
             )
+            .with_for_update()
         )
         if publication is not None and publication.status == PublicationStatus.PUBLISHED:
             return f"Already published: {publication.url}"
+        if publication is not None and publication.status == PublicationStatus.UPLOADING:
+            return "Publication is already uploading."
 
         if publication is None:
             publication = PublicationModel(
@@ -200,13 +205,49 @@ class TelegramControlPlane:
         }:
             return f"Publication is already in state: {publication.status}"
 
+        if publication.status == PublicationStatus.FAILED_RETRYABLE:
+            publication.status = transition_publication(
+                publication.status, PublicationStatus.QUEUED
+            )
+        elif publication.status == PublicationStatus.PENDING:
+            publication.status = transition_publication(
+                publication.status, PublicationStatus.QUEUED
+            )
+
+        previous_attempt = self._session.scalar(
+            select(PublicationAttemptModel)
+            .where(PublicationAttemptModel.publication_id == publication.id)
+            .order_by(PublicationAttemptModel.attempt_number.desc())
+        )
+        attempt_number = (previous_attempt.attempt_number if previous_attempt else 0) + 1
+        attempt = PublicationAttemptModel(
+            publication_id=publication.id,
+            attempt_number=attempt_number,
+            provider="youtube",
+            status=PublicationStatus.UPLOADING,
+            started_at=datetime.now(UTC),
+            upload_session_url=previous_attempt.upload_session_url if previous_attempt else None,
+            bytes_uploaded=previous_attempt.bytes_uploaded if previous_attempt else 0,
+            total_bytes=previous_attempt.total_bytes if previous_attempt else None,
+        )
+        self._session.add(attempt)
+        self._session.flush()
+
         run.status = transition_run(run.status, RunStatus.PUBLISHING)
-        publication.status = transition_publication(publication.status, PublicationStatus.QUEUED)
+        publication.status = transition_publication(
+            publication.status, PublicationStatus.UPLOADING
+        )
         self._session.commit()
 
         content = self._session.get(ContentModel, run.content_id)
         title = (content.topic if content else "YouTube Short").strip()[:100]
         description = f"{title}\n\n#shorts #tarih"
+
+        def persist_upload_state(upload_url: str, bytes_uploaded: int, total_bytes: int) -> None:
+            attempt.upload_session_url = upload_url
+            attempt.bytes_uploaded = bytes_uploaded
+            attempt.total_bytes = total_bytes
+            self._session.commit()
 
         try:
             result = await self._publisher.publish(
@@ -215,17 +256,19 @@ class TelegramControlPlane:
                     video_path=await self._video_path(run),
                     title=title,
                     description=description,
+                    upload_session_url=attempt.upload_session_url,
+                    upload_state_callback=persist_upload_state,
                 )
             )
-            publication.status = transition_publication(
-                PublicationStatus.QUEUED, PublicationStatus.UPLOADING
-            )
+            attempt.status = PublicationStatus.PUBLISHED
+            attempt.bytes_uploaded = attempt.total_bytes or attempt.bytes_uploaded
+            attempt.completed_at = datetime.now(UTC)
             publication.platform_post_id = result.platform_post_id
             publication.url = result.url
             publication.title = title
             publication.description = description
             publication.status = transition_publication(
-                PublicationStatus.UPLOADING, PublicationStatus.PUBLISHED
+                publication.status, PublicationStatus.PUBLISHED
             )
             publication.published_at = datetime.now(UTC)
             run.status = transition_run(run.status, RunStatus.PUBLISHED)
@@ -241,7 +284,24 @@ class TelegramControlPlane:
 
             return f"Published: {result.url}"
         except Exception as exc:
-            publication.status = PublicationStatus.FAILED_RETRYABLE
-            run.status = RunStatus.FAILED_RETRYABLE
+            retryable = getattr(exc, "retryable", True)
+            session_url = getattr(exc, "upload_session_url", None)
+            bytes_uploaded = getattr(exc, "bytes_uploaded", attempt.bytes_uploaded)
+            if session_url:
+                attempt.upload_session_url = session_url
+            attempt.bytes_uploaded = bytes_uploaded
+            attempt.completed_at = datetime.now(UTC)
+            if retryable:
+                attempt.status = PublicationStatus.FAILED_RETRYABLE
+                publication.status = transition_publication(
+                    publication.status, PublicationStatus.FAILED_RETRYABLE
+                )
+                run.status = RunStatus.FAILED_RETRYABLE
+            else:
+                attempt.status = PublicationStatus.FAILED_PERMANENT
+                publication.status = transition_publication(
+                    publication.status, PublicationStatus.FAILED_PERMANENT
+                )
+                run.status = RunStatus.FAILED_PERMANENT
             self._session.commit()
             raise RuntimeError(f"Publish failed: {exc}") from exc
