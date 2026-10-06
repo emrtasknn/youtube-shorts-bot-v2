@@ -35,3 +35,35 @@ def test_allocator_rejects_impossible_target_duration() -> None:
 
     with pytest.raises(ValueError, match="too short"):
         allocator.allocate((3.0, 3.0, 3.0), 5.0)
+
+
+def test_normalize_for_narration_expands_short_storyboard():
+    allocator = SceneTimingAllocator()
+    durations = allocator.normalize_for_narration(
+        (4.0, 8.0, 9.0, 5.0),
+        (10, 20, 25, 18),
+    )
+
+    assert len(durations) == 4
+    assert sum(durations) > 26.0
+    for duration, words in zip(durations, (10, 20, 25, 18), strict=True):
+        assert duration >= words / 2.5 * 1.05
+
+
+def test_normalize_for_narration_preserves_planned_total_when_long_enough():
+    allocator = SceneTimingAllocator()
+    durations = allocator.normalize_for_narration(
+        (8.0, 8.0, 8.0),
+        (5, 8, 10),
+    )
+
+    assert sum(durations) == 24.0
+    for duration, words in zip(durations, (5, 8, 10), strict=True):
+        assert duration >= words / 2.5 * 1.05
+
+
+def test_normalize_for_narration_rejects_mismatched_inputs():
+    allocator = SceneTimingAllocator()
+
+    with pytest.raises(ValueError, match="must match"):
+        allocator.normalize_for_narration((4.0, 6.0), (10,))
