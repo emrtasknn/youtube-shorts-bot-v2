@@ -72,7 +72,7 @@ def build_runtime(settings: Settings, session: Session | None = None) -> Runtime
     concurrency = ConcurrencyLimiter()
     quota = QuotaManager()
     idempotency = DatabaseIdempotencyStore(session) if session is not None else IdempotencyStore()
-    costs = CostTracker()
+    costs = CostTracker(session=session)
 
     for provider in {name for names in providers.values() for name in names}:
         health.configure(provider, failure_threshold=3, recovery_seconds=30.0)

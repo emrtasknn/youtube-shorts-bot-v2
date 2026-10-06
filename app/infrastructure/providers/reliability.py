@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from enum import StrEnum
+from uuid import UUID
 
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
@@ -399,13 +400,36 @@ class CostRecord:
 
 
 class CostTracker:
-    def __init__(self) -> None:
+    def __init__(self, session: Session | None = None) -> None:
+        self._session = session
         self._records: list[CostRecord] = []
 
-    def record(self, provider: str, operation: str, amount: Decimal, currency: str = "USD") -> None:
+    def record(
+        self,
+        provider: str,
+        operation: str,
+        amount: Decimal,
+        currency: str = "USD",
+        run_id: str | None = None,
+        metadata: dict[str, object] | None = None,
+    ) -> None:
         if amount < 0:
             raise ValueError("amount must be non-negative")
         self._records.append(CostRecord(provider, operation, amount, currency))
+        if self._session is not None and run_id is not None:
+            from app.infrastructure.database.models import CostEventModel
+
+            self._session.add(
+                CostEventModel(
+                    run_id=UUID(run_id),
+                    provider=provider,
+                    operation=operation,
+                    amount=amount,
+                    currency=currency,
+                    cost_metadata=metadata,
+                )
+            )
+            self._session.commit()
 
     def total(self, currency: str = "USD") -> Decimal:
         return sum(
