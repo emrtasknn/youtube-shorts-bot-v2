@@ -427,6 +427,26 @@ class ProviderHealthModel(Base):
     updated_at: Mapped[datetime] = updated_at()
 
 
+class ProviderIdempotencyModel(Base):
+    __tablename__ = "provider_idempotency"
+    __table_args__ = (
+        UniqueConstraint("idempotency_key", name="uq_provider_idempotency_key"),
+        Index("ix_provider_idempotency_expires", "expires_at"),
+    )
+    id: Mapped[UUID] = uuid_pk()
+    idempotency_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    provider: Mapped[str] = mapped_column(String(100), nullable=False)
+    request_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    success: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    output: Mapped[Any | None] = mapped_column(JSONB)
+    usage: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    cost: Mapped[Decimal] = mapped_column(Numeric(12, 6), nullable=False)
+    latency_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    result_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSONB, nullable=False)
+    created_at: Mapped[datetime] = created_at()
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class TelegramUpdateReceiptModel(Base):
     __tablename__ = "telegram_update_receipts"
     id: Mapped[UUID] = uuid_pk()

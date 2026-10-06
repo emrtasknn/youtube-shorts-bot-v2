@@ -10,7 +10,15 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from enum import StrEnum
 
-from app.infrastructure.providers.contracts import ErrorCategory, ProviderError, ProviderResult
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session
+
+from app.infrastructure.providers.contracts import (
+    ErrorCategory,
+    ProviderError,
+    ProviderResult,
+    ProviderUsage,
+)
 
 
 class RetryDecision(StrEnum):
@@ -314,6 +322,69 @@ class IdempotencyStore:
 
     def put(self, key: str, result: ProviderResult, now: datetime | None = None) -> None:
         self._records[key] = IdempotencyRecord(key, result, now or datetime.now(UTC))
+
+
+class DatabaseIdempotencyStore:
+    """Durable idempotency store backed by PostgreSQL."""
+
+    def __init__(self, session: Session, ttl_seconds: int = 3600) -> None:
+        self.session = session
+        self.ttl_seconds = ttl_seconds
+
+    def get(self, key: str, now: datetime | None = None) -> ProviderResult | None:
+        from app.infrastructure.database.models import ProviderIdempotencyModel
+
+        now = now or datetime.now(UTC)
+        record = self.session.scalar(
+            select(ProviderIdempotencyModel).where(ProviderIdempotencyModel.idempotency_key == key)
+        )
+        if record is None:
+            return None
+        if now > record.expires_at:
+            self.session.execute(
+                delete(ProviderIdempotencyModel).where(ProviderIdempotencyModel.id == record.id)
+            )
+            self.session.commit()
+            return None
+        usage = record.usage or {}
+        return ProviderResult(
+            success=record.success,
+            provider=record.provider,
+            request_id=record.request_id,
+            output=record.output,
+            usage=ProviderUsage(
+                input_units=int(usage.get("input_units", 0)),
+                output_units=int(usage.get("output_units", 0)),
+                total_units=int(usage.get("total_units", 0)),
+            ),
+            cost=Decimal(record.cost),
+            latency_ms=record.latency_ms,
+            metadata=record.result_metadata or {},
+        )
+
+    def put(self, key: str, result: ProviderResult, now: datetime | None = None) -> None:
+        from app.infrastructure.database.models import ProviderIdempotencyModel
+
+        now = now or datetime.now(UTC)
+        record = ProviderIdempotencyModel(
+            idempotency_key=key,
+            provider=result.provider,
+            request_id=result.request_id,
+            success=result.success,
+            output=result.output,
+            usage={
+                "input_units": result.usage.input_units,
+                "output_units": result.usage.output_units,
+                "total_units": result.usage.total_units,
+            },
+            cost=result.cost,
+            latency_ms=result.latency_ms,
+            result_metadata=result.metadata,
+            created_at=now,
+            expires_at=now + timedelta(seconds=self.ttl_seconds),
+        )
+        self.session.add(record)
+        self.session.commit()
 
 
 @dataclass(frozen=True, slots=True)
