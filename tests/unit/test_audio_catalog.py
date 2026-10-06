@@ -13,4 +13,6 @@ def test_music_selection_is_deterministic_and_traceable() -> None:
 def test_sfx_selection_is_bounded() -> None:
     cues = SfxCatalog().match("Suddenly the tank exploded and the crowd panicked.")
     assert len(cues) <= 2
-    assert {cue.cue_id for cue in cues} == {"impact", "whoosh", "heartbeat"} & {cue.cue_id for cue in cues}
+    assert {cue.cue_id for cue in cues} == {"impact", "whoosh", "heartbeat"} & {
+        cue.cue_id for cue in cues
+    }
