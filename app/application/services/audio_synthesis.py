@@ -14,7 +14,10 @@ _MAX_AMPLITUDE = 0.22
 
 def _write_wav(path: Path, samples: list[float]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    pcm = b"".join(struct.pack("<h", max(-1.0, min(1.0, sample)) * 32767) for sample in samples)
+    pcm = b"".join(
+        struct.pack("<h", int(max(-1.0, min(1.0, sample)) * 32767))
+        for sample in samples
+    )
     with wave.open(str(path), "wb") as output:
         output.setnchannels(1)
         output.setsampwidth(2)
@@ -40,16 +43,12 @@ class ProceduralMusicGenerator:
             pulse = math.sin(2 * math.pi * frequency * t)
             harmonic = 0.35 * math.sin(2 * math.pi * frequency * 2 * t)
             samples.append(_MAX_AMPLITUDE * envelope * (pulse + harmonic) / 1.35)
-        return self._write(output_path, samples)
-
-    @staticmethod
-    def _write(path: Path, samples: list[float]) -> Path:
-        _write_wav(path, samples)
-        return path
+        _write_wav(output_path, samples)
+        return output_path
 
 
 class ProceduralSfxGenerator:
-    """Generates short original SFX cues from deterministic oscillators/noise."""
+    """Generates short original SFX cues from deterministic oscillators."""
 
     def generate(self, cue: SfxCue, *, output_path: Path) -> Path:
         duration = cue.duration_seconds
@@ -64,8 +63,13 @@ class ProceduralSfxGenerator:
             elif cue.kind == "whoosh":
                 signal = math.sin(2 * math.pi * (250 + 900 * progress) * t)
             elif cue.kind == "alarm":
-                signal = math.sin(2 * math.pi * (700 if int(t * 8) % 2 else 1100) * t)
+                signal = math.sin(
+                    2 * math.pi * (700 if int(t * 8) % 2 else 1100) * t
+                )
             else:
-                signal = math.sin(2 * math.pi * 72 * t) + 0.25 * math.sin(2 * math.pi * 144 * t)
+                signal = math.sin(2 * math.pi * 72 * t) + 0.25 * math.sin(
+                    2 * math.pi * 144 * t
+                )
             samples.append(0.35 * envelope * signal)
-        return _write(output_path, samples)
+        _write_wav(output_path, samples)
+        return output_path
