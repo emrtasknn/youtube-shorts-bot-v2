@@ -26,6 +26,7 @@ from app.application.services.optimization_persistence import OptimizationDecisi
 from app.application.services.optimization_production_adapter import OptimizationProductionAdapter
 from app.application.services.production_decision_adapter import ProductionDecisionAdapter
 from app.application.services.scene_contract import build_scene_contract
+from app.application.services.script_completeness import ScriptCompletenessGate
 from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.topic_selection_production_adapter import (
@@ -425,6 +426,11 @@ class GenerateCustomShort:
                     "visual_query when relevant; never use generic queries such as "
                     "crowd or people when the narration names a specific place/event. "
                     "Use concrete stock-photo or historical-illustration queries. "
+                    "The story must be complete, not a teaser or partial excerpt: body must be at least 35 words, "
+                    "end with a complete sentence, and reach a clear payoff. Scene narration must collectively "
+                    "cover the full body rather than summarize only its beginning. Use narrative purposes from "
+                    "hook, context, event, consequence, payoff; first scene must be hook and final scene must be payoff. "
+                    "Include at least three distinct narrative purposes. Never end a body or scene narration mid-sentence. "
                     "The hook must be 4-18 words and strongly favor one of these types: shocking fact, unanswered question, impossible event, curiosity gap, contradiction.\n"
                     "Do not invent uncertain historical facts."
                 ),
@@ -452,6 +458,21 @@ class GenerateCustomShort:
         if not hook_evaluation.is_acceptable:
             data["hook"] = hook_engine.fallback(topic)
             hook_engine.ensure_acceptable(str(data["hook"]))
+
+        effective_duration_target = (
+            experiment_override.duration_target_seconds
+            if experiment_override is not None
+            and experiment_override.duration_target_seconds is not None
+            else (
+                optimization_override.duration_target_seconds
+                if optimization_override is not None
+                and optimization_override.duration_target_seconds is not None
+                else decision_adapter.duration_target_seconds or data["duration_target"]
+            )
+        )
+        data["duration_target"] = float(effective_duration_target)
+        ScriptCompletenessGate().evaluate(data).raise_if_failed()
+
         script = ScriptModel(
             content_id=run.content_id,
             version=1,
