@@ -13,6 +13,9 @@ from app.application.ports.stock_media import StockMediaGateway, StockMediaStrat
 from app.application.ports.text_generation import TextGenerationGateway, TextGenerationRequest
 from app.application.ports.tts import TTSGateway, TTSRequest
 from app.application.ports.video_engine import VideoEngine, VideoRenderRequest, VideoSceneInput
+from app.application.services.audio_direction import AudioDirector
+from app.application.services.autonomous_audio import AutonomousAudioPlanner
+from app.application.services.audio_quality import AudioQualityAnalyzer
 from app.application.services.custom_short_support import parse_script, validate_output
 from app.application.services.event_memory import EventMemoryCandidate, EventMemoryService
 from app.application.services.experiment_persistence import ExperimentPersistenceService
@@ -42,6 +45,8 @@ from app.domain.enums import (
     RunType,
     SceneStatus,
     ScriptStatus,
+    Stage,
+    StageStatus,
 )
 from app.domain.experimentation import ExperimentAssignment, ExperimentVariant
 from app.domain.optimization import OptimizationDecision
@@ -53,6 +58,7 @@ from app.infrastructure.database.models import (
     RunModel,
     SceneModel,
     ScriptModel,
+    StageExecutionModel,
 )
 
 
@@ -213,12 +219,16 @@ class GenerateCustomShort:
                     )
                 )
             run.status = RunStatus.ASSET_GENERATION
-            narration_text = f"{script.hook} {script.body} {script.cta or ''}".strip()
+            direction = AudioDirector().plan(
+                hook=script.hook,
+                body=script.body,
+                cta=script.cta,
+            )
             voice = await self._tts.synthesize(
                 TTSRequest(
                     run_id=str(run.id),
                     request_id=f"{run.id}:voiceover",
-                    text=narration_text,
+                    text=direction.tts_text,
                 )
             )
             run_dir = self._storage_root / str(run.id)
@@ -226,23 +236,110 @@ class GenerateCustomShort:
             audio_path.parent.mkdir(parents=True, exist_ok=True)
             audio_path.write_bytes(voice.audio_bytes)
             run.status = RunStatus.TTS
+
+            audio_plan = AutonomousAudioPlanner().build(
+                run_id=run.id,
+                direction=direction,
+                scenes=tuple(
+                    {
+                        "scene_index": scene.scene_index,
+                        "narration": scene.narration or "",
+                    }
+                    for scene in scenes
+                ),
+                duration_seconds=float(script.duration_target or 30),
+                output_dir=run_dir / "audio",
+            )
+            self._session.add(
+                StageExecutionModel(
+                    run_id=run.id,
+                    stage=Stage.AUDIO_MIX,
+                    attempt=1,
+                    status=StageStatus.SUCCESS,
+                    provider="m15-procedural-audio",
+                    stage_metadata={
+                        **audio_plan.metadata,
+                        "audio_profile": audio_plan.profile,
+                        "voice_provider": voice.provider,
+                        "voice_energy": direction.energy,
+                        "emphasis_terms": list(direction.emphasis_terms),
+                    },
+                )
+            )
+            self._session.flush()
             run.status = RunStatus.AUDIO_MIX
+
             output_path = (
                 request.output_path
                 if request.output_path.is_absolute()
                 else run_dir / request.output_path.name
             )
+            background_volume = 0.14
             render = await self._video_engine.render(
                 VideoRenderRequest(
                     scenes=tuple(inputs),
                     output_path=output_path,
                     voiceover_path=audio_path,
-                    subtitle_text=narration_text,
+                    background_audio_path=audio_plan.background_audio_path,
+                    subtitle_text=direction.tts_text,
+                    background_volume=background_volume,
+                    ducking_threshold=0.03,
+                    ducking_ratio=8.0,
+                    ducking_attack_ms=20.0,
+                    ducking_release_ms=250.0,
                 )
             )
             run.status = RunStatus.RENDERING
             run.status = RunStatus.QC
             validate_output(render.output_path, render.duration_seconds)
+            audio_qc = await AudioQualityAnalyzer().analyze_file(
+                render.output_path,
+                duration_seconds=render.duration_seconds,
+            )
+            if not audio_qc.passed:
+                # One bounded repair: reduce the music/SFX bed and rerender.
+                repaired_volume = background_volume * 0.5
+                render = await self._video_engine.render(
+                    VideoRenderRequest(
+                        scenes=tuple(inputs),
+                        output_path=output_path,
+                        voiceover_path=audio_path,
+                        background_audio_path=audio_plan.background_audio_path,
+                        subtitle_text=direction.tts_text,
+                        background_volume=repaired_volume,
+                        ducking_threshold=0.02,
+                        ducking_ratio=10.0,
+                        ducking_attack_ms=15.0,
+                        ducking_release_ms=300.0,
+                    )
+                )
+                validate_output(render.output_path, render.duration_seconds)
+                audio_qc = await AudioQualityAnalyzer().analyze_file(
+                    render.output_path,
+                    duration_seconds=render.duration_seconds,
+                )
+                if not audio_qc.passed:
+                    raise RuntimeError(
+                        "M15 audio QC failed after one bounded repair: "
+                        + "; ".join(audio_qc.failures)
+                    )
+            stage = self._session.query(StageExecutionModel).filter_by(
+                run_id=run.id,
+                stage=Stage.AUDIO_MIX,
+                attempt=1,
+            ).first()
+            if stage is not None:
+                stage.stage_metadata = {
+                    **(stage.stage_metadata or {}),
+                    "audio_qc": {
+                        "passed": audio_qc.passed,
+                        "failures": list(audio_qc.failures),
+                        "max_volume_dbfs": audio_qc.max_volume_dbfs,
+                        "mean_volume_dbfs": audio_qc.mean_volume_dbfs,
+                        "silence_ratio": audio_qc.silence_ratio,
+                        "repair_applied": background_volume != 0.14,
+                    },
+                }
             if event_candidate is not None:
                 EventMemoryService(self._session).upsert(
                     EventMemoryCandidate(
