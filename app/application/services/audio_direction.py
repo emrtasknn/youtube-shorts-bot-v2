@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 
 
-_SENTENCE_END_RE = re.compile(r"([.!?])(["')\]]?)(?=\s|$)")
+_SENTENCE_END_RE = re.compile(r"""([.!?])(["')\]]?)(?=\s|$)""")
 _MULTI_SPACE_RE = re.compile(r"\s+")
 
 
@@ -79,10 +79,17 @@ class AudioDirector:
 
     @staticmethod
     def _split_sentences(text: str) -> list[str]:
-        return [part.strip() for part in re.split(r"(?<=[.!?])\s+", text) if part.strip()]
+        return [
+            part.strip()
+            for part in re.split(r"(?<=[.!?])\s+", text)
+            if part.strip()
+        ]
 
     @staticmethod
     def _extract_emphasis_terms(hook: str) -> tuple[str, ...]:
-        words = re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ0-9][A-Za-zÀ-ÖØ-öø-ÿ0-9'’-]*", hook)
+        words = re.findall(
+            r"[A-Za-zÀ-ÖØ-öø-ÿ0-9][A-Za-zÀ-ÖØ-öø-ÿ0-9'’-]*",
+            hook,
+        )
         candidates = [word for word in words if len(word) >= 5]
         return tuple(dict.fromkeys(candidates[:4]))
