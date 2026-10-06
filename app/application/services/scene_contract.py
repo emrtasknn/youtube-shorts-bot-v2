@@ -57,8 +57,10 @@ def build_scene_contract(item: dict[str, Any]) -> SceneContract:
         value = item.get(name, [])
         if value is None:
             return ()
+        if isinstance(value, str):
+            value = [value]
         if not isinstance(value, list):
-            raise ValueError(f"Scene {name} must be a list")
+            raise ValueError(f"Scene {name} must be a list or string")
         return tuple(str(entry).strip() for entry in value if str(entry).strip())
 
     narration = required_text("narration")
