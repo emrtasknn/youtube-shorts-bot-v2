@@ -33,6 +33,8 @@ from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.topic_selection_production_adapter import (
     TopicSelectionProductionAdapter,
 )
+from app.application.services.visual_beat import VisualBeatCompiler
+from app.application.services.visual_beat_retriever import VisualBeatRetriever
 from app.application.services.visual_relevance import VisualRelevanceContext
 from app.application.services.visual_source_resolver import VisualSourceResolver
 from app.application.use_cases.search_stock_media import SearchStockMedia
@@ -552,6 +554,88 @@ class GenerateCustomShort:
         return scenes
 
     async def _select_asset(self, run: RunModel, scene: SceneModel) -> tuple[Path, AssetModel]:
+        try:
+            return await self._select_asset_with_visual_beats(run, scene)
+        except Exception:
+            return await self._select_asset_scene_fallback(run, scene)
+
+    async def _select_asset_with_visual_beats(
+        self,
+        run: RunModel,
+        scene: SceneModel,
+    ) -> tuple[Path, AssetModel]:
+        scene_contract = build_scene_contract(
+            {
+                "narration": scene.narration,
+                "visual_goal": scene.visual_goal,
+                "visual_query": scene.primary_subject,
+                "purpose": "support_narration",
+                "subject": scene.primary_subject,
+                "action": scene.action,
+                "entities": [],
+                "location": scene.location,
+                "era": scene.era,
+                "visual_intent": scene.visual_goal,
+                "visual_style": "documentary",
+                "must_show": scene.must_show or [],
+                "must_avoid": scene.must_avoid or [],
+            }
+        )
+        timeline = VisualBeatCompiler().compile(
+            scene_contract,
+            scene_index=scene.scene_index,
+            scene_duration_seconds=float(scene.duration or 5),
+        )
+        retriever = VisualBeatRetriever(self._stock_media)
+        results = []
+        for beat in timeline.beats:
+            results.append(
+                await retriever.retrieve(
+                    run_id=str(run.id),
+                    request_id=f"{run.id}:scene:{scene.scene_index}:beat:{beat.beat_index}",
+                    beat=beat,
+                )
+            )
+        selected = max(results, key=lambda result: result.score)
+        item = selected.item
+        url = str(item.get("download_url") or "").strip()
+        if not url:
+            raise RuntimeError(f"Selected beat asset has no download URL: {item.get('id')}")
+        path = (
+            self._storage_root
+            / str(run.id)
+            / f"scene-{scene.scene_index}.jpg"
+        )
+        await self._downloader.download(url, path)
+        asset = AssetModel(
+            asset_type=AssetType.STOCK_IMAGE,
+            provider=selected.provider,
+            provider_asset_id=str(item.get("id") or ""),
+            source_url=str(item.get("source_url") or ""),
+            local_path=str(path),
+            mime_type="image/jpeg",
+            width=int(item.get("width") or 0),
+            height=int(item.get("height") or 0),
+            status=AssetStatus.READY,
+            asset_metadata={
+                "query": selected.query,
+                "score": selected.score,
+                "m18_visual_beat": {
+                    "scene_index": scene.scene_index,
+                    "beat_index": selected.beat.beat_index,
+                    "start_seconds": selected.beat.start_seconds,
+                    "duration_seconds": selected.beat.duration_seconds,
+                    "beat_count": len(timeline.beats),
+                },
+            },
+        )
+        return path, asset
+
+    async def _select_asset_scene_fallback(
+        self,
+        run: RunModel,
+        scene: SceneModel,
+    ) -> tuple[Path, AssetModel]:
         scene_contract = build_scene_contract(
             {
                 "narration": scene.narration,
