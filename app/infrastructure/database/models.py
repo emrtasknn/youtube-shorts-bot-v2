@@ -14,6 +14,7 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    BigInteger,
     UniqueConstraint,
     func,
 )
@@ -421,6 +422,13 @@ class ProviderHealthModel(Base):
     cooldown_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     provider_metadata: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSONB)
     updated_at: Mapped[datetime] = updated_at()
+
+
+class TelegramUpdateReceiptModel(Base):
+    __tablename__ = "telegram_update_receipts"
+    id: Mapped[UUID] = uuid_pk()
+    update_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
+    created_at: Mapped[datetime] = created_at()
 
 
 class SystemEventModel(Base):
