@@ -184,8 +184,7 @@ class SearchStockMedia:
 
         detail = "; ".join(attempts) or "no strategies executed"
         raise RuntimeError(
-            "No safe visual candidate found after evidence-aware retrieval: "
-            f"{detail}"
+            f"No safe visual candidate found after evidence-aware retrieval: {detail}"
         )
 
     @staticmethod
