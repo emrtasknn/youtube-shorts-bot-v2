@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 from typing import Any
 
 _WORD_RE = re.compile(r"\b[\w’'-]+\b", re.UNICODE)
