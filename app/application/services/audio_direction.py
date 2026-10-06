@@ -35,13 +35,12 @@ class AudioDirector:
         body: str,
         cta: str | None = None,
     ) -> AudioDirection:
-        parts = [self._normalize(hook)]
+        parts = [self._ensure_sentence_boundaries(self._normalize(hook))]
         if body.strip():
-            parts.append(self._normalize(body))
+            parts.append(self._ensure_sentence_boundaries(self._normalize(body)))
         if cta and cta.strip():
-            parts.append(self._normalize(cta))
+            parts.append(self._ensure_sentence_boundaries(self._normalize(cta)))
         text = " ".join(part for part in parts if part)
-        text = self._ensure_sentence_boundaries(text)
         sentences = self._split_sentences(text)
         emphasis_terms = self._extract_emphasis_terms(parts[0])
         if len(sentences) <= 2:
