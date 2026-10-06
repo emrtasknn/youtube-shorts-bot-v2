@@ -98,7 +98,13 @@ class ReliabilityExecutor:
                         metadata=result.metadata,
                     )
                     self.health.record_success(provider_name)
-                    self.costs.record(provider_name, request.operation, result.cost)
+                    self.costs.record(
+                        provider_name,
+                        request.operation,
+                        result.cost,
+                        run_id=request.run_id,
+                        metadata={"request_id": request.request_id, "capability": request.capability.value},
+                    )
                     if key:
                         self.idempotency.put(key, result)
                     return result
