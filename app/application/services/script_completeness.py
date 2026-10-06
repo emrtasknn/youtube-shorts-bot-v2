@@ -123,8 +123,7 @@ class ScriptCompletenessGate:
 
         if (
             scene_duration
-            and estimated_scene_narration_seconds
-            > scene_duration / self.min_scene_duration_ratio
+            and estimated_scene_narration_seconds > scene_duration / self.min_scene_duration_ratio
         ):
             failures.append(
                 f"scene duration ({scene_duration:.1f}s) is too short for scene narration "
