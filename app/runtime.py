@@ -18,7 +18,6 @@ from app.infrastructure.providers.gateways import (
     ProviderTextGenerationGateway,
     ProviderTTSGateway,
 )
-
 from app.infrastructure.providers.reliability import (
     ConcurrencyLimiter,
     CostTracker,
