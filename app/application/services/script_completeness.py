@@ -97,6 +97,7 @@ class ScriptCompletenessGate:
         narration_words = _words(all_narration)
         total_tts_words = len(_words(" ".join(part for part in (hook, body, cta) if part)))
         estimated_seconds = total_tts_words / self.words_per_second
+        estimated_scene_narration_seconds = len(narration_words) / self.words_per_second
         scene_duration = (
             sum(float(scene.get("duration") or 0) for scene in scenes if isinstance(scene, dict))
             if isinstance(scenes, list)
@@ -120,10 +121,14 @@ class ScriptCompletenessGate:
                 f"scene narration covers only {len(narration_words)}/{len(body_words)} body words"
             )
 
-        if scene_duration and estimated_seconds > scene_duration / self.min_scene_duration_ratio:
+        if (
+            scene_duration
+            and estimated_scene_narration_seconds
+            > scene_duration / self.min_scene_duration_ratio
+        ):
             failures.append(
-                f"scene duration ({scene_duration:.1f}s) is too short for narration "
-                f"({estimated_seconds:.1f}s estimated)"
+                f"scene duration ({scene_duration:.1f}s) is too short for scene narration "
+                f"({estimated_scene_narration_seconds:.1f}s estimated)"
             )
 
         if target and estimated_seconds < target * 0.70:
