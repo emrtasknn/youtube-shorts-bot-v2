@@ -41,8 +41,6 @@ class SceneTimingAllocator:
 
         return durations
 
-
-
     def normalize_for_narration(
         self,
         planned_durations: tuple[float, ...],
