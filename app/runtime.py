@@ -30,6 +30,7 @@ from app.infrastructure.providers.reliability import (
     RetryPolicy,
     StrategyRouter,
 )
+from app.infrastructure.providers.telemetry import ReliabilityTelemetry
 from app.infrastructure.storage.http_downloader import HttpAssetDownloader
 from app.infrastructure.video.ffmpeg import FFmpegVideoEngine
 
@@ -73,6 +74,7 @@ def build_runtime(settings: Settings, session: Session | None = None) -> Runtime
     quota = QuotaManager()
     idempotency = DatabaseIdempotencyStore(session) if session is not None else IdempotencyStore()
     costs = CostTracker(session=session)
+    telemetry = ReliabilityTelemetry(session=session)
 
     for provider in {name for names in providers.values() for name in names}:
         health.configure(provider, failure_threshold=3, recovery_seconds=30.0)
@@ -93,6 +95,7 @@ def build_runtime(settings: Settings, session: Session | None = None) -> Runtime
         idempotency=idempotency,
         costs=costs,
         router=StrategyRouter(health),
+        telemetry=telemetry,
     )
 
     return RuntimeComponents(
