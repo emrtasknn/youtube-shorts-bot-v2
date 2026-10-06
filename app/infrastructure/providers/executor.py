@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from time import perf_counter
 
 from app.domain.enums import EventSeverity
@@ -33,7 +33,7 @@ class ReliabilityExecutor:
     idempotency: IdempotencyStore | DatabaseIdempotencyStore
     costs: CostTracker
     router: StrategyRouter
-    telemetry: ReliabilityTelemetry
+    telemetry: ReliabilityTelemetry = field(default_factory=ReliabilityTelemetry)
 
     async def execute(
         self,
