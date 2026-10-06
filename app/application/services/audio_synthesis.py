@@ -13,10 +13,7 @@ _MAX_AMPLITUDE = 0.22
 
 def _write_wav(path: Path, samples: list[float]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    pcm = b"".join(
-        pack("<h", int(max(-1.0, min(1.0, sample)) * 32767))
-        for sample in samples
-    )
+    pcm = b"".join(pack("<h", int(max(-1.0, min(1.0, sample)) * 32767)) for sample in samples)
     with wave_open(str(path), "wb") as output:
         output.setnchannels(1)
         output.setsampwidth(2)
@@ -38,9 +35,7 @@ class ProceduralMusicGenerator:
             t = index / _SAMPLE_RATE
             phase = int(t / beat) % len(scale)
             frequency = scale[phase]
-            envelope = min(1.0, t * 8.0) * min(
-                1.0, max(0.0, duration_seconds - t) * 8.0
-            )
+            envelope = min(1.0, t * 8.0) * min(1.0, max(0.0, duration_seconds - t) * 8.0)
             pulse = sin(2 * pi * frequency * t)
             harmonic = 0.35 * sin(2 * pi * frequency * 2 * t)
             samples.append(_MAX_AMPLITUDE * envelope * (pulse + harmonic) / 1.35)
@@ -64,9 +59,7 @@ class ProceduralSfxGenerator:
             elif cue.kind == "whoosh":
                 signal = sin(2 * pi * (250 + 900 * progress) * t)
             elif cue.kind == "alarm":
-                signal = sin(
-                    2 * pi * (700 if int(t * 8) % 2 else 1100) * t
-                )
+                signal = sin(2 * pi * (700 if int(t * 8) % 2 else 1100) * t)
             else:
                 signal = sin(2 * pi * 72 * t) + 0.25 * sin(2 * pi * 144 * t)
             samples.append(0.35 * envelope * signal)
