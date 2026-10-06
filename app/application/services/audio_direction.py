@@ -58,7 +58,7 @@ class AudioDirector:
 
     @staticmethod
     def _normalize(value: str) -> str:
-        text = value.replace("\u2014", ",").replace("\u2013", ",")
+        text = value.replace("\u2014", ", ").replace("\u2013", ", ")
         return _MULTI_SPACE_RE.sub(" ", text).strip()
 
     @staticmethod
