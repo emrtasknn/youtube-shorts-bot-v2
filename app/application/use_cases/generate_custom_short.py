@@ -476,9 +476,7 @@ class GenerateCustomShort:
         if isinstance(data.get("scenes"), list):
             scenes = data["scenes"]
             planned_durations = tuple(
-                float(scene.get("duration") or 6)
-                for scene in scenes
-                if isinstance(scene, dict)
+                float(scene.get("duration") or 6) for scene in scenes if isinstance(scene, dict)
             )
             narration_word_counts = tuple(
                 len(str(scene.get("narration") or "").split())
