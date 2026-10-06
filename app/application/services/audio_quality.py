@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -44,12 +45,55 @@ class AudioQualityGate:
         )
 
 
+class AudioQualityAnalyzer:
+    """Runs one bounded FFmpeg audio analysis against the rendered MP4."""
+
+    def __init__(self, executable: str = "ffmpeg", timeout_seconds: float = 90.0) -> None:
+        if timeout_seconds <= 0:
+            raise ValueError("Audio QC timeout must be positive")
+        self._executable = executable
+        self._timeout_seconds = timeout_seconds
+
+    async def analyze_file(self, path: Path, *, duration_seconds: float) -> AudioQualityReport:
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        process = await asyncio.create_subprocess_exec(
+            self._executable,
+            "-hide_banner",
+            "-i",
+            str(path),
+            "-af",
+            "volumedetect,silencedetect=noise=-45dB:d=0.15",
+            "-f",
+            "null",
+            "-",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            _, stderr = await asyncio.wait_for(
+                process.communicate(), timeout=self._timeout_seconds
+            )
+        except TimeoutError as exc:
+            process.kill()
+            await process.wait()
+            raise RuntimeError("Audio QC analysis timed out") from exc
+        if process.returncode != 0:
+            raise RuntimeError(
+                "Audio QC analysis failed: "
+                + stderr.decode("utf-8", errors="replace").strip()
+            )
+        return parse_ffmpeg_audio_metrics(
+            stderr.decode("utf-8", errors="replace"),
+            duration_seconds=duration_seconds,
+        )
+
+
 def parse_ffmpeg_audio_metrics(stderr: str, *, duration_seconds: float) -> AudioQualityReport:
     max_match = re.search(r"max_volume:\s*(-?[\d.]+)\s*dB", stderr)
     mean_match = re.search(r"mean_volume:\s*(-?[\d.]+)\s*dB", stderr)
     silence_durations = [
-        float(value)
-        for value in re.findall(r"silence_duration:\s*([\d.]+)", stderr)
+        float(value) for value in re.findall(r"silence_duration:\s*([\d.]+)", stderr)
     ]
     max_volume = float(max_match.group(1)) if max_match else -100.0
     mean_volume = float(mean_match.group(1)) if mean_match else -100.0
