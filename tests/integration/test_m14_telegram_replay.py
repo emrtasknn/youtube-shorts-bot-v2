@@ -40,14 +40,19 @@ def test_telegram_update_claim_is_durable_and_idempotent() -> None:
             assert worker._claim_update(update_id) is True
             assert worker._claim_update(update_id) is False
 
-            receipt = session.query(TelegramUpdateReceiptModel).filter_by(
-                update_id=update_id
-            ).one()
+            receipt = (
+                session.query(TelegramUpdateReceiptModel)
+                .filter_by(update_id=update_id)
+                .one()
+            )
             assert receipt.update_id == update_id
 
             worker._release_update(update_id)
-            assert session.query(TelegramUpdateReceiptModel).filter_by(
-                update_id=update_id
-            ).one_or_none() is None
+            assert (
+                session.query(TelegramUpdateReceiptModel)
+                .filter_by(update_id=update_id)
+                .one_or_none()
+                is None
+            )
     finally:
         engine.dispose()
