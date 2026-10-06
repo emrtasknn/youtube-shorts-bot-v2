@@ -601,11 +601,7 @@ class GenerateCustomShort:
         url = str(item.get("download_url") or "").strip()
         if not url:
             raise RuntimeError(f"Selected beat asset has no download URL: {item.get('id')}")
-        path = (
-            self._storage_root
-            / str(run.id)
-            / f"scene-{scene.scene_index}.jpg"
-        )
+        path = self._storage_root / str(run.id) / f"scene-{scene.scene_index}.jpg"
         await self._downloader.download(url, path)
         asset = AssetModel(
             asset_type=AssetType.STOCK_IMAGE,
