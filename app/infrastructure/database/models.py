@@ -389,6 +389,9 @@ class PublicationAttemptModel(Base):
     error_message: Mapped[str | None] = mapped_column(Text)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    upload_session_url: Mapped[str | None] = mapped_column(Text)
+    bytes_uploaded: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    total_bytes: Mapped[int | None] = mapped_column(BigInteger)
 
 
 class ProviderModel(Base):
