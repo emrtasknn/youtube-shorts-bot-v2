@@ -22,9 +22,7 @@ def test_cost_tracker_persists_cost_event() -> None:
             run_id=str(run_id),
             metadata={"request_id": "req-cost"},
         )
-        event = session.scalar(
-            select(CostEventModel).where(CostEventModel.run_id == run_id)
-        )
+        event = session.scalar(select(CostEventModel).where(CostEventModel.run_id == run_id))
         assert event is not None
         assert event.provider == "gemini"
         assert event.operation == "generate_script"
