@@ -110,6 +110,84 @@ class SearchStockMedia:
         detail = "; ".join(attempts) or "no strategies executed"
         raise RuntimeError(f"No eligible stock asset found after strategy fallback: {detail}")
 
+    async def execute_visual_intent(
+        self,
+        *,
+        run_id: str,
+        request_id: str,
+        strategies: list[StockMediaStrategy],
+        intent: VisualIntent,
+        selector: StockMediaSelector,
+        used_provider_asset_ids: set[str] | None = None,
+        metadata: dict[str, object] | None = None,
+    ) -> tuple[StockMediaSearchResult, VisualCandidateSelection]:
+        if not strategies:
+            raise ValueError("At least one stock media strategy is required")
+
+        evidence_selector = VisualCandidateSelector()
+        context = VisualRelevanceContext(
+            entities=(intent.primary_entity, *intent.secondary_entities),
+            location=intent.location,
+            era=intent.era,
+            visual_goal=intent.visual_goal,
+            action=intent.action,
+            must_show=intent.must_show,
+            must_avoid=intent.must_avoid,
+        )
+
+        attempts: list[str] = []
+        for strategy in strategies:
+            result = await self.execute(
+                StockMediaSearchRequest(
+                    run_id=run_id,
+                    request_id=f"{request_id}:{strategy.name}",
+                    query=strategy.query,
+                    operation=strategy.operation,
+                    orientation=strategy.orientation,
+                    provider_candidates=strategy.provider_candidates,
+                    metadata={
+                        **(metadata or {}),
+                        "strategy": strategy.name,
+                        "visual_intent_scene_index": intent.scene_index,
+                    },
+                )
+            )
+            ranked = selector.rank(
+                result.items,
+                query=strategy.query,
+                used_provider_asset_ids=used_provider_asset_ids,
+                min_relevance=strategy.min_relevance,
+                relevance_context=context,
+            )
+            candidates = [
+                (candidate.item, candidate.score)
+                for candidate in ranked
+                if candidate.score.relevance >= strategy.min_relevance
+                and candidate.score.duplicate_penalty == 0.0
+            ]
+            selected = evidence_selector.select(
+                candidates,
+                intent=intent,
+                source_is_exact=strategy.name == "exact",
+            )
+            if selected is not None:
+                return result, selected
+
+            best = ranked[0] if ranked else None
+            if best is None:
+                attempts.append(f"{strategy.name}:no_results")
+            else:
+                attempts.append(
+                    f"{strategy.name}:best={best.score.score:.3f}:"
+                    f"relevance={best.score.relevance:.3f}"
+                )
+
+        detail = "; ".join(attempts) or "no strategies executed"
+        raise RuntimeError(
+            "No safe visual candidate found after evidence-aware retrieval: "
+            f"{detail}"
+        )
+
     @staticmethod
     def _validate(request: StockMediaSearchRequest) -> None:
         if not request.query.strip():
