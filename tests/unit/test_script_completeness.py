@@ -56,6 +56,18 @@ def test_gate_rejects_truncated_body():
     report = ScriptCompletenessGate().evaluate(payload)
     assert report.passed is False
     assert "body does not end with a complete sentence" in report.failures
+
+
+def test_gate_rejects_sentence_fragment():
+    payload = _payload(
+        body=(
+            "In 1927 Hollywood audiences heard synchronized dialogue for the first time. "
+            "The breakthrough changed how studios made movies and quickly pushed silent films aside. "
+            "Studios rushed to adapt, actors faced a new challenge, and audiences discovered a different kind of cinema, and."
+        )
+    )
+    report = ScriptCompletenessGate().evaluate(payload)
+    assert report.passed is False
     assert "body ends with a sentence fragment" in report.failures
 
 
