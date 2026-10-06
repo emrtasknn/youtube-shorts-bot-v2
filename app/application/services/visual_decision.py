@@ -75,8 +75,7 @@ class VisualDecisionEngine:
                 visual_quality,
                 factual_specificity,
                 "exact_source_preferred",
-                enhancement_required=decision
-                == VisualDecision.BEAUTIFY_THEN_ACCEPT,
+                enhancement_required=decision == VisualDecision.BEAUTIFY_THEN_ACCEPT,
             )
 
         if semantic_relevance >= 0.65 and visual_quality >= 0.65:
