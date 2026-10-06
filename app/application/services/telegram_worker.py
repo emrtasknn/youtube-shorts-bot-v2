@@ -52,7 +52,7 @@ class TelegramWorker:
                 for update in updates:
                     self._offset = int(update["update_id"]) + 1
                     await self.handle_update(update)
-            except Exception as exc:
+            except Exception:
                 await asyncio.sleep(3)
                 await self._bot.send_message(
                     self._admin_chat_id,
