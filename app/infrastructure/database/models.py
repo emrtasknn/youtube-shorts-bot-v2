@@ -6,6 +6,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     DateTime,
     ForeignKey,
@@ -14,7 +15,6 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
-    BigInteger,
     UniqueConstraint,
     func,
 )
