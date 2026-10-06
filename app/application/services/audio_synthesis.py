@@ -7,7 +7,6 @@ from wave import open as wave_open
 
 from app.application.services.audio_catalog import MusicTrack, SfxCue
 
-
 _SAMPLE_RATE = 24_000
 _MAX_AMPLITUDE = 0.22
 
