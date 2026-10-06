@@ -24,9 +24,7 @@ def _scene():
 
 
 def test_compiler_preserves_scene_semantics_across_beats() -> None:
-    timeline = VisualBeatCompiler().compile(
-        _scene(), scene_index=2, scene_duration_seconds=8.0
-    )
+    timeline = VisualBeatCompiler().compile(_scene(), scene_index=2, scene_duration_seconds=8.0)
 
     assert len(timeline.beats) == 2
     for beat in timeline.beats:
@@ -43,14 +41,10 @@ def test_compiler_preserves_scene_semantics_across_beats() -> None:
 
 
 def test_compiler_produces_contiguous_timeline_equal_to_scene_duration() -> None:
-    timeline = VisualBeatCompiler().compile(
-        _scene(), scene_index=0, scene_duration_seconds=10.0
-    )
+    timeline = VisualBeatCompiler().compile(_scene(), scene_index=0, scene_duration_seconds=10.0)
 
     assert timeline.beats[0].start_seconds == 0.0
-    assert timeline.beats[0].end_seconds == pytest.approx(
-        timeline.beats[1].start_seconds
-    )
+    assert timeline.beats[0].end_seconds == pytest.approx(timeline.beats[1].start_seconds)
     assert timeline.total_duration_seconds == pytest.approx(10.0)
     assert timeline.beats[-1].end_seconds == pytest.approx(10.0)
 
@@ -64,9 +58,7 @@ def test_compiler_falls_back_to_one_beat_for_single_sentence() -> None:
         }
     )
 
-    timeline = VisualBeatCompiler().compile(
-        scene, scene_index=1, scene_duration_seconds=6.0
-    )
+    timeline = VisualBeatCompiler().compile(scene, scene_index=1, scene_duration_seconds=6.0)
 
     assert len(timeline.beats) == 1
     assert timeline.beats[0].narration == "The fleet arrived."
@@ -74,9 +66,7 @@ def test_compiler_falls_back_to_one_beat_for_single_sentence() -> None:
 
 
 def test_timeline_rejects_gaps() -> None:
-    timeline = VisualBeatCompiler().compile(
-        _scene(), scene_index=0, scene_duration_seconds=8.0
-    )
+    timeline = VisualBeatCompiler().compile(_scene(), scene_index=0, scene_duration_seconds=8.0)
 
     with pytest.raises(ValueError, match="contiguous"):
         VisualBeatTimeline(
