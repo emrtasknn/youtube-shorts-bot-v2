@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from re import compile, findall, split
 
-
 _SENTENCE_END_RE = compile(r"""([.!?])(["')\]]?)(?=\s|$)""")
 _MULTI_SPACE_RE = compile(r"\s+")
 
