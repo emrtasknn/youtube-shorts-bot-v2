@@ -47,3 +47,24 @@ def test_build_runtime_rejects_missing_required_provider() -> None:
         assert str(exc) == "No TTS provider is enabled"
     else:
         raise AssertionError("build_runtime should reject a missing TTS provider")
+
+
+def test_build_runtime_uses_durable_idempotency_when_session_is_provided() -> None:
+    from unittest.mock import Mock
+
+    from sqlalchemy.orm import Session
+
+    from app.infrastructure.providers.reliability import DatabaseIdempotencyStore
+
+    settings = Settings(
+        pexels_enabled=True,
+        pexels_api_key="pexels-test",
+        gemini_enabled=True,
+        gemini_api_key="gemini-test",
+        fish_audio_enabled=True,
+        fish_audio_api_key="fish-test",
+    )
+
+    runtime = build_runtime(settings, session=Mock(spec=Session))
+
+    assert isinstance(runtime.executor.idempotency, DatabaseIdempotencyStore)
