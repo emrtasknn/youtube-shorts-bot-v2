@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -13,6 +14,8 @@ class PublicationRequest:
     description: str
     privacy_status: str = "public"
     category_id: str = "27"
+    upload_session_url: str | None = None
+    upload_state_callback: Callable[[str, int, int], None] | None = None
 
 
 @dataclass(frozen=True, slots=True)
