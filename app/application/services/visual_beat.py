@@ -17,11 +17,14 @@ class VisualBeat:
     narration: str
     visual_goal: str
     visual_query: str
+    purpose: str
     subject: str
     action: str
     entities: tuple[str, ...]
     location: str
     era: str
+    visual_intent: str
+    visual_style: str
     must_show: tuple[str, ...]
     must_avoid: tuple[str, ...]
 
@@ -164,11 +167,14 @@ class VisualBeatCompiler:
             narration=narration,
             visual_goal=scene.visual_goal,
             visual_query=scene.visual_query,
+            purpose=scene.purpose,
             subject=scene.subject,
             action=scene.action,
             entities=scene.entities,
             location=scene.location,
             era=scene.era,
+            visual_intent=scene.visual_intent,
+            visual_style=scene.visual_style,
             must_show=scene.must_show,
             must_avoid=scene.must_avoid,
         )
