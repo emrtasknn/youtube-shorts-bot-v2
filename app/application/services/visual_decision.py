@@ -63,7 +63,7 @@ class VisualDecisionEngine:
             )
 
         if source_is_exact and semantic_relevance >= 0.80:
-            if visual_quality >= 0.65:
+            if visual_quality >= 0.75:
                 decision = VisualDecision.ACCEPT_EXACT
             elif beautifiable:
                 decision = VisualDecision.BEAUTIFY_THEN_ACCEPT
