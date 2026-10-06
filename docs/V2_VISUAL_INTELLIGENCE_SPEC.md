@@ -278,3 +278,65 @@ M17 should prove that the selector can choose a historically specific asset over
 M18 can then change pacing.
 
 This sequencing prevents three variables from changing simultaneously.
+
+
+## 15. Visual Decision Core Principle
+
+V2 does not optimize for visual attractiveness alone and does not stop at text relevance.
+
+The production decision hierarchy is:
+
+> **SHOW WHAT IS BEING SAID → MAKE IT LOOK GOOD → IF IT CANNOT BE MADE GOOD, KEEP THE MOST RELEVANT VISUAL.**
+
+Operationally:
+
+1. **Find the most semantically specific candidate.**
+   - Prefer the exact person, event, object, place, or historical source named by the narration.
+2. **Evaluate visual quality separately.**
+   - Relevance and beauty are independent dimensions.
+3. **Beautify when the semantic match is strong but the asset is visually weak.**
+   - Allowed deterministic treatments include crop, portrait framing, resize/upscale where technically safe, contrast/exposure adjustment, subtle motion/zoom, background treatment, and subtitle-safe composition.
+4. **Re-score after treatment.**
+   - The transformed asset must remain semantically faithful.
+5. **If no candidate is both strong and attractive, preserve semantic truth.**
+   - Use the strongest relevant candidate rather than a beautiful but incorrect generic asset.
+6. **If only a weak contextual fallback exists, use it only as a declared fallback.**
+   - Never silently represent a generic image as proof of a specific historical entity/event.
+
+### Decision states
+
+Every scene must end in one of these states:
+
+- `ACCEPT_EXACT`
+- `ACCEPT_CONTEXTUAL`
+- `BEAUTIFY_THEN_ACCEPT`
+- `FALLBACK_RELEVANT`
+- `REJECT_NO_SAFE_VISUAL`
+
+### Example
+
+Narration:
+
+> "The Jazz Singer, starring Al Jolson, changed Hollywood forever."
+
+Candidate A:
+- exact Al Jolson / The Jazz Singer image
+- semantic relevance: 0.95
+- visual quality: 0.45
+
+Candidate B:
+- attractive generic 1920s singer
+- semantic relevance: 0.42
+- visual quality: 0.98
+
+Decision:
+
+`Candidate A → BEAUTIFY_THEN_ACCEPT`
+
+Candidate B is rejected because aesthetic quality cannot compensate for factual/semantic mismatch.
+
+### Non-negotiable rule
+
+**A beautiful wrong visual must never outrank an accurate relevant visual.**
+
+This rule is a V2 architectural invariant and must be covered by unit tests before M16 exits.
