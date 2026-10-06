@@ -14,8 +14,8 @@ from app.application.ports.text_generation import TextGenerationGateway, TextGen
 from app.application.ports.tts import TTSGateway, TTSRequest
 from app.application.ports.video_engine import VideoEngine, VideoRenderRequest, VideoSceneInput
 from app.application.services.audio_direction import AudioDirector
-from app.application.services.autonomous_audio import AutonomousAudioPlanner
 from app.application.services.audio_quality import AudioQualityAnalyzer
+from app.application.services.autonomous_audio import AutonomousAudioPlanner
 from app.application.services.custom_short_support import parse_script, validate_output
 from app.application.services.event_memory import EventMemoryCandidate, EventMemoryService
 from app.application.services.experiment_persistence import ExperimentPersistenceService
