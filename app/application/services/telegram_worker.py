@@ -52,9 +52,12 @@ class TelegramWorker:
                 for update in updates:
                     self._offset = int(update["update_id"]) + 1
                     await self.handle_update(update)
-            except Exception as exc:
+            except Exception:
                 await asyncio.sleep(3)
-                await self._bot.send_message(self._admin_chat_id, f"Telegram worker error: {exc}")
+                await self._bot.send_message(
+                    self._admin_chat_id,
+                    "Telegram worker error. Check application logs for details.",
+                )
 
     async def handle_update(self, update: dict[str, object]) -> None:
         raw_update_id = update.get("update_id")
@@ -131,9 +134,12 @@ class TelegramWorker:
                     await self._bot.send_message(self._admin_chat_id, message)
                 else:
                     await self._bot.answer_callback(str(callback["id"]), "Unknown action")
-            except Exception as exc:
+            except Exception:
                 await self._bot.answer_callback(str(callback.get("id")), "Action failed")
-                await self._bot.send_message(self._admin_chat_id, f"M5 action failed: {exc}")
+                await self._bot.send_message(
+                    self._admin_chat_id,
+                    "Telegram action failed. Check application logs for details.",
+                )
             return
         update_message = update.get("message")
         if (
