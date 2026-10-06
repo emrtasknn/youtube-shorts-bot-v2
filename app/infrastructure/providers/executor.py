@@ -4,6 +4,7 @@ import sys
 from dataclasses import dataclass
 from time import perf_counter
 
+from app.domain.enums import EventSeverity
 from app.infrastructure.providers.contracts import ProviderError, ProviderRequest, ProviderResult
 from app.infrastructure.providers.registry import ProviderRegistry
 from app.infrastructure.providers.reliability import (
@@ -18,6 +19,7 @@ from app.infrastructure.providers.reliability import (
     RetryManager,
     StrategyRouter,
 )
+from app.infrastructure.providers.telemetry import ReliabilityTelemetry
 
 
 @dataclass(slots=True)
@@ -31,6 +33,7 @@ class ReliabilityExecutor:
     idempotency: IdempotencyStore | DatabaseIdempotencyStore
     costs: CostTracker
     router: StrategyRouter
+    telemetry: ReliabilityTelemetry
 
     async def execute(
         self,
@@ -42,6 +45,14 @@ class ReliabilityExecutor:
         if key:
             cached = self.idempotency.get(key)
             if cached is not None:
+                self.telemetry.emit(
+                    "provider.idempotency_hit",
+                    EventSeverity.INFO,
+                    provider=cached.provider,
+                    message="Provider result served from idempotency store",
+                    metadata={"request_id": cached.request_id},
+                    run_id=request.run_id,
+                )
                 return cached
 
         providers = candidates or [request.provider]
@@ -98,6 +109,18 @@ class ReliabilityExecutor:
                         metadata=result.metadata,
                     )
                     self.health.record_success(provider_name)
+                    self.telemetry.emit(
+                        "provider.success",
+                        EventSeverity.INFO,
+                        provider=provider_name,
+                        message="Provider request succeeded",
+                        metadata={
+                            "request_id": request.request_id,
+                            "attempt": attempt,
+                            "latency_ms": latency_ms,
+                        },
+                        run_id=request.run_id,
+                    )
                     self.costs.record(
                         provider_name,
                         request.operation,
@@ -114,6 +137,19 @@ class ReliabilityExecutor:
                 except ProviderError as error:
                     last_error = error
                     self.health.record_failure(provider_name)
+                    self.telemetry.emit(
+                        "provider.error",
+                        EventSeverity.WARNING if error.retryable else EventSeverity.ERROR,
+                        provider=provider_name,
+                        message=str(error),
+                        metadata={
+                            "request_id": request.request_id,
+                            "attempt": attempt,
+                            "error_code": error.code,
+                            "category": error.category.value,
+                        },
+                        run_id=request.run_id,
+                    )
                     decision = self.retry.classify(error)
                     if decision == RetryDecision.RETRY and attempt < request.max_attempts:
                         await self.retry.wait(attempt, error)
@@ -121,4 +157,12 @@ class ReliabilityExecutor:
                     break
 
         assert last_error is not None
+        self.telemetry.emit(
+            "provider.exhausted",
+            EventSeverity.ERROR,
+            provider=last_error.provider,
+            message="Provider execution exhausted all eligible attempts",
+            metadata={"request_id": request.request_id, "error_code": last_error.code},
+            run_id=request.run_id,
+        )
         raise last_error
