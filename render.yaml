@@ -25,4 +25,46 @@ services:
         value: public
       - key: YOUTUBE_CATEGORY_ID
         value: "27"
+      - key: PEXELS_ENABLED
+        value: "true"
+      - key: PEXELS_API_KEY
+        sync: false
+      - key: PEXELS_BASE_URL
+        value: https://api.pexels.com
+      - key: PEXELS_TIMEOUT_SECONDS
+        value: "30"
+      - key: GEMINI_ENABLED
+        value: "true"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: GEMINI_TIMEOUT_SECONDS
+        value: "60"
+      - key: GROQ_ENABLED
+        value: "true"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
+      - key: GROQ_TIMEOUT_SECONDS
+        value: "60"
+      - key: FISH_AUDIO_ENABLED
+        value: "true"
+      - key: FISH_AUDIO_API_KEY
+        sync: false
+      - key: FISH_AUDIO_BASE_URL
+        value: https://api.fish.audio
+      - key: FISH_AUDIO_MODEL
+        value: s2.1-pro-free
+      - key: FISH_AUDIO_FORMAT
+        value: mp3
+      - key: FISH_AUDIO_REFERENCE_ID
+        sync: false
+      - key: FISH_AUDIO_TIMEOUT_SECONDS
+        value: "120"
     dockerCommand: /bin/sh -c "alembic upgrade head && python -m app telegram-poll"
