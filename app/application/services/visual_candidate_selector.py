@@ -108,9 +108,7 @@ class VisualCandidateSelector:
             0.0,
             min(
                 1.0,
-                score.orientation * 0.35
-                + score.resolution * 0.45
-                + score.duration * 0.20,
+                score.orientation * 0.35 + score.resolution * 0.45 + score.duration * 0.20,
             ),
         )
 
