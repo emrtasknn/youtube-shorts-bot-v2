@@ -37,16 +37,26 @@ class MusicCatalog:
 
     def select(self, *, text: str, energy: str) -> MusicTrack:
         lowered = text.lower()
-        if any(term in lowered for term in ("murder", "disaster", "flood", "explosion", "war", "death")):
+        if any(
+            term in lowered for term in ("murder", "disaster", "flood", "explosion", "war", "death")
+        ):
             mood = "tension"
-        elif any(term in lowered for term in ("secret", "mystery", "unknown", "strange", "mysterious")):
+        elif any(
+            term in lowered for term in ("secret", "mystery", "unknown", "strange", "mysterious")
+        ):
             mood = "mystery"
         elif energy == "low":
             mood = "documentary"
         else:
             mood = "cinematic"
         candidates = [track for track in self._tracks if track.mood == mood]
-        return sorted(candidates, key=lambda track: (abs(self._energy_rank(track.energy) - self._energy_rank(energy)), track.track_id))[0]
+        return sorted(
+            candidates,
+            key=lambda track: (
+                abs(self._energy_rank(track.energy) - self._energy_rank(energy)),
+                track.track_id,
+            ),
+        )[0]
 
     @staticmethod
     def _energy_rank(value: str) -> int:
