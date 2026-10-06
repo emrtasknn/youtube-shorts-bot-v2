@@ -8,10 +8,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from enum import StrEnum
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
-from enum import StrEnum
 
 from app.infrastructure.providers.contracts import (
     ErrorCategory,
