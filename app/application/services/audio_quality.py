@@ -71,17 +71,14 @@ class AudioQualityAnalyzer:
             stderr=asyncio.subprocess.PIPE,
         )
         try:
-            _, stderr = await asyncio.wait_for(
-                process.communicate(), timeout=self._timeout_seconds
-            )
+            _, stderr = await asyncio.wait_for(process.communicate(), timeout=self._timeout_seconds)
         except TimeoutError as exc:
             process.kill()
             await process.wait()
             raise RuntimeError("Audio QC analysis timed out") from exc
         if process.returncode != 0:
             raise RuntimeError(
-                "Audio QC analysis failed: "
-                + stderr.decode("utf-8", errors="replace").strip()
+                "Audio QC analysis failed: " + stderr.decode("utf-8", errors="replace").strip()
             )
         return parse_ffmpeg_audio_metrics(
             stderr.decode("utf-8", errors="replace"),
