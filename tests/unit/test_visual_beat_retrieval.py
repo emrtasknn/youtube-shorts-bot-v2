@@ -17,11 +17,15 @@ def test_visual_beat_maps_to_existing_m17_retrieval_context() -> None:
             "must_avoid": ["modern borders"],
         }
     )
-    beat = VisualBeatCompiler().compile(
-        scene,
-        scene_index=0,
-        scene_duration_seconds=6.0,
-    ).beats[0]
+    beat = (
+        VisualBeatCompiler()
+        .compile(
+            scene,
+            scene_index=0,
+            scene_duration_seconds=6.0,
+        )
+        .beats[0]
+    )
 
     context = to_visual_relevance_context(beat)
 
