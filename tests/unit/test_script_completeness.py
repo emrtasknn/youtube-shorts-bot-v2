@@ -30,7 +30,9 @@ def _payload(**overrides):
                 "duration": 9,
             },
             {
-                "narration": "The result transformed movie history forever.",
+                "narration": (
+                    "The result transformed movie history forever and became a lasting turning point."
+                ),
                 "purpose": "payoff",
                 "duration": 5,
             },
@@ -110,3 +112,40 @@ def test_gate_requires_story_beats():
     report = ScriptCompletenessGate().evaluate(payload)
     assert report.passed is False
     assert any("narrative beats" in failure for failure in report.failures)
+
+
+def test_gate_uses_scene_narration_for_scene_timing():
+    payload = _payload(
+        hook="This hook is intentionally much longer than the storyboard opening.",
+        body=(
+            "In 1927 Hollywood audiences heard synchronized dialogue for the first time. "
+            "The breakthrough changed how studios made movies and quickly pushed silent films aside. "
+            "The result transformed movie history forever and became a lasting turning point."
+        ),
+        cta="Follow for more detailed history and historical stories.",
+        scenes=[
+            {
+                "narration": "A shocking fact happened.",
+                "purpose": "hook",
+                "duration": 4,
+            },
+            {
+                "narration": "In 1927 Hollywood audiences heard synchronized dialogue for the first time.",
+                "purpose": "context",
+                "duration": 7,
+            },
+            {
+                "narration": "The breakthrough changed how studios made movies and quickly pushed silent films aside.",
+                "purpose": "event",
+                "duration": 8,
+            },
+            {
+                "narration": "The result transformed movie history forever.",
+                "purpose": "payoff",
+                "duration": 5,
+            },
+        ],
+    )
+    report = ScriptCompletenessGate().evaluate(payload)
+    assert report.passed is True
+    assert not any("scene duration" in failure for failure in report.failures)
