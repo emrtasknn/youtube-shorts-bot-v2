@@ -64,6 +64,18 @@ def parse_script(raw: str) -> dict[str, Any]:
         raise ValueError("Script must contain between 3 and 6 scenes")
     normalized_scenes: list[dict[str, Any]] = []
     for scene in scenes:
+        if not isinstance(scene, dict):
+            raise ValueError("Scene must be an object")
+        # LLMs occasionally return a single string for an optional string-list
+        # field. Normalize that provider-specific shape before applying the
+        # strict scene contract.
+        scene = dict(scene)
+        for field in ("entities", "must_show", "must_avoid"):
+            value = scene.get(field)
+            if isinstance(value, str):
+                scene[field] = [value]
+            elif value is not None and not isinstance(value, list):
+                raise ValueError(f"Scene {field} must be a list or string")
         contract = build_scene_contract(scene)
         query_tokens = {
             token.lower().strip(".,!?;:()[]{}")

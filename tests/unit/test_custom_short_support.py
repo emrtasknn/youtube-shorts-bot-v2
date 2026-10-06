@@ -123,3 +123,46 @@ def test_parse_script_rejects_generic_visual_query() -> None:
     }
     with pytest.raises(ValueError, match="specific visual_query"):
         parse_script(json.dumps(payload))
+
+
+def test_parse_script_normalizes_scalar_scene_list_fields() -> None:
+    payload = {
+        "hook": "H",
+        "body": "B",
+        "duration_target": 28,
+        "scenes": [
+            {
+                "visual_query": "Boston molasses tank",
+                "visual_goal": "The Boston molasses tank",
+                "narration": "A giant tank stood over Boston.",
+                "entities": "Purity Distilling Company",
+                "must_show": "Boston molasses tank",
+                "must_avoid": "modern buildings",
+            }
+        ]
+        * 3,
+    }
+    result = parse_script(json.dumps(payload))
+    scene = result["scenes"][0]
+    assert scene["entities"] == ["Purity Distilling Company"]
+    assert scene["must_show"] == ["Boston molasses tank"]
+    assert scene["must_avoid"] == ["modern buildings"]
+
+
+def test_parse_script_rejects_invalid_scene_list_field_type() -> None:
+    payload = {
+        "hook": "H",
+        "body": "B",
+        "duration_target": 28,
+        "scenes": [
+            {
+                "visual_query": "Boston molasses tank",
+                "visual_goal": "The Boston molasses tank",
+                "narration": "A giant tank stood over Boston.",
+                "must_show": 123,
+            }
+        ]
+        * 3,
+    }
+    with pytest.raises(ValueError, match="must_show must be a list or string"):
+        parse_script(json.dumps(payload))

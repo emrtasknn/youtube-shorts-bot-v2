@@ -318,6 +318,7 @@ class GenerateCustomShort:
                     "Each scene must contain duration, narration, "
                     "visual_goal, visual_query, purpose, subject, action, entities, "
                     "location, era, visual_intent, visual_style, must_show, and must_avoid. "
+                    "entities, must_show, and must_avoid must be JSON arrays of strings. "
                     "must describe the exact subject shown on screen. For historical "
                     "topics include concrete entities, location, event and era in "
                     "visual_query when relevant; never use generic queries such as "
