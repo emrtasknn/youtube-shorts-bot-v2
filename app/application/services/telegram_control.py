@@ -234,9 +234,7 @@ class TelegramControlPlane:
         self._session.flush()
 
         run.status = transition_run(run.status, RunStatus.PUBLISHING)
-        publication.status = transition_publication(
-            publication.status, PublicationStatus.UPLOADING
-        )
+        publication.status = transition_publication(publication.status, PublicationStatus.UPLOADING)
         self._session.commit()
 
         content = self._session.get(ContentModel, run.content_id)
