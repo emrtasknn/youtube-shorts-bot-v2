@@ -7,7 +7,13 @@ from app.application.ports.stock_media import (
     StockMediaStrategy,
 )
 from app.application.services.stock_media_selector import ScoredStockMedia, StockMediaSelector
-from app.application.services.visual_candidate_selector import (\n    VisualCandidateSelection,\n    VisualCandidateSelector,\n)\nfrom app.application.services.visual_intent import VisualIntent\nfrom app.application.services.visual_relevance import VisualRelevanceContext\n
+from app.application.services.visual_candidate_selector import (
+    VisualCandidateSelection,
+    VisualCandidateSelector,
+)
+from app.application.services.visual_intent import VisualIntent
+from app.application.services.visual_relevance import VisualRelevanceContext
+
 
 class SearchStockMedia:
     def __init__(self, gateway: StockMediaGateway) -> None:
