@@ -7,10 +7,38 @@ from typing import Any
 _WORD_RE = re.compile(r"\b[\w’'-]+\b", re.UNICODE)
 _SENTENCE_END_RE = re.compile(r"""[.!?]["'”’)]*$""")
 _TRAILING_FRAGMENT_WORDS = {
-    "and", "or", "but", "because", "that", "which", "who", "when", "while",
-    "with", "from", "for", "to", "of", "in", "on", "as", "than", "until",
-    "ve", "veya", "ama", "çünkü", "ki", "ile", "için", "olarak", "ancak",
-    "fakat", "eğer", "iken", "kadar",
+    "and",
+    "or",
+    "but",
+    "because",
+    "that",
+    "which",
+    "who",
+    "when",
+    "while",
+    "with",
+    "from",
+    "for",
+    "to",
+    "of",
+    "in",
+    "on",
+    "as",
+    "than",
+    "until",
+    "ve",
+    "veya",
+    "ama",
+    "çünkü",
+    "ki",
+    "ile",
+    "için",
+    "olarak",
+    "ancak",
+    "fakat",
+    "eğer",
+    "iken",
+    "kadar",
 }
 _STORY_PURPOSES = {"hook", "context", "event", "consequence", "payoff"}
 
@@ -69,29 +97,22 @@ class ScriptCompletenessGate:
             else ""
         )
         narration_words = _words(all_narration)
-        total_tts_words = len(
-            _words(" ".join(part for part in (hook, body, cta) if part))
-        )
+        total_tts_words = len(_words(" ".join(part for part in (hook, body, cta) if part)))
         estimated_seconds = total_tts_words / self.words_per_second
         scene_duration = (
-            sum(
-                float(scene.get("duration") or 0)
-                for scene in scenes
-                if isinstance(scene, dict)
-            )
+            sum(float(scene.get("duration") or 0) for scene in scenes if isinstance(scene, dict))
             if isinstance(scenes, list)
             else 0.0
         )
 
         if len(body_words) < 35:
-            failures.append(
-                f"body is too short ({len(body_words)} words; minimum 35)"
-            )
+            failures.append(f"body is too short ({len(body_words)} words; minimum 35)")
         if not _ends_as_sentence(body):
             failures.append("body does not end with a complete sentence")
-        if body_words and body_words[-1].lower().strip(
-            ".,!?;:()[]{}\"'’”"
-        ) in _TRAILING_FRAGMENT_WORDS:
+        if (
+            body_words
+            and body_words[-1].lower().strip(".,!?;:()[]{}\"'’”") in _TRAILING_FRAGMENT_WORDS
+        ):
             failures.append("body ends with a sentence fragment")
         if scenes is None or not isinstance(scenes, list) or len(scenes) < 3:
             failures.append("story needs at least 3 scenes")
@@ -123,9 +144,7 @@ class ScriptCompletenessGate:
                 if isinstance(scene, dict)
             ]
             meaningful_purposes = [
-                purpose
-                for purpose in normalized_purposes
-                if purpose in _STORY_PURPOSES
+                purpose for purpose in normalized_purposes if purpose in _STORY_PURPOSES
             ]
             if len(set(meaningful_purposes)) < 3:
                 failures.append(
@@ -144,22 +163,16 @@ class ScriptCompletenessGate:
                 if narration and not _ends_as_sentence(narration):
                     failures.append(f"scene {index} narration is incomplete")
                 if narration:
-                    last_word = _words(narration)[-1].lower().strip(
-                        ".,!?;:()[]{}\"'’”"
-                    )
+                    last_word = _words(narration)[-1].lower().strip(".,!?;:()[]{}\"'’”")
                     if last_word in _TRAILING_FRAGMENT_WORDS:
-                        failures.append(
-                            f"scene {index} narration ends with a fragment"
-                        )
+                        failures.append(f"scene {index} narration ends with a fragment")
 
         body_tokens = _normalized_words(body)
         narration_tokens = _normalized_words(all_narration)
         if body_tokens:
             token_coverage = len(body_tokens & narration_tokens) / len(body_tokens)
             if token_coverage < 0.60:
-                failures.append(
-                    f"storyboard vocabulary coverage is too low ({token_coverage:.0%})"
-                )
+                failures.append(f"storyboard vocabulary coverage is too low ({token_coverage:.0%})")
 
         return ScriptCompletenessReport(
             passed=not failures,
