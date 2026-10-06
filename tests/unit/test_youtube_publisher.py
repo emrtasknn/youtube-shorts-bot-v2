@@ -50,7 +50,9 @@ async def test_youtube_publish_streams_chunks_and_persists_session(tmp_path: Pat
     )
     try:
         result = await publisher.publish(
-            request_for(video, callback=lambda url, offset, total: states.append((url, offset, total)))
+            request_for(
+                video, callback=lambda url, offset, total: states.append((url, offset, total))
+            )
         )
     finally:
         await client.aclose()
@@ -62,7 +64,10 @@ async def test_youtube_publish_streams_chunks_and_persists_session(tmp_path: Pat
         ("init", ""),
         ("put", "bytes 0-3/10"),
     ]
-    assert states == [("https://upload.test/session", 0, 10), ("https://upload.test/session", 10, 10)]
+    assert states == [
+        ("https://upload.test/session", 0, 10),
+        ("https://upload.test/session", 10, 10),
+    ]
 
 
 @pytest.mark.asyncio
@@ -82,9 +87,7 @@ async def test_youtube_publish_resumes_from_persisted_session(tmp_path: Path) ->
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     publisher = YouTubePublisher("client", "secret", "refresh", client=client, chunk_size=4)
     try:
-        result = await publisher.publish(
-            request_for(video, "https://upload.test/session")
-        )
+        result = await publisher.publish(request_for(video, "https://upload.test/session"))
     finally:
         await client.aclose()
 
