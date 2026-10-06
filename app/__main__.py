@@ -65,7 +65,7 @@ def _build_telegram_control(
     if not with_runtime:
         return TelegramControlPlane(session=session, bot=bot), bot, session
 
-    runtime = build_runtime(settings)
+    runtime = build_runtime(settings, session=session)
     generator = GenerateCustomShort(
         session=session,
         text=runtime.text,
@@ -90,8 +90,8 @@ def _build_telegram_control(
 
 async def _run_custom(args: argparse.Namespace) -> None:
     settings = get_settings()
-    runtime = build_runtime(settings)
     session = get_session()
+    runtime = build_runtime(settings, session=session)
     try:
         run_key = args.run_key or f"manual-{uuid.uuid4().hex}"
         result = await GenerateCustomShort(
