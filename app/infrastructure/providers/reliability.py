@@ -8,9 +8,17 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session
 from enum import StrEnum
 
-from app.infrastructure.providers.contracts import ErrorCategory, ProviderError, ProviderResult
+from app.infrastructure.providers.contracts import (
+    ErrorCategory,
+    ProviderError,
+    ProviderResult,
+    ProviderUsage,
+)
 
 
 class RetryDecision(StrEnum):
@@ -319,13 +327,11 @@ class IdempotencyStore:
 class DatabaseIdempotencyStore:
     """Durable idempotency store backed by PostgreSQL."""
 
-    def __init__(self, session: object, ttl_seconds: int = 3600) -> None:
+    def __init__(self, session: Session, ttl_seconds: int = 3600) -> None:
         self.session = session
         self.ttl_seconds = ttl_seconds
 
     def get(self, key: str, now: datetime | None = None) -> ProviderResult | None:
-        from sqlalchemy import delete, select
-
         from app.infrastructure.database.models import ProviderIdempotencyModel
 
         now = now or datetime.now(UTC)
@@ -348,7 +354,7 @@ class DatabaseIdempotencyStore:
             provider=record.provider,
             request_id=record.request_id,
             output=record.output,
-            usage=__import__("app.infrastructure.providers.contracts", fromlist=["ProviderUsage"]).ProviderUsage(
+            usage=ProviderUsage(
                 input_units=int(usage.get("input_units", 0)),
                 output_units=int(usage.get("output_units", 0)),
                 total_units=int(usage.get("total_units", 0)),
@@ -359,8 +365,6 @@ class DatabaseIdempotencyStore:
         )
 
     def put(self, key: str, result: ProviderResult, now: datetime | None = None) -> None:
-        from datetime import timedelta
-
         from app.infrastructure.database.models import ProviderIdempotencyModel
 
         now = now or datetime.now(UTC)
