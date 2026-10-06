@@ -22,8 +22,9 @@ def test_ffmpeg_command_contains_dynamic_ducking(tmp_path) -> None:
 
     filter_complex = command[command.index("-filter_complex") + 1]
     assert "[2:a]atrim=duration=6" in filter_complex
-    assert "[bgm][voice]sidechaincompress=" in filter_complex
-    assert "[voice][ducked]amix=inputs=2" in filter_complex
+    assert "[voice]asplit=2[voice_mix][voice_sidechain];" in filter_complex
+    assert "[bgm][voice_sidechain]sidechaincompress=" in filter_complex
+    assert "[voice_mix][ducked]amix=inputs=2" in filter_complex
     assert "[aout]" in command
 
 
