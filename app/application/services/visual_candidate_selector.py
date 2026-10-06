@@ -41,7 +41,7 @@ class VisualCandidateSelector:
             factual_specificity=factual_specificity,
             source_is_exact=source_is_exact,
             must_avoid_match="must_avoid_match" in score.reasons,
-            beautifiable=visual_quality >= 0.35,
+            beautifiable=visual_quality < 0.75,
         )
         evidence = CandidateEvidence.from_score(
             item,
