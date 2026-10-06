@@ -36,14 +36,16 @@ class AudioDucking:
         output_label: str = "aout",
     ) -> str:
         config = self.config
+        sidechain_label = f"{voice_label}_sidechain"
         return (
             f"[{background_label}]volume={config.background_volume:g}[bgm];"
-            f"[bgm][{voice_label}]sidechaincompress="
+            f"[{voice_label}]asplit=2[{voice_label}_mix][{sidechain_label}];"
+            f"[bgm][{sidechain_label}]sidechaincompress="
             f"threshold={config.threshold:g}:"
             f"ratio={config.ratio:g}:"
             f"attack={config.attack_ms:g}:"
             f"release={config.release_ms:g}:"
             "makeup=1[ducked];"
-            f"[{voice_label}][ducked]amix=inputs=2:duration=first:"
+            f"[{voice_label}_mix][ducked]amix=inputs=2:duration=first:"
             f"dropout_transition=2[{output_label}]"
         )
