@@ -74,6 +74,8 @@ def parse_script(raw: str) -> dict[str, Any]:
             value = scene.get(field)
             if isinstance(value, str):
                 scene[field] = [value]
+            elif value is not None and not isinstance(value, list):
+                raise ValueError(f"Scene {field} must be a list or string")
         contract = build_scene_contract(scene)
         query_tokens = {
             token.lower().strip(".,!?;:()[]{}")
