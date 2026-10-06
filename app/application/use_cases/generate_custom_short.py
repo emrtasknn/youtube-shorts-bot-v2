@@ -34,6 +34,7 @@ from app.application.services.topic_selection_production_adapter import (
     TopicSelectionProductionAdapter,
 )
 from app.application.services.visual_beat import VisualBeatCompiler
+from app.application.services.visual_beat_render import to_video_scene_inputs
 from app.application.services.visual_beat_retriever import VisualBeatRetriever
 from app.application.services.visual_relevance import VisualRelevanceContext
 from app.application.services.visual_source_resolver import VisualSourceResolver
@@ -88,6 +89,13 @@ class CustomShortResult:
     output_path: Path
     duration_seconds: float
     status: RunStatus
+
+
+@dataclass(frozen=True, slots=True)
+class VisualBeatAssetSelection:
+    timeline: Any
+    paths: tuple[Path, ...]
+    assets: tuple[AssetModel, ...]
 
 
 class GenerateCustomShort:
@@ -211,17 +219,28 @@ class GenerateCustomShort:
             run.status = RunStatus.ASSET_PLANNING
             inputs = []
             for scene in scenes:
-                path, asset = await self._select_asset(run, scene)
-                scene.status = SceneStatus.READY
-                self._session.add(asset)
-                self._session.flush()
-                inputs.append(
-                    VideoSceneInput(
-                        path=path,
-                        duration_seconds=float(scene.duration or 5),
-                        is_image=True,
+                try:
+                    selection = await self._select_visual_beats(run, scene)
+                    scene_inputs = to_video_scene_inputs(
+                        selection.timeline,
+                        selection.paths,
                     )
-                )
+                    assets = selection.assets
+                except Exception:
+                    path, asset = await self._select_asset_scene_fallback(run, scene)
+                    scene_inputs = (
+                        VideoSceneInput(
+                            path=path,
+                            duration_seconds=float(scene.duration or 5),
+                            is_image=True,
+                        ),
+                    )
+                    assets = (asset,)
+                scene.status = SceneStatus.READY
+                for asset in assets:
+                    self._session.add(asset)
+                self._session.flush()
+                inputs.extend(scene_inputs)
             run.status = RunStatus.ASSET_GENERATION
             direction = AudioDirector().plan(
                 hook=script.hook,
@@ -555,15 +574,22 @@ class GenerateCustomShort:
 
     async def _select_asset(self, run: RunModel, scene: SceneModel) -> tuple[Path, AssetModel]:
         try:
-            return await self._select_asset_with_visual_beats(run, scene)
+            selection = await self._select_visual_beats(run, scene)
+            best_index = max(
+                range(len(selection.assets)),
+                key=lambda index: float(
+                    selection.assets[index].asset_metadata.get("score", 0.0)
+                ),
+            )
+            return selection.paths[best_index], selection.assets[best_index]
         except Exception:
             return await self._select_asset_scene_fallback(run, scene)
 
-    async def _select_asset_with_visual_beats(
+    async def _select_visual_beats(
         self,
         run: RunModel,
         scene: SceneModel,
-    ) -> tuple[Path, AssetModel]:
+    ) -> VisualBeatAssetSelection:
         scene_contract = build_scene_contract(
             {
                 "narration": scene.narration,
@@ -596,36 +622,53 @@ class GenerateCustomShort:
                     beat=beat,
                 )
             )
-        selected = max(results, key=lambda result: result.score)
-        item = selected.item
-        url = str(item.get("download_url") or "").strip()
-        if not url:
-            raise RuntimeError(f"Selected beat asset has no download URL: {item.get('id')}")
-        path = self._storage_root / str(run.id) / f"scene-{scene.scene_index}.jpg"
-        await self._downloader.download(url, path)
-        asset = AssetModel(
-            asset_type=AssetType.STOCK_IMAGE,
-            provider=selected.provider,
-            provider_asset_id=str(item.get("id") or ""),
-            source_url=str(item.get("source_url") or ""),
-            local_path=str(path),
-            mime_type="image/jpeg",
-            width=int(item.get("width") or 0),
-            height=int(item.get("height") or 0),
-            status=AssetStatus.READY,
-            asset_metadata={
-                "query": selected.query,
-                "score": selected.score,
-                "m18_visual_beat": {
-                    "scene_index": scene.scene_index,
-                    "beat_index": selected.beat.beat_index,
-                    "start_seconds": selected.beat.start_seconds,
-                    "duration_seconds": selected.beat.duration_seconds,
-                    "beat_count": len(timeline.beats),
-                },
-            },
+
+        paths: list[Path] = []
+        assets: list[AssetModel] = []
+        for result in results:
+            item = result.item
+            url = str(item.get("download_url") or "").strip()
+            if not url:
+                raise RuntimeError(
+                    f"Selected beat asset has no download URL: {item.get('id')}"
+                )
+            path = (
+                self._storage_root
+                / str(run.id)
+                / f"scene-{scene.scene_index}-beat-{result.beat.beat_index}.jpg"
+            )
+            await self._downloader.download(url, path)
+            assets.append(
+                AssetModel(
+                    asset_type=AssetType.STOCK_IMAGE,
+                    provider=result.provider,
+                    provider_asset_id=str(item.get("id") or ""),
+                    source_url=str(item.get("source_url") or ""),
+                    local_path=str(path),
+                    mime_type="image/jpeg",
+                    width=int(item.get("width") or 0),
+                    height=int(item.get("height") or 0),
+                    status=AssetStatus.READY,
+                    asset_metadata={
+                        "query": result.query,
+                        "score": result.score,
+                        "m18_visual_beat": {
+                            "scene_index": scene.scene_index,
+                            "beat_index": result.beat.beat_index,
+                            "start_seconds": result.beat.start_seconds,
+                            "duration_seconds": result.beat.duration_seconds,
+                            "beat_count": len(timeline.beats),
+                        },
+                    },
+                )
+            )
+            paths.append(path)
+
+        return VisualBeatAssetSelection(
+            timeline=timeline,
+            paths=tuple(paths),
+            assets=tuple(assets),
         )
-        return path, asset
 
     async def _select_asset_scene_fallback(
         self,
