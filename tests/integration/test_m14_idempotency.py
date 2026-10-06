@@ -42,3 +42,30 @@ def test_database_idempotency_expiry_is_removed() -> None:
         assert store.get("expired-key") is None
     finally:
         session.close()
+
+
+def test_database_idempotency_duplicate_put_is_race_safe() -> None:
+    from sqlalchemy import func, select
+
+    from app.infrastructure.database.models import ProviderIdempotencyModel
+
+    session = get_session()
+    try:
+        first = DatabaseIdempotencyStore(session)
+        first_result = ProviderResult(True, "primary", "req-first")
+        second_result = ProviderResult(True, "fallback", "req-second")
+
+        first.put("concurrent-key", first_result)
+        first.put("concurrent-key", second_result)
+
+        cached = first.get("concurrent-key")
+        count = session.scalar(
+            select(func.count())
+            .select_from(ProviderIdempotencyModel)
+            .where(ProviderIdempotencyModel.idempotency_key == "concurrent-key")
+        )
+
+        assert cached == first_result
+        assert count == 1
+    finally:
+        session.close()
