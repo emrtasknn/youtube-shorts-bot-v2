@@ -336,9 +336,7 @@ class DatabaseIdempotencyStore:
 
         now = now or datetime.now(UTC)
         record = self.session.scalar(
-            select(ProviderIdempotencyModel).where(
-                ProviderIdempotencyModel.idempotency_key == key
-            )
+            select(ProviderIdempotencyModel).where(ProviderIdempotencyModel.idempotency_key == key)
         )
         if record is None:
             return None
