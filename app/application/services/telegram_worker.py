@@ -4,11 +4,16 @@ import asyncio
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.application.services.telegram_control import TelegramControlPlane
 from app.domain.enums import RunStatus
-from app.infrastructure.database.models import ApprovalModel, RunModel
+from app.infrastructure.database.models import (
+    ApprovalModel,
+    RunModel,
+    TelegramUpdateReceiptModel,
+)
 from app.infrastructure.telegram.bot import TelegramBot
 
 
@@ -46,13 +51,48 @@ class TelegramWorker:
                 updates = await self._bot.get_updates(offset=self._offset, timeout=25)
                 for update in updates:
                     self._offset = int(update["update_id"]) + 1
-                    await self._handle(update)
+                    await self.handle_update(update)
             except Exception as exc:
                 await asyncio.sleep(3)
                 await self._bot.send_message(self._admin_chat_id, f"Telegram worker error: {exc}")
 
     async def handle_update(self, update: dict[str, object]) -> None:
-        await self._handle(update)
+        raw_update_id = update.get("update_id")
+        if not isinstance(raw_update_id, int):
+            raise ValueError("Telegram update is missing a numeric update_id")
+        if not self._claim_update(raw_update_id):
+            return
+        try:
+            await self._handle(update)
+        except Exception:
+            self._release_update(raw_update_id)
+            raise
+
+    def _claim_update(self, update_id: int) -> bool:
+        existing = self._session.scalar(
+            select(TelegramUpdateReceiptModel).where(
+                TelegramUpdateReceiptModel.update_id == update_id
+            )
+        )
+        if existing is not None:
+            return False
+        self._session.add(TelegramUpdateReceiptModel(update_id=update_id))
+        try:
+            self._session.commit()
+        except IntegrityError:
+            self._session.rollback()
+            return False
+        return True
+
+    def _release_update(self, update_id: int) -> None:
+        receipt = self._session.scalar(
+            select(TelegramUpdateReceiptModel).where(
+                TelegramUpdateReceiptModel.update_id == update_id
+            )
+        )
+        if receipt is not None:
+            self._session.delete(receipt)
+            self._session.commit()
 
     async def _handle(self, update: dict[str, object]) -> None:
         callback = update.get("callback_query")
