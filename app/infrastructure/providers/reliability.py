@@ -11,6 +11,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from sqlalchemy import delete, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.infrastructure.providers.contracts import (
@@ -366,24 +367,26 @@ class DatabaseIdempotencyStore:
         from app.infrastructure.database.models import ProviderIdempotencyModel
 
         now = now or datetime.now(UTC)
-        record = ProviderIdempotencyModel(
-            idempotency_key=key,
-            provider=result.provider,
-            request_id=result.request_id,
-            success=result.success,
-            output=result.output,
-            usage={
+        values = {
+            "idempotency_key": key,
+            "provider": result.provider,
+            "request_id": result.request_id,
+            "success": result.success,
+            "output": result.output,
+            "usage": {
                 "input_units": result.usage.input_units,
                 "output_units": result.usage.output_units,
                 "total_units": result.usage.total_units,
             },
-            cost=result.cost,
-            latency_ms=result.latency_ms,
-            result_metadata=result.metadata,
-            created_at=now,
-            expires_at=now + timedelta(seconds=self.ttl_seconds),
-        )
-        self.session.add(record)
+            "cost": result.cost,
+            "latency_ms": result.latency_ms,
+            "metadata": result.metadata,
+            "created_at": now,
+            "expires_at": now + timedelta(seconds=self.ttl_seconds),
+        }
+        statement = insert(ProviderIdempotencyModel).values(**values)
+        statement = statement.on_conflict_do_nothing(index_elements=["idempotency_key"])
+        self.session.execute(statement)
         self.session.commit()
 
 
