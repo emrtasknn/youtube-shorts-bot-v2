@@ -51,16 +51,22 @@ def test_selector_prefers_semantically_strong_exact_candidate() -> None:
     selector = VisualCandidateSelector()
     result = selector.select(
         [
-            ({"id": "beautiful-wrong"}, _score(
-                relevance=0.42,
-                orientation=1.0,
-                resolution=1.0,
-            )),
-            ({"id": "relevant-exact"}, _score(
-                relevance=0.95,
-                orientation=1.0,
-                resolution=0.70,
-            )),
+            (
+                {"id": "beautiful-wrong"},
+                _score(
+                    relevance=0.42,
+                    orientation=1.0,
+                    resolution=1.0,
+                ),
+            ),
+            (
+                {"id": "relevant-exact"},
+                _score(
+                    relevance=0.95,
+                    orientation=1.0,
+                    resolution=0.70,
+                ),
+            ),
         ],
         intent=_intent(),
         source_is_exact=True,
@@ -75,11 +81,14 @@ def test_selector_keeps_relevant_candidate_when_beautification_is_needed() -> No
     selector = VisualCandidateSelector()
     result = selector.select(
         [
-            ({"id": "relevant-ugly"}, _score(
-                relevance=0.95,
-                orientation=1.0,
-                resolution=0.35,
-            )),
+            (
+                {"id": "relevant-ugly"},
+                _score(
+                    relevance=0.95,
+                    orientation=1.0,
+                    resolution=0.35,
+                ),
+            ),
         ],
         intent=_intent(),
         source_is_exact=True,
@@ -94,11 +103,14 @@ def test_selector_rejects_only_beautiful_but_irrelevant_candidate() -> None:
     selector = VisualCandidateSelector()
     result = selector.select(
         [
-            ({"id": "wrong"}, _score(
-                relevance=0.30,
-                orientation=1.0,
-                resolution=1.0,
-            )),
+            (
+                {"id": "wrong"},
+                _score(
+                    relevance=0.30,
+                    orientation=1.0,
+                    resolution=1.0,
+                ),
+            ),
         ],
         intent=_intent(),
         source_is_exact=False,
