@@ -12,11 +12,14 @@ def _scene():
             "narration": "Rome grew powerful. Its armies conquered distant lands.",
             "visual_goal": "Show Roman expansion",
             "visual_query": "Roman Empire expansion map",
+            "purpose": "event",
             "subject": "Roman Empire",
             "action": "expanding",
             "entities": ["Rome", "Roman Empire"],
             "location": "Mediterranean",
             "era": "ancient Rome",
+            "visual_intent": "territorial expansion",
+            "visual_style": "archival",
             "must_show": ["Roman territory"],
             "must_avoid": ["modern borders"],
         }
@@ -31,11 +34,14 @@ def test_compiler_preserves_scene_semantics_across_beats() -> None:
         assert beat.scene_index == 2
         assert beat.visual_goal == "Show Roman expansion"
         assert beat.visual_query == "Roman Empire expansion map"
+        assert beat.purpose == "event"
         assert beat.subject == "Roman Empire"
         assert beat.action == "expanding"
         assert beat.entities == ("Rome", "Roman Empire")
         assert beat.location == "Mediterranean"
         assert beat.era == "ancient Rome"
+        assert beat.visual_intent == "territorial expansion"
+        assert beat.visual_style == "archival"
         assert beat.must_show == ("Roman territory",)
         assert beat.must_avoid == ("modern borders",)
 
