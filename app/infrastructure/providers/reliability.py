@@ -444,8 +444,7 @@ class CostTracker:
         if run is None or run.budget_target is None:
             return None
         spent = self._session.scalar(
-            select(func.coalesce(func.sum(CostEventModel.amount), 0))
-            .where(
+            select(func.coalesce(func.sum(CostEventModel.amount), 0)).where(
                 CostEventModel.run_id == UUID(run_id),
                 CostEventModel.currency == currency,
             )
@@ -456,7 +455,7 @@ class CostTracker:
         if upcoming_cost < 0:
             raise ValueError("upcoming_cost must be non-negative")
         remaining = self.budget_remaining(run_id)
-        if remaining is not None and upcoming_cost > remaining:
+        if remaining is not None and (remaining <= 0 or upcoming_cost > remaining):
             raise CostBudgetExceeded(f"Run budget exhausted: remaining={remaining}")
 
     def total(self, currency: str = "USD") -> Decimal:
