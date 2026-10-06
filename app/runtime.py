@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from sqlalchemy.orm import Session
+
 from app.application.ports.asset_downloader import AssetDownloader
 from app.application.ports.stock_media import StockMediaGateway
 from app.application.ports.text_generation import TextGenerationGateway
@@ -16,7 +18,6 @@ from app.infrastructure.providers.gateways import (
     ProviderTextGenerationGateway,
     ProviderTTSGateway,
 )
-from sqlalchemy.orm import Session
 
 from app.infrastructure.providers.reliability import (
     ConcurrencyLimiter,
