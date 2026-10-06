@@ -134,7 +134,7 @@ class TelegramWorker:
                     await self._bot.send_message(self._admin_chat_id, message)
                 else:
                     await self._bot.answer_callback(str(callback["id"]), "Unknown action")
-            except Exception as exc:
+            except Exception:
                 await self._bot.answer_callback(str(callback.get("id")), "Action failed")
                 await self._bot.send_message(
                     self._admin_chat_id,
