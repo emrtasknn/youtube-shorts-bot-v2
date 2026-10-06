@@ -129,26 +129,18 @@ class AutonomousAudioPlanner:
                 sfx_rate = sfx.getframerate()
             start = min(
                 sample_count - 1,
-                int(
-                    (cue_index + 1)
-                    * duration_seconds
-                    / (len(sfx_paths) + 1)
-                    * params.framerate
-                ),
+                int((cue_index + 1) * duration_seconds / (len(sfx_paths) + 1) * params.framerate),
             )
             if sfx_rate != params.framerate:
                 raise ValueError("M15 procedural assets must use the same sample rate")
-            for offset in range(
-                min(len(sfx_frames) // 2, sample_count - start)
-            ):
+            for offset in range(min(len(sfx_frames) // 2, sample_count - start)):
                 value = struct.unpack_from("<h", sfx_frames, offset * 2)[0] / 32767.0
                 mixed[start + offset] = max(
                     -1.0,
                     min(1.0, mixed[start + offset] + 0.28 * value),
                 )
         pcm = b"".join(
-            struct.pack("<h", int(max(-1.0, min(1.0, sample)) * 32767))
-            for sample in mixed
+            struct.pack("<h", int(max(-1.0, min(1.0, sample)) * 32767)) for sample in mixed
         )
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with wave.open(str(output_path), "wb") as output:
