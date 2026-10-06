@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from pathlib import Path
 import struct
 import wave
+from dataclasses import dataclass
+from pathlib import Path
 from uuid import UUID
 
 from app.application.services.audio_catalog import MusicCatalog, MusicTrack, SfxCatalog, SfxCue
@@ -48,20 +48,17 @@ class AutonomousAudioPlanner:
         text = direction.tts_text
         music = self._music_catalog.select(text=text, energy=direction.energy)
         sfx = self._sfx_catalog.match(text)
-
         music_path = output_dir / f"music-{music.track_id}.wav"
         self._music_generator.generate(
             music, duration_seconds=duration_seconds, output_path=music_path
         )
         validate_generated_wav(music_path)
-
         sfx_paths: list[Path] = []
         for cue in sfx:
             path = output_dir / f"sfx-{cue.cue_id}.wav"
             self._sfx_generator.generate(cue, output_path=path)
             validate_generated_wav(path)
             sfx_paths.append(path)
-
         mixed_path = output_dir / "background-mix.wav"
         self._mix_assets(
             music_path,
@@ -70,7 +67,6 @@ class AutonomousAudioPlanner:
             output_path=mixed_path,
         )
         validate_generated_wav(mixed_path)
-
         profile = f"m15:{music.track_id}:sfx={','.join(cue.cue_id for cue in sfx) or 'none'}"
         metadata: dict[str, object] = {
             "profile_version": "m15-v1",
@@ -119,21 +115,41 @@ class AutonomousAudioPlanner:
             frames = bytearray(music.readframes(music.getnframes()))
         if params.nchannels != 1 or params.sampwidth != 2:
             raise ValueError("M15 procedural audio expects mono 16-bit WAV")
-        sample_count = min(len(frames) // 2, int(duration_seconds * params.framerate))
-        mixed = [struct.unpack_from("<h", frames, index * 2)[0] / 32767.0 for index in range(sample_count)]
-
+        sample_count = min(
+            len(frames) // 2,
+            int(duration_seconds * params.framerate),
+        )
+        mixed = [
+            struct.unpack_from("<h", frames, index * 2)[0] / 32767.0
+            for index in range(sample_count)
+        ]
         for cue_index, sfx_path in enumerate(sfx_paths):
             with wave.open(str(sfx_path), "rb") as sfx:
                 sfx_frames = sfx.readframes(sfx.getnframes())
                 sfx_rate = sfx.getframerate()
-            start = min(sample_count - 1, int((cue_index + 1) * duration_seconds / (len(sfx_paths) + 1) * params.framerate))
+            start = min(
+                sample_count - 1,
+                int(
+                    (cue_index + 1)
+                    * duration_seconds
+                    / (len(sfx_paths) + 1)
+                    * params.framerate
+                ),
+            )
             if sfx_rate != params.framerate:
                 raise ValueError("M15 procedural assets must use the same sample rate")
-            for offset in range(min(len(sfx_frames) // 2, sample_count - start)):
+            for offset in range(
+                min(len(sfx_frames) // 2, sample_count - start)
+            ):
                 value = struct.unpack_from("<h", sfx_frames, offset * 2)[0] / 32767.0
-                mixed[start + offset] = max(-1.0, min(1.0, mixed[start + offset] + 0.28 * value))
-
-        pcm = b"".join(struct.pack("<h", max(-1.0, min(1.0, sample)) * 32767) for sample in mixed)
+                mixed[start + offset] = max(
+                    -1.0,
+                    min(1.0, mixed[start + offset] + 0.28 * value),
+                )
+        pcm = b"".join(
+            struct.pack("<h", int(max(-1.0, min(1.0, sample)) * 32767))
+            for sample in mixed
+        )
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with wave.open(str(output_path), "wb") as output:
             output.setparams(params)
