@@ -9,6 +9,7 @@ from app.infrastructure.providers.registry import ProviderRegistry
 from app.infrastructure.providers.reliability import (
     ConcurrencyLimiter,
     CostTracker,
+    DatabaseIdempotencyStore,
     IdempotencyStore,
     ProviderHealthManager,
     QuotaManager,
@@ -27,7 +28,7 @@ class ReliabilityExecutor:
     rate_limiter: RateLimiter
     concurrency: ConcurrencyLimiter
     quota: QuotaManager
-    idempotency: IdempotencyStore
+    idempotency: IdempotencyStore | DatabaseIdempotencyStore
     costs: CostTracker
     router: StrategyRouter
 
