@@ -103,7 +103,10 @@ class ReliabilityExecutor:
                         request.operation,
                         result.cost,
                         run_id=request.run_id,
-                        metadata={"request_id": request.request_id, "capability": request.capability.value},
+                        metadata={
+                            "request_id": request.request_id,
+                            "capability": request.capability.value,
+                        },
                     )
                     if key:
                         self.idempotency.put(key, result)
