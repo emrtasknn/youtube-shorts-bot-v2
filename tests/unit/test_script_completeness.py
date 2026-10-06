@@ -60,9 +60,7 @@ def test_gate_rejects_truncated_body():
 
 
 def test_gate_rejects_short_story():
-    payload = _payload(
-        body="Hollywood heard voices in movies for the first time."
-    )
+    payload = _payload(body="Hollywood heard voices in movies for the first time.")
     report = ScriptCompletenessGate().evaluate(payload)
     assert report.passed is False
     assert any("body is too short" in failure for failure in report.failures)
@@ -84,8 +82,16 @@ def test_gate_rejects_short_scene_narration():
 def test_gate_requires_story_beats():
     payload = _payload(
         scenes=[
-            {"narration": "A shocking fact happened.", "purpose": "support_narration", "duration": 4},
-            {"narration": "Hollywood changed movies.", "purpose": "support_narration", "duration": 8},
+            {
+                "narration": "A shocking fact happened.",
+                "purpose": "support_narration",
+                "duration": 4,
+            },
+            {
+                "narration": "Hollywood changed movies.",
+                "purpose": "support_narration",
+                "duration": 8,
+            },
             {"narration": "Cinema changed forever.", "purpose": "support_narration", "duration": 8},
         ]
     )
