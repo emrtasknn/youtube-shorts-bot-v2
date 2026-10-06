@@ -63,9 +63,5 @@ class SfxCatalog:
 
     def match(self, text: str) -> tuple[SfxCue, ...]:
         lowered = text.lower()
-        matches = [
-            cue
-            for cue in self._cues
-            if any(term in lowered for term in cue.trigger_terms)
-        ]
+        matches = [cue for cue in self._cues if any(term in lowered for term in cue.trigger_terms)]
         return tuple(matches[:2])
