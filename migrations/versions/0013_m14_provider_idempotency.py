@@ -26,7 +26,9 @@ def upgrade() -> None:
         sa.Column("cost", sa.Numeric(12, 6), nullable=False),
         sa.Column("latency_ms", sa.Integer(), nullable=False),
         sa.Column("metadata", sa.JSON(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("idempotency_key", name="uq_provider_idempotency_key"),
