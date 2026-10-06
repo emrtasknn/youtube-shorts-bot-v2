@@ -147,7 +147,6 @@ def test_telemetry_event() -> None:
     assert len(telemetry.events()) == 1
 
 
-
 def test_json_safe_round_trips_binary_provider_output() -> None:
     output = {
         "audio_bytes": b"\x00\x01binary-audio",
