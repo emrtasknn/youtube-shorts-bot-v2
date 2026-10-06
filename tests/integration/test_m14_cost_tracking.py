@@ -2,7 +2,9 @@ from decimal import Decimal
 
 from sqlalchemy import select
 
+from app.domain.enums import ContentCategory, RunStatus, RunType
 from app.infrastructure.database.connection import get_session
+from app.infrastructure.database.models import ContentModel, RunModel
 from app.infrastructure.providers.reliability import CostTracker
 
 
@@ -14,6 +16,25 @@ def test_cost_tracker_persists_cost_event() -> None:
     session = get_session()
     try:
         run_id = uuid4()
+        content = ContentModel(
+            content_key=f"cost-test-{run_id}",
+            language="en",
+            category=ContentCategory.CUSTOM,
+            topic="Cost tracking test",
+        )
+        session.add(content)
+        session.flush()
+        session.add(
+            RunModel(
+                id=run_id,
+                run_key=f"cost-run-{run_id}",
+                content_id=content.id,
+                run_type=RunType.CUSTOM,
+                status=RunStatus.RUNNING,
+                language="en",
+            )
+        )
+        session.flush()
         tracker = CostTracker(session)
         tracker.record(
             "gemini",
