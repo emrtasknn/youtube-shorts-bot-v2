@@ -25,6 +25,8 @@ from app.infrastructure.providers.reliability import (
     RetryManager,
     RetryPolicy,
     StrategyRouter,
+    _json_restore,
+    _json_safe,
 )
 from app.infrastructure.providers.telemetry import ReliabilityTelemetry
 
@@ -143,3 +145,16 @@ def test_telemetry_event() -> None:
     event = telemetry.emit("PROVIDER_429", EventSeverity.WARNING, "primary")
     assert event.provider == "primary"
     assert len(telemetry.events()) == 1
+
+
+def test_json_safe_round_trips_binary_provider_output() -> None:
+    output = {
+        "audio_bytes": b"\x00\x01binary-audio",
+        "format": "mp3",
+        "nested": [b"more-bytes"],
+    }
+    encoded = _json_safe(output)
+    assert isinstance(encoded, dict)
+    assert isinstance(encoded["audio_bytes"], dict)
+    assert isinstance(encoded["nested"], list)
+    assert _json_restore(encoded) == output

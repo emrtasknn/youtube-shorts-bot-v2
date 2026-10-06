@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import random
 import time
 from collections import defaultdict
@@ -326,6 +327,31 @@ class IdempotencyStore:
         self._records[key] = IdempotencyRecord(key, result, now or datetime.now(UTC))
 
 
+_BYTES_MARKER = "__youtube_shorts_bot_bytes__"
+
+
+def _json_safe(value: object) -> object:
+    if isinstance(value, bytes):
+        return {_BYTES_MARKER: base64.b64encode(value).decode("ascii")}
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, tuple):
+        return [_json_safe(item) for item in value]
+    return value
+
+
+def _json_restore(value: object) -> object:
+    if isinstance(value, dict):
+        if set(value) == {_BYTES_MARKER} and isinstance(value[_BYTES_MARKER], str):
+            return base64.b64decode(value[_BYTES_MARKER])
+        return {str(key): _json_restore(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_restore(item) for item in value]
+    return value
+
+
 class DatabaseIdempotencyStore:
     """Durable idempotency store backed by PostgreSQL."""
 
@@ -353,7 +379,7 @@ class DatabaseIdempotencyStore:
             success=record.success,
             provider=record.provider,
             request_id=record.request_id,
-            output=record.output,
+            output=_json_restore(record.output) if record.output is not None else None,
             usage=ProviderUsage(
                 input_units=int(usage.get("input_units", 0)),
                 output_units=int(usage.get("output_units", 0)),
@@ -373,7 +399,7 @@ class DatabaseIdempotencyStore:
             "provider": result.provider,
             "request_id": result.request_id,
             "success": result.success,
-            "output": result.output,
+            "output": _json_safe(result.output),
             "usage": {
                 "input_units": result.usage.input_units,
                 "output_units": result.usage.output_units,
