@@ -7,6 +7,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from app.application.services.telegram_control import TelegramControlPlane
 from app.application.services.telegram_worker import TelegramWorker
 from app.infrastructure.database.models import TelegramUpdateReceiptModel
 from app.infrastructure.telegram.bot import TelegramBot
@@ -23,7 +24,7 @@ def build_worker(session: Session) -> TelegramWorker:
     return TelegramWorker(
         session=session,
         bot=cast(TelegramBot, object()),
-        control=cast(object, object()),
+        control=cast(TelegramControlPlane, object()),
         admin_chat_id=1,
         admin_user_id=1,
     )
