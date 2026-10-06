@@ -41,11 +41,15 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
             "must_avoid": ["modern borders"],
         }
     )
-    beat = VisualBeatCompiler().compile(
-        scene,
-        scene_index=0,
-        scene_duration_seconds=6.0,
-    ).beats[0]
+    beat = (
+        VisualBeatCompiler()
+        .compile(
+            scene,
+            scene_index=0,
+            scene_duration_seconds=6.0,
+        )
+        .beats[0]
+    )
 
     result = await retriever.retrieve(
         run_id="run-1",
