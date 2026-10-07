@@ -1,0 +1,93 @@
+name: Production Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "Topic for the real end-to-end Short"
+        required: true
+        type: string
+      language:
+        description: "Short language"
+        required: false
+        default: "en"
+        type: string
+
+jobs:
+  smoke:
+    name: Real generation smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: shorts
+          POSTGRES_USER: shorts
+          POSTGRES_PASSWORD: shorts
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U shorts -d shorts"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://shorts:shorts@localhost:5432/shorts
+      PEXELS_ENABLED: "true"
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      PEXELS_BASE_URL: https://api.pexels.com
+      PEXELS_TIMEOUT_SECONDS: "30"
+      GEMINI_ENABLED: "true"
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_BASE_URL: https://generativelanguage.googleapis.com/v1beta
+      GEMINI_MODEL: gemini-3.8-flash
+      GEMINI_TIMEOUT_SECONDS: "60"
+      GROQ_ENABLED: "true"
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GROQ_BASE_URL: https://api.groq.com/openai/v1
+      GROQ_MODEL: openai/gpt-oss-20b
+      GROQ_TIMEOUT_SECONDS: "60"
+      FISH_AUDIO_ENABLED: "true"
+      FISH_AUDIO_API_KEY: ${{ secrets.FISH_AUDIO_API_KEY }}
+      FISH_AUDIO_BASE_URL: https://api.fish.audio
+      FISH_AUDIO_MODEL: s2.1-pro-free
+      FISH_AUDIO_FORMAT: mp3
+      FISH_AUDIO_REFERENCE_ID: ${{ secrets.FISH_AUDIO_REFERENCE_ID }}
+      FISH_AUDIO_TIMEOUT_SECONDS: "120"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - run: alembic upgrade head
+      - name: Generate real Short
+        run: |
+          python -m app custom "${{ inputs.topic }}" \
+            --language "${{ inputs.language }}" \
+            --requested-by "production-smoke"
+      - name: Verify output and approval gate
+        run: |
+          python - <<'PY'
+          import glob
+          import os
+          import sys
+
+          videos = glob.glob("storage/runs/**/*.mp4", recursive=True)
+          if not videos:
+              print("No rendered MP4 found.")
+              sys.exit(1)
+
+          print("Rendered outputs:")
+          for path in videos:
+              print(path, os.path.getsize(path), "bytes")
+
+          print("Smoke generation completed. YouTube publication is not invoked by this workflow.")
+          PY
+      - name: Upload generated Short
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-smoke-short
+          path: storage/runs/**/*.mp4
+          if-no-files-found: error
