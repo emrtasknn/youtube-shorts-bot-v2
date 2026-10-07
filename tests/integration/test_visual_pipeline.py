@@ -26,11 +26,15 @@ def _beat():
             "must_avoid": ["modern borders"],
         }
     )
-    return VisualBeatCompiler().compile(
-        scene,
-        scene_index=0,
-        scene_duration_seconds=4.0,
-    ).beats[0]
+    return (
+        VisualBeatCompiler()
+        .compile(
+            scene,
+            scene_index=0,
+            scene_duration_seconds=4.0,
+        )
+        .beats[0]
+    )
 
 
 def _candidate(asset_id: str, metadata: dict[str, object]) -> Mock:
@@ -54,7 +58,9 @@ def _candidate(asset_id: str, metadata: dict[str, object]) -> Mock:
 
 
 @pytest.mark.asyncio
-async def test_visual_pipeline_rejects_wrong_visual_and_accepts_semantically_verified_candidate() -> None:
+async def test_visual_pipeline_rejects_wrong_visual_and_accepts_semantically_verified_candidate() -> (
+    None
+):
     search = Mock()
     search.execute_strategy = AsyncMock(
         return_value=Mock(
