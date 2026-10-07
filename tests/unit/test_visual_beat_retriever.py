@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from app.application.services.scene_contract import build_scene_contract
-from app.application.services.visual_beat import VisualBeatCompiler
 from app.application.services.stock_media_scoring import StockMediaScore
+from app.application.services.visual_beat import VisualBeatCompiler
 from app.application.services.visual_beat_retriever import VisualBeatRetriever
 
 
