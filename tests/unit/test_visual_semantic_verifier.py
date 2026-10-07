@@ -134,11 +134,19 @@ def test_failover_verifier_does_not_override_primary_rejection() -> None:
             *,
             context: VisualVerificationContext,
         ) -> VisualVerificationResult:
-            return DeterministicVisualSemanticVerifier().verify(
+            result = DeterministicVisualSemanticVerifier().verify(
                 {"title": "Modern city"},
                 context=VisualVerificationContext(
                     must_avoid=("modern city",),
                 ),
+            )
+            return VisualVerificationResult(
+                decision=result.decision,
+                score=result.score,
+                verifier="vision-provider",
+                matched_signals=result.matched_signals,
+                missing_signals=result.missing_signals,
+                violated_constraints=result.violated_constraints,
             )
 
     class AcceptingFallback:
