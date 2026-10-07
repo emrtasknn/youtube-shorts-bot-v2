@@ -173,6 +173,43 @@ class DeterministicVisualSemanticVerifier:
         return " ".join(re.findall(r"[a-z0-9]+", value.lower()))
 
 
+class FailoverVisualSemanticVerifier:
+    """Uses a fallback verifier only when the primary provider is unavailable.
+
+    A primary verifier's UNCERTAIN or REJECT decision is authoritative. The
+    fallback exists for provider outages and never overrides a valid primary
+    decision.
+    """
+
+    def __init__(
+        self,
+        primary: VisualSemanticVerifier,
+        fallback: VisualSemanticVerifier,
+    ) -> None:
+        self._primary = primary
+        self._fallback = fallback
+        self.name = f"{getattr(primary, 'name', 'primary')}->failover"
+
+    def verify(
+        self,
+        item: dict[str, Any],
+        *,
+        context: VisualVerificationContext,
+    ) -> VisualVerificationResult:
+        try:
+            return self._primary.verify(item, context=context)
+        except Exception:
+            result = self._fallback.verify(item, context=context)
+            return VisualVerificationResult(
+                decision=result.decision,
+                score=result.score,
+                verifier=f"failover:{result.verifier}",
+                matched_signals=result.matched_signals,
+                missing_signals=result.missing_signals,
+                violated_constraints=result.violated_constraints,
+            )
+
+
 def to_visual_verification_context(beat: Any) -> VisualVerificationContext:
     """Adapt one timed visual beat to the M20 semantic verification contract."""
 
