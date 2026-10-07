@@ -95,8 +95,7 @@ class VisualBeatRetriever:
             eligible = [
                 candidate
                 for candidate in ranked
-                if candidate.score.eligible
-                and candidate.score.relevance >= strategy.min_relevance
+                if candidate.score.eligible and candidate.score.relevance >= strategy.min_relevance
             ]
             for candidate in eligible:
                 quality_result = self._quality_evaluator.evaluate(candidate.score)

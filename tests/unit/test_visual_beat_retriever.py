@@ -24,15 +24,18 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
         eligible=True,
         reasons=(),
     )
-    search.execute_strategy_until_selected = AsyncMock(
-        return_value=(
-            Mock(provider="pexels", query="Roman Empire expansion"),
-            selected,
+    search.execute_strategy = AsyncMock(
+        return_value=Mock(
+            provider="pexels",
+            query="Roman Empire expansion",
+            items=[selected.item],
         )
     )
 
     retriever = VisualBeatRetriever(gateway)
     retriever._search = search
+    retriever._selector = Mock()
+    retriever._selector.rank.return_value = [selected]
 
     scene = build_scene_contract(
         {
@@ -72,8 +75,10 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
     assert result.quality_decision == "accept"
     assert result.visual_quality == 0.865
     assert result.beautifiable is False
-    search.execute_strategy_until_selected.assert_awaited_once()
-    kwargs = search.execute_strategy_until_selected.await_args.kwargs
-    assert kwargs["relevance_context"].entities == beat.entities
-    assert kwargs["relevance_context"].location == beat.location
-    assert kwargs["relevance_context"].era == beat.era
+    search.execute_strategy.assert_awaited_once()
+    kwargs = search.execute_strategy.await_args.kwargs
+    assert kwargs["strategies"][0].name == "exact"
+    rank_kwargs = retriever._selector.rank.call_args.kwargs
+    assert rank_kwargs["relevance_context"].entities == beat.entities
+    assert rank_kwargs["relevance_context"].location == beat.location
+    assert rank_kwargs["relevance_context"].era == beat.era
