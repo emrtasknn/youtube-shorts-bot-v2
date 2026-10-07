@@ -10,6 +10,12 @@ from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.visual_beat import VisualBeat
 from app.application.services.visual_beat_retrieval import to_visual_relevance_context
+from app.application.services.visual_semantic_verifier import (
+    DeterministicVisualSemanticVerifier,
+    VisualSemanticVerifier,
+    VisualVerificationContext,
+    to_visual_verification_context,
+)
 from app.application.services.visual_source_resolver import VisualSourceResolver
 from app.application.use_cases.search_stock_media import SearchStockMedia
 
@@ -24,15 +30,27 @@ class VisualBeatRetrievalResult:
     quality_decision: str
     visual_quality: float
     beautifiable: bool
+    verification_decision: str
+    semantic_verification_score: float
+    semantic_verifier: str
+    matched_signals: tuple[str, ...]
+    missing_signals: tuple[str, ...]
+    violated_constraints: tuple[str, ...]
 
 
 class VisualBeatRetriever:
     """Retrieves assets for timed beats through the existing M17 retrieval path."""
 
-    def __init__(self, gateway: StockMediaGateway) -> None:
+    def __init__(
+        self,
+        gateway: StockMediaGateway,
+        *,
+        semantic_verifier: VisualSemanticVerifier | None = None,
+    ) -> None:
         self._search = SearchStockMedia(gateway)
         self._selector = StockMediaSelector(StockMediaScorer())
         self._quality_evaluator = StockMediaQualityEvaluator()
+        self._semantic_verifier = semantic_verifier or DeterministicVisualSemanticVerifier()
 
     async def retrieve(
         self,
@@ -79,6 +97,7 @@ class VisualBeatRetriever:
             ],
         ]
         relevance_context = to_visual_relevance_context(beat)
+        verification_context: VisualVerificationContext = to_visual_verification_context(beat)
         attempts: list[str] = []
         for strategy in strategies:
             result = await self._search.execute_strategy(
@@ -101,6 +120,12 @@ class VisualBeatRetriever:
                 quality_result = self._quality_evaluator.evaluate(candidate.score)
                 if quality_result.decision.value == "reject":
                     continue
+                verification = self._semantic_verifier.verify(
+                    dict(candidate.item),
+                    context=verification_context,
+                )
+                if verification.decision.value in {"uncertain", "reject"}:
+                    continue
                 return VisualBeatRetrievalResult(
                     beat=beat,
                     provider=result.provider,
@@ -110,13 +135,20 @@ class VisualBeatRetriever:
                     quality_decision=quality_result.decision.value,
                     visual_quality=quality_result.score.overall,
                     beautifiable=quality_result.score.beautifiable,
+                    verification_decision=verification.decision.value,
+                    semantic_verification_score=verification.score.overall,
+                    semantic_verifier=verification.verifier,
+                    matched_signals=verification.matched_signals,
+                    missing_signals=verification.missing_signals,
+                    violated_constraints=verification.violated_constraints,
                 )
             attempts.append(
-                f"{strategy.name}:quality_rejected={len(eligible)}"
+                f"{strategy.name}:quality_or_verification_rejected={len(eligible)}"
                 if eligible
                 else f"{strategy.name}:no_semantically_eligible_candidates"
             )
         detail = "; ".join(attempts) or "no strategies executed"
         raise RuntimeError(
-            "No stock asset passed semantic relevance and visual quality gates: " + detail
+            "No stock asset passed semantic relevance, visual quality, and semantic verification gates: "
+            + detail
         )

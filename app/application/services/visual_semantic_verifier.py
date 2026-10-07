@@ -171,3 +171,16 @@ class DeterministicVisualSemanticVerifier:
     @staticmethod
     def _normalize(value: str) -> str:
         return " ".join(re.findall(r"[a-z0-9]+", value.lower()))
+
+
+def to_visual_verification_context(beat: Any) -> VisualVerificationContext:
+    """Adapt one timed visual beat to the M20 semantic verification contract."""
+
+    return VisualVerificationContext(
+        entities=beat.entities,
+        location=beat.location,
+        era=beat.era,
+        action=beat.action,
+        must_show=beat.must_show,
+        must_avoid=beat.must_avoid,
+    )
