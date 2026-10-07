@@ -80,7 +80,6 @@ def test_builder_renders_visual_beats_in_order_with_exact_planned_durations(
     assert "concat=n=3:v=1:a=0" in filter_complex
 
 
-
 def test_engine_scales_beat_durations_to_target_duration():
     engine = FFmpegVideoEngine()
     request = VideoRenderRequest(
