@@ -189,11 +189,27 @@ class GeminiTextProvider:
             category = ErrorCategory.INVALID_REQUEST
             retryable = False
 
+        message = f"Gemini API returned HTTP {response.status_code}"
+        try:
+            error_body = response.json()
+        except ValueError:
+            error_body = None
+
+        if isinstance(error_body, dict):
+            error = error_body.get("error")
+            if isinstance(error, dict):
+                detail = error.get("message")
+                status = error.get("status")
+                if isinstance(detail, str) and detail.strip():
+                    message = f"{message}: {detail.strip()}"
+                if isinstance(status, str) and status.strip():
+                    message = f"{message} [{status.strip()}]"
+
         return ProviderError(
             code=f"HTTP_{response.status_code}",
             category=category,
             provider=self.name,
-            message=f"Gemini API returned HTTP {response.status_code}",
+            message=message,
             retryable=retryable,
             retry_after_seconds=retry_after_seconds,
             status_code=response.status_code,
