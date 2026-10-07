@@ -102,11 +102,15 @@ def _build_beat():
             "must_avoid": ["modern borders"],
         }
     )
-    return VisualBeatCompiler().compile(
-        scene,
-        scene_index=0,
-        scene_duration_seconds=4.0,
-    ).beats[0]
+    return (
+        VisualBeatCompiler()
+        .compile(
+            scene,
+            scene_index=0,
+            scene_duration_seconds=4.0,
+        )
+        .beats[0]
+    )
 
 
 def _candidate(asset_id: str):
@@ -195,7 +199,11 @@ async def test_visual_beat_retriever_falls_through_to_broader_strategy() -> None
 
     assert result.item["id"] == "broader-accepted"
     assert search.execute_strategy.await_count == 2
-    assert search.execute_strategy.await_args_list[1].kwargs["strategies"][0].name.startswith("broader_")
+    assert (
+        search.execute_strategy.await_args_list[1]
+        .kwargs["strategies"][0]
+        .name.startswith("broader_")
+    )
 
 
 @pytest.mark.asyncio
