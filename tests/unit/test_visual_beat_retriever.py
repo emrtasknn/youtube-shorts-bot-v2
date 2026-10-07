@@ -343,3 +343,76 @@ async def test_visual_beat_retriever_accepts_degraded_m20_verification() -> None
 
     assert result.item["id"] == "degraded"
     assert result.verification_decision == "accept_degraded"
+
+
+@pytest.mark.asyncio
+async def test_visual_beat_retriever_falls_back_after_search_provider_error() -> None:
+    search = Mock()
+    search.execute_strategy = AsyncMock(
+        side_effect=[
+            RuntimeError("provider unavailable"),
+            Mock(provider="pexels", query="broader", items=[{}]),
+        ]
+    )
+    retriever = VisualBeatRetriever(Mock())
+    retriever._search = search
+    candidate = _candidate("broader-accepted")
+    retriever._selector = Mock()
+    retriever._selector.rank.return_value = [candidate]
+    quality = Mock()
+    quality.decision.value = "accept"
+    quality.score.overall = 0.9
+    quality.score.beautifiable = False
+    retriever._quality_evaluator = Mock()
+    retriever._quality_evaluator.evaluate.return_value = quality
+    retriever._semantic_verifier = Mock()
+    retriever._semantic_verifier.verify.return_value = _verification(
+        VisualVerificationDecision.ACCEPT
+    )
+
+    result = await retriever.retrieve(
+        run_id="run-1",
+        request_id="request-1",
+        beat=_build_beat(),
+    )
+
+    assert result.item["id"] == "broader-accepted"
+    assert search.execute_strategy.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_visual_beat_retriever_falls_back_after_semantic_verifier_error() -> None:
+    search = Mock()
+    search.execute_strategy = AsyncMock(
+        return_value=Mock(
+            provider="pexels",
+            query="Roman Empire expansion",
+            items=[{}],
+        )
+    )
+    retriever = VisualBeatRetriever(Mock())
+    retriever._search = search
+    first = _candidate("verification-error")
+    second = _candidate("accepted")
+    retriever._selector = Mock()
+    retriever._selector.rank.return_value = [first, second]
+    quality = Mock()
+    quality.decision.value = "accept"
+    quality.score.overall = 0.9
+    quality.score.beautifiable = False
+    retriever._quality_evaluator = Mock()
+    retriever._quality_evaluator.evaluate.return_value = quality
+    retriever._semantic_verifier = Mock()
+    retriever._semantic_verifier.verify.side_effect = [
+        RuntimeError("vision provider timeout"),
+        _verification(VisualVerificationDecision.ACCEPT),
+    ]
+
+    result = await retriever.retrieve(
+        run_id="run-1",
+        request_id="request-1",
+        beat=_build_beat(),
+    )
+
+    assert result.item["id"] == "accepted"
+    assert retriever._semantic_verifier.verify.call_count == 2
