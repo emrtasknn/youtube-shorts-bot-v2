@@ -73,9 +73,7 @@ def test_builder_renders_visual_beats_in_order_with_exact_planned_durations(
     command = FFmpegCommandBuilder().build(request)
     filter_complex = command[command.index("-filter_complex") + 1]
 
-    assert [str(path) for path in beats] == [
-        command[command.index(str(path))] for path in beats
-    ]
+    assert [str(path) for path in beats] == [command[command.index(str(path))] for path in beats]
     assert "trim=duration=1.2" in filter_complex
     assert "trim=duration=2.3" in filter_complex
     assert "trim=duration=1.5" in filter_complex
