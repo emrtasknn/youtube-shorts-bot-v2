@@ -57,11 +57,7 @@ class VisualVerificationPolicy:
         )
         if any(not 0.0 <= value <= 1.0 for value in values):
             raise ValueError("Verification thresholds must be between 0 and 1")
-        if not (
-            self.accept_threshold
-            > self.degraded_threshold
-            > self.uncertainty_threshold
-        ):
+        if not (self.accept_threshold > self.degraded_threshold > self.uncertainty_threshold):
             raise ValueError("Verification thresholds must be strictly descending")
 
     def decide(self, score: VisualSemanticScore) -> VisualVerificationDecision:
