@@ -22,9 +22,7 @@ def _score(
 
 
 def test_m17_quality_signals_are_mapped_into_m19_contract() -> None:
-    result = StockMediaQualityEvaluator().evaluate(
-        _score(orientation=1.0, resolution=0.70)
-    )
+    result = StockMediaQualityEvaluator().evaluate(_score(orientation=1.0, resolution=0.70))
 
     assert result.decision == VisualQualityDecision.ACCEPT
     assert result.score.overall == 0.865
