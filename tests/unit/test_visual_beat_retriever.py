@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from app.application.services.scene_contract import build_scene_contract
+from app.application.services.stock_media_scoring import StockMediaScore
 from app.application.services.visual_beat import VisualBeatCompiler
 from app.application.services.visual_beat_retriever import VisualBeatRetriever
 
@@ -13,7 +14,16 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
     search = Mock()
     selected = Mock()
     selected.item = {"id": "asset-1", "download_url": "https://example.test/a.jpg"}
-    selected.score.score = 0.91
+    selected.score = StockMediaScore(
+        score=0.91,
+        relevance=0.95,
+        orientation=1.0,
+        resolution=0.70,
+        duration=1.0,
+        duplicate_penalty=0.0,
+        eligible=True,
+        reasons=(),
+    )
     search.execute_strategy_until_selected = AsyncMock(
         return_value=(
             Mock(provider="pexels", query="Roman Empire expansion"),
@@ -59,6 +69,9 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
 
     assert result.item["id"] == "asset-1"
     assert result.provider == "pexels"
+    assert result.quality_decision == "accept"
+    assert result.visual_quality == 0.865
+    assert result.beautifiable is False
     search.execute_strategy_until_selected.assert_awaited_once()
     kwargs = search.execute_strategy_until_selected.await_args.kwargs
     assert kwargs["relevance_context"].entities == beat.entities

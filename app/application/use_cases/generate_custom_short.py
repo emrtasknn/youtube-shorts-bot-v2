@@ -36,6 +36,8 @@ from app.application.services.topic_selection_production_adapter import (
 from app.application.services.visual_beat import VisualBeatCompiler, VisualBeatTimeline
 from app.application.services.visual_beat_render import to_video_scene_inputs
 from app.application.services.visual_beat_retriever import VisualBeatRetriever
+from app.application.services.visual_beautifier import VisualBeautifier
+from app.application.services.visual_quality import VisualQualityDecision
 from app.application.services.visual_relevance import VisualRelevanceContext
 from app.application.services.visual_source_resolver import VisualSourceResolver
 from app.application.use_cases.search_stock_media import SearchStockMedia
@@ -625,17 +627,29 @@ class GenerateCustomShort:
 
         paths: list[Path] = []
         assets: list[AssetModel] = []
+        beautifier = VisualBeautifier()
         for result in results:
             item = result.item
             url = str(item.get("download_url") or "").strip()
             if not url:
                 raise RuntimeError(f"Selected beat asset has no download URL: {item.get('id')}")
-            path = (
+            source_path = (
                 self._storage_root
                 / str(run.id)
                 / f"scene-{scene.scene_index}-beat-{result.beat.beat_index}.jpg"
             )
-            await self._downloader.download(url, path)
+            await self._downloader.download(url, source_path)
+            path = source_path
+            beautification = None
+            if result.quality_decision == VisualQualityDecision.BEAUTIFY.value:
+                beautified_path = (
+                    self._storage_root
+                    / str(run.id)
+                    / f"scene-{scene.scene_index}-beat-{result.beat.beat_index}-beautified.jpg"
+                )
+                beautification = beautifier.beautify(source_path, beautified_path)
+                path = beautification.output_path
+
             assets.append(
                 AssetModel(
                     asset_type=AssetType.STOCK_IMAGE,
@@ -644,12 +658,26 @@ class GenerateCustomShort:
                     source_url=str(item.get("source_url") or ""),
                     local_path=str(path),
                     mime_type="image/jpeg",
-                    width=int(item.get("width") or 0),
-                    height=int(item.get("height") or 0),
+                    width=beautification.width if beautification else int(item.get("width") or 0),
+                    height=beautification.height
+                    if beautification
+                    else int(item.get("height") or 0),
                     status=AssetStatus.READY,
                     asset_metadata={
                         "query": result.query,
                         "score": result.score,
+                        "m19_visual_quality": {
+                            "decision": result.quality_decision,
+                            "overall": result.visual_quality,
+                            "beautifiable": result.beautifiable,
+                            "beautification_applied": bool(
+                                beautification and beautification.changed
+                            ),
+                            "operations": list(beautification.operations) if beautification else [],
+                            "fallback_reason": (
+                                beautification.fallback_reason if beautification else None
+                            ),
+                        },
                         "m18_visual_beat": {
                             "scene_index": scene.scene_index,
                             "beat_index": result.beat.beat_index,

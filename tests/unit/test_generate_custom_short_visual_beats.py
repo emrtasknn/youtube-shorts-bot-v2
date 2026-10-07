@@ -31,6 +31,9 @@ class FakeRetriever:
                 "height": 1920,
             },
             score=0.8 - (beat.beat_index * 0.1),
+            quality_decision="accept",
+            visual_quality=0.8 - (beat.beat_index * 0.1),
+            beautifiable=False,
         )
 
 
