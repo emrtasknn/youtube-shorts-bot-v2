@@ -54,6 +54,32 @@ def test_builder_supports_mixed_scenes_and_voiceover(tmp_path: Path) -> None:
     assert "-shortest" in command
 
 
+def test_builder_renders_visual_beats_in_order_with_exact_planned_durations(
+    tmp_path: Path,
+) -> None:
+    beats = tuple(tmp_path / f"beat-{index}.jpg" for index in range(3))
+    for path in beats:
+        path.touch()
+    output = tmp_path / "output.mp4"
+
+    request = VideoRenderRequest(
+        scenes=tuple(
+            VideoSceneInput(path, duration, is_image=True)
+            for path, duration in zip(beats, (1.2, 2.3, 1.5), strict=True)
+        ),
+        output_path=output,
+    )
+
+    command = FFmpegCommandBuilder().build(request)
+    filter_complex = command[command.index("-filter_complex") + 1]
+
+    assert [str(path) for path in beats] == [command[command.index(str(path))] for path in beats]
+    assert "trim=duration=1.2" in filter_complex
+    assert "trim=duration=2.3" in filter_complex
+    assert "trim=duration=1.5" in filter_complex
+    assert "concat=n=3:v=1:a=0" in filter_complex
+
+
 def test_builder_rejects_empty_scenes(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="At least one video scene"):
         FFmpegCommandBuilder().build(
