@@ -217,7 +217,7 @@ class GenerateCustomShort:
             run.status = RunStatus.STORYBOARDING
             scenes = self._create_scenes(script, script_data["scenes"])
             run.status = RunStatus.ASSET_PLANNING
-            inputs = []
+            inputs: list[VideoSceneInput] = []
             for scene in scenes:
                 try:
                     selection = await self._select_visual_beats(run, scene)
@@ -577,7 +577,7 @@ class GenerateCustomShort:
             selection = await self._select_visual_beats(run, scene)
             best_index = max(
                 range(len(selection.assets)),
-                key=lambda index: float(selection.assets[index].asset_metadata.get("score", 0.0)),
+                key=lambda index: float((selection.assets[index].asset_metadata or {}).get("score", 0.0)),
             )
             return selection.paths[best_index], selection.assets[best_index]
         except Exception:
