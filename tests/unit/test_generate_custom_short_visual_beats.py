@@ -114,10 +114,7 @@ async def test_select_visual_beats_preserves_timed_render_contract(
     assert all(item["scene_index"] == 2 for item in metadata)
     assert all(item["beat_count"] == 2 for item in metadata)
 
-    verification = [
-        asset.asset_metadata["m20_semantic_verification"]
-        for asset in selection.assets
-    ]
+    verification = [asset.asset_metadata["m20_semantic_verification"] for asset in selection.assets]
     assert [item["decision"] for item in verification] == ["accept", "accept"]
     assert [item["overall"] for item in verification] == pytest.approx([0.9, 0.8])
     assert all(item["verifier"] == "fake-verifier" for item in verification)
