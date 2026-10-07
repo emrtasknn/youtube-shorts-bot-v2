@@ -40,6 +40,7 @@ class FakeRetriever:
             matched_signals=("historical event",),
             missing_signals=(),
             violated_constraints=(),
+            retrieval_attempts=(f"exact:asset-{beat.beat_index}:accepted",),
         )
 
 
@@ -121,3 +122,7 @@ async def test_select_visual_beats_preserves_timed_render_contract(
     assert all(item["matched_signals"] == ["historical event"] for item in verification)
     assert all(item["missing_signals"] == [] for item in verification)
     assert all(item["violated_constraints"] == [] for item in verification)
+    assert [item["retrieval_attempts"] for item in verification] == [
+        ["exact:asset-0:accepted"],
+        ["exact:asset-1:accepted"],
+    ]

@@ -87,6 +87,7 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
     assert result.verification_decision == "accept"
     assert result.semantic_verification_score == 0.9
     assert result.semantic_verifier == "test-verifier"
+    assert result.retrieval_attempts == ("exact:asset-1:accepted",)
     search.execute_strategy.assert_awaited_once()
     kwargs = search.execute_strategy.await_args.kwargs
     assert kwargs["strategies"][0].name == "exact"
