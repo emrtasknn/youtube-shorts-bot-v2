@@ -36,6 +36,7 @@ class VisualBeatRetrievalResult:
     matched_signals: tuple[str, ...]
     missing_signals: tuple[str, ...]
     violated_constraints: tuple[str, ...]
+    retrieval_attempts: tuple[str, ...]
 
 
 class VisualBeatRetriever:
@@ -123,7 +124,15 @@ class VisualBeatRetriever:
             ]
             for candidate in eligible:
                 quality_result = self._quality_evaluator.evaluate(candidate.score)
+                candidate_id = str(
+                    candidate.item.get("id")
+                    or candidate.item.get("asset_id")
+                    or "unknown"
+                )
                 if quality_result.decision.value == "reject":
+                    attempts.append(
+                        f"{strategy.name}:{candidate_id}:quality_reject"
+                    )
                     continue
                 try:
                     verification = self._semantic_verifier.verify(
@@ -134,6 +143,10 @@ class VisualBeatRetriever:
                     attempts.append(f"{strategy.name}:verification_error={type(exc).__name__}")
                     continue
                 if verification.decision.value in {"uncertain", "reject"}:
+                    attempts.append(
+                        f"{strategy.name}:{candidate_id}:semantic_"
+                        f"{verification.decision.value}"
+                    )
                     continue
                 return VisualBeatRetrievalResult(
                     beat=beat,
@@ -150,6 +163,9 @@ class VisualBeatRetriever:
                     matched_signals=verification.matched_signals,
                     missing_signals=verification.missing_signals,
                     violated_constraints=verification.violated_constraints,
+                    retrieval_attempts=tuple(
+                        (*attempts, f"{strategy.name}:{candidate_id}:accepted")
+                    ),
                 )
             attempts.append(
                 f"{strategy.name}:quality_or_verification_rejected={len(eligible)}"
