@@ -133,8 +133,8 @@ class GroqTextProvider:
         request_payload: dict[str, Any] = {
             "model": model,
             "messages": messages,
-            "temperature": 0,
             "response_format": {"type": "json_object"},
+            "include_reasoning": False,
         }
         generation_config = payload.get("generation_config")
         if isinstance(generation_config, dict):
@@ -195,6 +195,17 @@ class GroqTextProvider:
         )
 
     def _provider_error(self, response: httpx.Response) -> ProviderError:
+        # Preserve Groq's actionable validation detail without exposing the API key.
+        try:
+            error_body = response.json()
+            detail = (
+                error_body.get("error", {}).get("message") if isinstance(error_body, dict) else None
+            )
+        except ValueError:
+            detail = None
+        message = f"Groq API returned HTTP {response.status_code}"
+        if isinstance(detail, str) and detail.strip():
+            message = f"{message}: {detail.strip()}"
         retry_after = response.headers.get("retry-after")
         retry_after_seconds = None
         if retry_after:
@@ -223,7 +234,7 @@ class GroqTextProvider:
             code=f"HTTP_{response.status_code}",
             category=category,
             provider=self.name,
-            message=f"Groq API returned HTTP {response.status_code}",
+            message=message,
             retryable=retryable,
             retry_after_seconds=retry_after_seconds,
             status_code=response.status_code,
