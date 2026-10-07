@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from app.application.ports.video_engine import VideoRenderRequest, VideoSceneInput
-from app.infrastructure.video.ffmpeg import FFmpegCommandBuilder
+from app.infrastructure.video.ffmpeg import FFmpegCommandBuilder, FFmpegVideoEngine
 
 
 def test_builder_creates_vertical_scene_pipeline(tmp_path: Path) -> None:
@@ -78,6 +78,23 @@ def test_builder_renders_visual_beats_in_order_with_exact_planned_durations(
     assert "trim=duration=2.3" in filter_complex
     assert "trim=duration=1.5" in filter_complex
     assert "concat=n=3:v=1:a=0" in filter_complex
+
+
+def test_engine_scales_beat_durations_to_target_duration():
+    engine = FFmpegVideoEngine()
+    request = VideoRenderRequest(
+        scenes=(
+            VideoSceneInput(Path("beat0.jpg"), 1.0, is_image=True),
+            VideoSceneInput(Path("beat1.jpg"), 2.0, is_image=True),
+            VideoSceneInput(Path("beat2.jpg"), 3.0, is_image=True),
+        ),
+        output_path=Path("output.mp4"),
+    )
+
+    durations = engine._resolve_scene_durations(request, 12.0)
+
+    assert durations == pytest.approx((2.0, 4.0, 6.0))
+    assert sum(durations) == pytest.approx(12.0)
 
 
 def test_builder_rejects_empty_scenes(tmp_path: Path) -> None:
