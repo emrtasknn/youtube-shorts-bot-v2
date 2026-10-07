@@ -577,9 +577,7 @@ class GenerateCustomShort:
             selection = await self._select_visual_beats(run, scene)
             best_index = max(
                 range(len(selection.assets)),
-                key=lambda index: float(
-                    selection.assets[index].asset_metadata.get("score", 0.0)
-                ),
+                key=lambda index: float(selection.assets[index].asset_metadata.get("score", 0.0)),
             )
             return selection.paths[best_index], selection.assets[best_index]
         except Exception:
@@ -629,9 +627,7 @@ class GenerateCustomShort:
             item = result.item
             url = str(item.get("download_url") or "").strip()
             if not url:
-                raise RuntimeError(
-                    f"Selected beat asset has no download URL: {item.get('id')}"
-                )
+                raise RuntimeError(f"Selected beat asset has no download URL: {item.get('id')}")
             path = (
                 self._storage_root
                 / str(run.id)
