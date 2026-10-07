@@ -123,7 +123,7 @@ class VisualQualityEvaluator:
             0.0,
             min(
                 1.0,
-                composition * 0.30 + resolution * 0.30 + portrait_fit * 0.25 + cleanliness * 0.15,
+                composition * 0.175 + resolution * 0.45 + portrait_fit * 0.175 + cleanliness * 0.20,
             ),
         )
 

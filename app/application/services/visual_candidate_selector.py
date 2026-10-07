@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from app.application.services.stock_media_quality import StockMediaQualityEvaluator
 from app.application.services.stock_media_scoring import StockMediaScore
 from app.application.services.visual_candidate_evidence import CandidateEvidence
 from app.application.services.visual_decision import VisualDecision, VisualDecisionEngine
@@ -20,6 +21,7 @@ class VisualCandidateSelector:
 
     def __init__(self, decision_engine: VisualDecisionEngine | None = None) -> None:
         self._decision_engine = decision_engine or VisualDecisionEngine()
+        self._quality_evaluator = StockMediaQualityEvaluator()
 
     def evaluate(
         self,
@@ -30,7 +32,8 @@ class VisualCandidateSelector:
         source_is_exact: bool,
     ) -> VisualCandidateSelection:
         semantic_relevance = score.relevance
-        visual_quality = self._visual_quality(score)
+        quality_result = self._quality_evaluator.evaluate(score)
+        visual_quality = quality_result.score.overall
         factual_specificity = self._factual_specificity(
             intent,
             source_is_exact=source_is_exact,
@@ -41,7 +44,7 @@ class VisualCandidateSelector:
             factual_specificity=factual_specificity,
             source_is_exact=source_is_exact,
             must_avoid_match="must_avoid_match" in score.reasons,
-            beautifiable=visual_quality < 0.75,
+            beautifiable=quality_result.score.beautifiable,
         )
         evidence = CandidateEvidence.from_score(
             item,
@@ -52,7 +55,7 @@ class VisualCandidateSelector:
             semantic_relevance=semantic_relevance,
             visual_quality=visual_quality,
             factual_specificity=factual_specificity,
-            extra_reasons=result.reasons,
+            extra_reasons=(*quality_result.reasons, *result.reasons),
         )
         return VisualCandidateSelection(item=item, evidence=evidence)
 
@@ -99,16 +102,6 @@ class VisualCandidateSelector:
                 candidate.evidence.semantic_relevance,
                 candidate.evidence.visual_quality,
                 candidate.evidence.factual_specificity,
-            ),
-        )
-
-    @staticmethod
-    def _visual_quality(score: StockMediaScore) -> float:
-        return max(
-            0.0,
-            min(
-                1.0,
-                score.orientation * 0.35 + score.resolution * 0.45 + score.duration * 0.20,
             ),
         )
 
