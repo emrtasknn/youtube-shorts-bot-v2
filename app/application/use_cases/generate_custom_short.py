@@ -461,7 +461,8 @@ class GenerateCustomShort:
                 system_instruction="Return valid JSON only, with no markdown fences.",
                 generation_config={
                     "responseMimeType": "application/json",
-                    "maxOutputTokens": 3000,
+                    "maxOutputTokens": 6000,
+                    "thinkingConfig": {"thinkingLevel": "low"},
                 },
             )
         )
