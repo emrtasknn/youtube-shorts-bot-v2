@@ -6,6 +6,11 @@ from app.application.services.scene_contract import build_scene_contract
 from app.application.services.stock_media_scoring import StockMediaScore
 from app.application.services.visual_beat import VisualBeatCompiler
 from app.application.services.visual_beat_retriever import VisualBeatRetriever
+from app.application.services.visual_semantic_verification import (
+    VisualSemanticScore,
+    VisualVerificationDecision,
+    VisualVerificationResult,
+)
 
 
 @pytest.mark.asyncio
@@ -36,6 +41,10 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
     retriever._search = search
     retriever._selector = Mock()
     retriever._selector.rank.return_value = [selected]
+    retriever._semantic_verifier = Mock()
+    retriever._semantic_verifier.verify.return_value = _verification(
+        VisualVerificationDecision.ACCEPT
+    )
 
     scene = build_scene_contract(
         {
@@ -75,6 +84,9 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
     assert result.quality_decision == "accept"
     assert result.visual_quality == 0.865
     assert result.beautifiable is False
+    assert result.verification_decision == "accept"
+    assert result.semantic_verification_score == 0.9
+    assert result.semantic_verifier == "test-verifier"
     search.execute_strategy.assert_awaited_once()
     kwargs = search.execute_strategy.await_args.kwargs
     assert kwargs["strategies"][0].name == "exact"
@@ -82,6 +94,23 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
     assert rank_kwargs["relevance_context"].entities == beat.entities
     assert rank_kwargs["relevance_context"].location == beat.location
     assert rank_kwargs["relevance_context"].era == beat.era
+
+
+
+def _verification(decision: VisualVerificationDecision) -> VisualVerificationResult:
+    return VisualVerificationResult(
+        decision=decision,
+        score=VisualSemanticScore(
+            entity_match=1.0,
+            action_match=1.0,
+            context_match=1.0,
+            must_show_match=1.0,
+            must_avoid_compliance=1.0,
+            overall=0.9 if decision == VisualVerificationDecision.ACCEPT else 0.5,
+        ),
+        verifier="test-verifier",
+        matched_signals=("roman empire",),
+    )
 
 
 def _build_beat():
@@ -141,6 +170,11 @@ async def test_visual_beat_retriever_retries_after_m19_rejection() -> None:
     second = _candidate("accepted")
     retriever._selector = Mock()
     retriever._selector.rank.return_value = [first, second]
+    retriever._semantic_verifier = Mock()
+    retriever._semantic_verifier.verify.side_effect = [
+        _verification(VisualVerificationDecision.REJECT),
+        _verification(VisualVerificationDecision.ACCEPT),
+    ]
 
     rejected = Mock()
     rejected.decision.value = "reject"
@@ -179,6 +213,11 @@ async def test_visual_beat_retriever_falls_through_to_broader_strategy() -> None
     accepted_candidate = _candidate("broader-accepted")
     retriever._selector = Mock()
     retriever._selector.rank.side_effect = [[rejected_candidate], [accepted_candidate]]
+    retriever._semantic_verifier = Mock()
+    retriever._semantic_verifier.verify.side_effect = [
+        _verification(VisualVerificationDecision.REJECT),
+        _verification(VisualVerificationDecision.ACCEPT),
+    ]
 
     rejected = Mock()
     rejected.decision.value = "reject"
@@ -217,6 +256,10 @@ async def test_visual_beat_retriever_raises_when_all_candidates_fail_quality() -
     candidate = _candidate("rejected")
     retriever._selector = Mock()
     retriever._selector.rank.return_value = [candidate]
+    retriever._semantic_verifier = Mock()
+    retriever._semantic_verifier.verify.return_value = _verification(
+        VisualVerificationDecision.REJECT
+    )
 
     rejected = Mock()
     rejected.decision.value = "reject"
@@ -231,3 +274,74 @@ async def test_visual_beat_retriever_raises_when_all_candidates_fail_quality() -
             request_id="request-1",
             beat=_build_beat(),
         )
+
+@pytest.mark.asyncio
+async def test_visual_beat_retriever_retries_after_m20_uncertain() -> None:
+    search = Mock()
+    search.execute_strategy = AsyncMock(
+        return_value=Mock(provider="pexels", query="Roman Empire expansion", items=[{}])
+    )
+    retriever = VisualBeatRetriever(Mock())
+    retriever._search = search
+    first = _candidate("uncertain")
+    second = _candidate("accepted")
+    retriever._selector = Mock()
+    retriever._selector.rank.return_value = [first, second]
+
+    rejected = Mock()
+    rejected.decision.value = "accept"
+    rejected.score.overall = 0.9
+    rejected.score.beautifiable = False
+    accepted = Mock()
+    accepted.decision.value = "accept"
+    accepted.score.overall = 0.9
+    accepted.score.beautifiable = False
+    retriever._quality_evaluator = Mock()
+    retriever._quality_evaluator.evaluate.side_effect = [rejected, accepted]
+    retriever._semantic_verifier = Mock()
+    retriever._semantic_verifier.verify.side_effect = [
+        _verification(VisualVerificationDecision.UNCERTAIN),
+        _verification(VisualVerificationDecision.ACCEPT),
+    ]
+
+    result = await retriever.retrieve(
+        run_id="run-1",
+        request_id="request-1",
+        beat=_build_beat(),
+    )
+
+    assert result.item["id"] == "accepted"
+    assert retriever._semantic_verifier.verify.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_visual_beat_retriever_accepts_degraded_m20_verification() -> None:
+    search = Mock()
+    search.execute_strategy = AsyncMock(
+        return_value=Mock(provider="pexels", query="Roman Empire expansion", items=[{}])
+    )
+    retriever = VisualBeatRetriever(Mock())
+    retriever._search = search
+    candidate = _candidate("degraded")
+    retriever._selector = Mock()
+    retriever._selector.rank.return_value = [candidate]
+
+    quality = Mock()
+    quality.decision.value = "accept"
+    quality.score.overall = 0.9
+    quality.score.beautifiable = False
+    retriever._quality_evaluator = Mock()
+    retriever._quality_evaluator.evaluate.return_value = quality
+    retriever._semantic_verifier = Mock()
+    retriever._semantic_verifier.verify.return_value = _verification(
+        VisualVerificationDecision.ACCEPT_DEGRADED
+    )
+
+    result = await retriever.retrieve(
+        run_id="run-1",
+        request_id="request-1",
+        beat=_build_beat(),
+    )
+
+    assert result.item["id"] == "degraded"
+    assert result.verification_decision == "accept_degraded"
