@@ -51,11 +51,7 @@ class VisualQualityPolicy:
 
     def __post_init__(self) -> None:
         if not (
-            0.0
-            <= self.degraded_floor
-            <= self.beautify_threshold
-            <= self.accept_threshold
-            <= 1.0
+            0.0 <= self.degraded_floor <= self.beautify_threshold <= self.accept_threshold <= 1.0
         ):
             raise ValueError("Quality thresholds must be ordered between 0 and 1")
 
