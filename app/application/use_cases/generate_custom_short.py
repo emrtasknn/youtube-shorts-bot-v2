@@ -577,9 +577,9 @@ class GenerateCustomShort:
             selection = await self._select_visual_beats(run, scene)
             best_index = max(
                 range(len(selection.assets)),
-                key=lambda index: float(\n                    (selection.assets[index].asset_metadata or {}).get("score", 0.0)\n                ),
-            )
-            return selection.paths[best_index], selection.assets[best_index]
+                key=lambda index: float(
+                    (selection.assets[index].asset_metadata or {}).get("score", 0.0)
+                ),
         except Exception:
             return await self._select_asset_scene_fallback(run, scene)
 
