@@ -107,9 +107,7 @@ class VisualBeatRetriever:
                     strategies=[strategy],
                 )
             except Exception as exc:
-                attempts.append(
-                    f"{strategy.name}:search_error={type(exc).__name__}"
-                )
+                attempts.append(f"{strategy.name}:search_error={type(exc).__name__}")
                 continue
 
             ranked = self._selector.rank(
@@ -133,9 +131,7 @@ class VisualBeatRetriever:
                         context=verification_context,
                     )
                 except Exception as exc:
-                    attempts.append(
-                        f"{strategy.name}:verification_error={type(exc).__name__}"
-                    )
+                    attempts.append(f"{strategy.name}:verification_error={type(exc).__name__}")
                     continue
                 if verification.decision.value in {"uncertain", "reject"}:
                     continue
