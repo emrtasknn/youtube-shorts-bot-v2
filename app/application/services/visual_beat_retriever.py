@@ -100,11 +100,16 @@ class VisualBeatRetriever:
         verification_context: VisualVerificationContext = to_visual_verification_context(beat)
         attempts: list[str] = []
         for strategy in strategies:
-            result = await self._search.execute_strategy(
-                run_id=run_id,
-                request_id=request_id,
-                strategies=[strategy],
-            )
+            try:
+                result = await self._search.execute_strategy(
+                    run_id=run_id,
+                    request_id=request_id,
+                    strategies=[strategy],
+                )
+            except Exception as exc:
+                attempts.append(f"{strategy.name}:search_error={type(exc).__name__}")
+                continue
+
             ranked = self._selector.rank(
                 result.items,
                 query=strategy.query,
@@ -120,10 +125,14 @@ class VisualBeatRetriever:
                 quality_result = self._quality_evaluator.evaluate(candidate.score)
                 if quality_result.decision.value == "reject":
                     continue
-                verification = self._semantic_verifier.verify(
-                    dict(candidate.item),
-                    context=verification_context,
-                )
+                try:
+                    verification = self._semantic_verifier.verify(
+                        dict(candidate.item),
+                        context=verification_context,
+                    )
+                except Exception as exc:
+                    attempts.append(f"{strategy.name}:verification_error={type(exc).__name__}")
+                    continue
                 if verification.decision.value in {"uncertain", "reject"}:
                     continue
                 return VisualBeatRetrievalResult(
