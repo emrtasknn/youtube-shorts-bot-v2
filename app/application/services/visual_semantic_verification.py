@@ -62,9 +62,7 @@ class VisualVerificationPolicy:
             > self.degraded_threshold
             > self.uncertainty_threshold
         ):
-            raise ValueError(
-                "Verification thresholds must be strictly descending"
-            )
+            raise ValueError("Verification thresholds must be strictly descending")
 
     def decide(self, score: VisualSemanticScore) -> VisualVerificationDecision:
         if score.overall >= self.accept_threshold:
