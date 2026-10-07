@@ -99,10 +99,7 @@ async def test_select_visual_beats_preserves_timed_render_contract(
     assert starts[1] == pytest.approx(durations[0])
     assert sum(durations) == pytest.approx(6.0)
 
-    metadata = [
-        asset.asset_metadata["m18_visual_beat"]
-        for asset in selection.assets
-    ]
+    metadata = [asset.asset_metadata["m18_visual_beat"] for asset in selection.assets]
     assert [item["beat_index"] for item in metadata] == [0, 1]
     assert [item["duration_seconds"] for item in metadata] == pytest.approx(durations)
     assert all(item["scene_index"] == 2 for item in metadata)
