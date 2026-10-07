@@ -272,6 +272,7 @@ async def test_visual_beat_retriever_raises_when_all_candidates_fail_quality() -
             beat=_build_beat(),
         )
 
+
 @pytest.mark.asyncio
 async def test_visual_beat_retriever_retries_after_m20_uncertain() -> None:
     search = Mock()
