@@ -171,10 +171,9 @@ async def test_visual_beat_retriever_retries_after_m19_rejection() -> None:
     retriever._selector = Mock()
     retriever._selector.rank.return_value = [first, second]
     retriever._semantic_verifier = Mock()
-    retriever._semantic_verifier.verify.side_effect = [
-        _verification(VisualVerificationDecision.REJECT),
-        _verification(VisualVerificationDecision.ACCEPT),
-    ]
+    retriever._semantic_verifier.verify.return_value = _verification(
+        VisualVerificationDecision.ACCEPT
+    )
 
     rejected = Mock()
     rejected.decision.value = "reject"
@@ -214,10 +213,9 @@ async def test_visual_beat_retriever_falls_through_to_broader_strategy() -> None
     retriever._selector = Mock()
     retriever._selector.rank.side_effect = [[rejected_candidate], [accepted_candidate]]
     retriever._semantic_verifier = Mock()
-    retriever._semantic_verifier.verify.side_effect = [
-        _verification(VisualVerificationDecision.REJECT),
-        _verification(VisualVerificationDecision.ACCEPT),
-    ]
+    retriever._semantic_verifier.verify.return_value = _verification(
+        VisualVerificationDecision.ACCEPT
+    )
 
     rejected = Mock()
     rejected.decision.value = "reject"
@@ -268,7 +266,7 @@ async def test_visual_beat_retriever_raises_when_all_candidates_fail_quality() -
     retriever._quality_evaluator = Mock()
     retriever._quality_evaluator.evaluate.return_value = rejected
 
-    with pytest.raises(RuntimeError, match="quality gates"):
+    with pytest.raises(RuntimeError, match="verification gates"):
         await retriever.retrieve(
             run_id="run-1",
             request_id="request-1",
