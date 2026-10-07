@@ -580,6 +580,8 @@ class GenerateCustomShort:
                 key=lambda index: float(
                     (selection.assets[index].asset_metadata or {}).get("score", 0.0)
                 ),
+            )
+            return selection.paths[best_index], selection.assets[best_index]
         except Exception:
             return await self._select_asset_scene_fallback(run, scene)
 
