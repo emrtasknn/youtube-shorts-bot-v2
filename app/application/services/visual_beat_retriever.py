@@ -125,14 +125,10 @@ class VisualBeatRetriever:
             for candidate in eligible:
                 quality_result = self._quality_evaluator.evaluate(candidate.score)
                 candidate_id = str(
-                    candidate.item.get("id")
-                    or candidate.item.get("asset_id")
-                    or "unknown"
+                    candidate.item.get("id") or candidate.item.get("asset_id") or "unknown"
                 )
                 if quality_result.decision.value == "reject":
-                    attempts.append(
-                        f"{strategy.name}:{candidate_id}:quality_reject"
-                    )
+                    attempts.append(f"{strategy.name}:{candidate_id}:quality_reject")
                     continue
                 try:
                     verification = self._semantic_verifier.verify(
@@ -144,8 +140,7 @@ class VisualBeatRetriever:
                     continue
                 if verification.decision.value in {"uncertain", "reject"}:
                     attempts.append(
-                        f"{strategy.name}:{candidate_id}:semantic_"
-                        f"{verification.decision.value}"
+                        f"{strategy.name}:{candidate_id}:semantic_{verification.decision.value}"
                     )
                     continue
                 return VisualBeatRetrievalResult(
