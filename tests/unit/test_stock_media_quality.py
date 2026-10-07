@@ -29,9 +29,7 @@ def test_m17_quality_signals_are_mapped_into_m19_contract() -> None:
 
 
 def test_low_resolution_candidate_remains_beautifiable() -> None:
-    result = StockMediaQualityEvaluator().evaluate(
-        _score(orientation=1.0, resolution=0.35)
-    )
+    result = StockMediaQualityEvaluator().evaluate(_score(orientation=1.0, resolution=0.35))
 
     assert result.decision == VisualQualityDecision.BEAUTIFY
     assert result.score.beautifiable is True
