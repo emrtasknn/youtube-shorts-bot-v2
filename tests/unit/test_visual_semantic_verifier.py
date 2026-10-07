@@ -2,6 +2,7 @@ import pytest
 
 from app.application.services.visual_semantic_verification import (
     VisualVerificationDecision,
+    VisualVerificationResult,
 )
 from app.application.services.visual_semantic_verifier import (
     DeterministicVisualSemanticVerifier,
@@ -104,7 +105,7 @@ def test_failover_verifier_uses_fallback_when_primary_is_unavailable() -> None:
             item: dict[str, object],
             *,
             context: VisualVerificationContext,
-        ) -> object:
+        ) -> VisualVerificationResult:
             raise RuntimeError("vision provider unavailable")
 
     fallback = DeterministicVisualSemanticVerifier()
@@ -132,7 +133,7 @@ def test_failover_verifier_does_not_override_primary_rejection() -> None:
             item: dict[str, object],
             *,
             context: VisualVerificationContext,
-        ) -> object:
+        ) -> VisualVerificationResult:
             return DeterministicVisualSemanticVerifier().verify(
                 {"title": "Modern city"},
                 context=VisualVerificationContext(
@@ -148,7 +149,7 @@ def test_failover_verifier_does_not_override_primary_rejection() -> None:
             item: dict[str, object],
             *,
             context: VisualVerificationContext,
-        ) -> object:
+        ) -> VisualVerificationResult:
             return DeterministicVisualSemanticVerifier().verify(
                 {"title": "Roman army"},
                 context=VisualVerificationContext(entities=("Roman army",)),
