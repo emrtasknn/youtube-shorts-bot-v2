@@ -32,6 +32,7 @@ class VisualBeatRetriever:
     def __init__(self, gateway: StockMediaGateway) -> None:
         self._search = SearchStockMedia(gateway)
         self._selector = StockMediaSelector(StockMediaScorer())
+        self._quality_evaluator = StockMediaQualityEvaluator()
 
     async def retrieve(
         self,
@@ -77,21 +78,46 @@ class VisualBeatRetriever:
                 for index, query in enumerate(source_plan.broader_queries, start=1)
             ],
         ]
-        result, selected = await self._search.execute_strategy_until_selected(
-            run_id=run_id,
-            request_id=request_id,
-            strategies=strategies,
-            selector=self._selector,
-            relevance_context=to_visual_relevance_context(beat),
-        )
-        quality_result = StockMediaQualityEvaluator().evaluate(selected.score)
-        return VisualBeatRetrievalResult(
-            beat=beat,
-            provider=result.provider,
-            query=result.query,
-            item=dict(selected.item),
-            score=selected.score.score,
-            quality_decision=quality_result.decision.value,
-            visual_quality=quality_result.score.overall,
-            beautifiable=quality_result.score.beautifiable,
+        relevance_context = to_visual_relevance_context(beat)
+        attempts: list[str] = []
+        for strategy in strategies:
+            result = await self._search.execute_strategy(
+                run_id=run_id,
+                request_id=request_id,
+                strategies=[strategy],
+            )
+            ranked = self._selector.rank(
+                result.items,
+                query=strategy.query,
+                min_relevance=strategy.min_relevance,
+                relevance_context=relevance_context,
+            )
+            eligible = [
+                candidate
+                for candidate in ranked
+                if candidate.score.eligible
+                and candidate.score.relevance >= strategy.min_relevance
+            ]
+            for candidate in eligible:
+                quality_result = self._quality_evaluator.evaluate(candidate.score)
+                if quality_result.decision.value == "reject":
+                    continue
+                return VisualBeatRetrievalResult(
+                    beat=beat,
+                    provider=result.provider,
+                    query=result.query,
+                    item=dict(candidate.item),
+                    score=candidate.score.score,
+                    quality_decision=quality_result.decision.value,
+                    visual_quality=quality_result.score.overall,
+                    beautifiable=quality_result.score.beautifiable,
+                )
+            attempts.append(
+                f"{strategy.name}:quality_rejected={len(eligible)}"
+                if eligible
+                else f"{strategy.name}:no_semantically_eligible_candidates"
+            )
+        detail = "; ".join(attempts) or "no strategies executed"
+        raise RuntimeError(
+            "No stock asset passed semantic relevance and visual quality gates: " + detail
         )
