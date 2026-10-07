@@ -33,7 +33,7 @@ from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.topic_selection_production_adapter import (
     TopicSelectionProductionAdapter,
 )
-from app.application.services.visual_beat import VisualBeatCompiler
+from app.application.services.visual_beat import VisualBeatCompiler, VisualBeatTimeline
 from app.application.services.visual_beat_render import to_video_scene_inputs
 from app.application.services.visual_beat_retriever import VisualBeatRetriever
 from app.application.services.visual_relevance import VisualRelevanceContext
@@ -93,7 +93,7 @@ class CustomShortResult:
 
 @dataclass(frozen=True, slots=True)
 class VisualBeatAssetSelection:
-    timeline: Any
+    timeline: VisualBeatTimeline
     paths: tuple[Path, ...]
     assets: tuple[AssetModel, ...]
 
