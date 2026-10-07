@@ -685,6 +685,14 @@ class GenerateCustomShort:
                             "duration_seconds": result.beat.duration_seconds,
                             "beat_count": len(timeline.beats),
                         },
+                        "m20_semantic_verification": {
+                            "decision": result.verification_decision,
+                            "overall": result.semantic_verification_score,
+                            "verifier": result.semantic_verifier,
+                            "matched_signals": list(result.matched_signals),
+                            "missing_signals": list(result.missing_signals),
+                            "violated_constraints": list(result.violated_constraints),
+                        },
                     },
                 )
             )

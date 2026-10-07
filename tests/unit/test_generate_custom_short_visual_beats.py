@@ -34,6 +34,12 @@ class FakeRetriever:
             quality_decision="accept",
             visual_quality=0.8 - (beat.beat_index * 0.1),
             beautifiable=False,
+            verification_decision="accept",
+            semantic_verification_score=0.9 - (beat.beat_index * 0.1),
+            semantic_verifier="fake-verifier",
+            matched_signals=("historical event",),
+            missing_signals=(),
+            violated_constraints=(),
         )
 
 
@@ -107,3 +113,11 @@ async def test_select_visual_beats_preserves_timed_render_contract(
     assert [item["duration_seconds"] for item in metadata] == pytest.approx(durations)
     assert all(item["scene_index"] == 2 for item in metadata)
     assert all(item["beat_count"] == 2 for item in metadata)
+
+    verification = [asset.asset_metadata["m20_semantic_verification"] for asset in selection.assets]
+    assert [item["decision"] for item in verification] == ["accept", "accept"]
+    assert [item["overall"] for item in verification] == pytest.approx([0.9, 0.8])
+    assert all(item["verifier"] == "fake-verifier" for item in verification)
+    assert all(item["matched_signals"] == ["historical event"] for item in verification)
+    assert all(item["missing_signals"] == [] for item in verification)
+    assert all(item["violated_constraints"] == [] for item in verification)
