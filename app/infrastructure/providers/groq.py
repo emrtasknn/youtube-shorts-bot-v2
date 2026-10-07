@@ -198,7 +198,9 @@ class GroqTextProvider:
         # Preserve Groq's actionable validation detail without exposing the API key.
         try:
             error_body = response.json()
-            detail = error_body.get("error", {}).get("message") if isinstance(error_body, dict) else None
+            detail = (
+                error_body.get("error", {}).get("message") if isinstance(error_body, dict) else None
+            )
         except ValueError:
             detail = None
         message = f"Groq API returned HTTP {response.status_code}"
