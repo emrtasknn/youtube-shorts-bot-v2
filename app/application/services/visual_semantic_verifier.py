@@ -155,11 +155,7 @@ class DeterministicVisualSemanticVerifier:
         values: tuple[str, ...],
         searchable: str,
     ) -> tuple[float, tuple[str, ...]]:
-        normalized = tuple(
-            cls._normalize(value)
-            for value in values
-            if value.strip()
-        )
+        normalized = tuple(cls._normalize(value) for value in values if value.strip())
         if not normalized:
             return 0.0, ()
 
