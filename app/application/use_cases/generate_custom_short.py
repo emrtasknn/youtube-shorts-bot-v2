@@ -673,9 +673,7 @@ class GenerateCustomShort:
                             "beautification_applied": bool(
                                 beautification and beautification.changed
                             ),
-                            "operations": list(beautification.operations)
-                            if beautification
-                            else [],
+                            "operations": list(beautification.operations) if beautification else [],
                             "fallback_reason": (
                                 beautification.fallback_reason if beautification else None
                             ),
