@@ -96,7 +96,6 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
     assert rank_kwargs["relevance_context"].era == beat.era
 
 
-
 def _verification(decision: VisualVerificationDecision) -> VisualVerificationResult:
     return VisualVerificationResult(
         decision=decision,
