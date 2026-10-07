@@ -5,6 +5,7 @@ from typing import Any
 
 from app.application.ports.stock_media import StockMediaGateway, StockMediaStrategy
 from app.application.services.scene_contract import SceneContract
+from app.application.services.stock_media_quality import StockMediaQualityEvaluator
 from app.application.services.stock_media_scoring import StockMediaScorer
 from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.visual_beat import VisualBeat
@@ -20,6 +21,9 @@ class VisualBeatRetrievalResult:
     query: str
     item: dict[str, Any]
     score: float
+    quality_decision: str
+    visual_quality: float
+    beautifiable: bool
 
 
 class VisualBeatRetriever:
@@ -80,10 +84,14 @@ class VisualBeatRetriever:
             selector=self._selector,
             relevance_context=to_visual_relevance_context(beat),
         )
+        quality_result = StockMediaQualityEvaluator().evaluate(selected.score)
         return VisualBeatRetrievalResult(
             beat=beat,
             provider=result.provider,
             query=result.query,
             item=dict(selected.item),
             score=selected.score.score,
+            quality_decision=quality_result.decision.value,
+            visual_quality=quality_result.score.overall,
+            beautifiable=quality_result.score.beautifiable,
         )
