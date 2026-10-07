@@ -692,6 +692,7 @@ class GenerateCustomShort:
                             "matched_signals": list(result.matched_signals),
                             "missing_signals": list(result.missing_signals),
                             "violated_constraints": list(result.violated_constraints),
+                            "retrieval_attempts": list(result.retrieval_attempts),
                         },
                     },
                 )
