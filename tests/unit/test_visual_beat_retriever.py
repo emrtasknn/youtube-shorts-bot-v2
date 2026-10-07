@@ -4,6 +4,7 @@ import pytest
 
 from app.application.services.scene_contract import build_scene_contract
 from app.application.services.visual_beat import VisualBeatCompiler
+from app.application.services.stock_media_scoring import StockMediaScore
 from app.application.services.visual_beat_retriever import VisualBeatRetriever
 
 
@@ -13,7 +14,7 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
     search = Mock()
     selected = Mock()
     selected.item = {"id": "asset-1", "download_url": "https://example.test/a.jpg"}
-    selected.score.score = 0.91
+    selected.score = StockMediaScore(\n        score=0.91,\n        relevance=0.95,\n        orientation=1.0,\n        resolution=0.70,\n        duration=1.0,\n        duplicate_penalty=0.0,\n        eligible=True,\n        reasons=(),\n    )
     search.execute_strategy_until_selected = AsyncMock(
         return_value=(
             Mock(provider="pexels", query="Roman Empire expansion"),
@@ -58,7 +59,7 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
     )
 
     assert result.item["id"] == "asset-1"
-    assert result.provider == "pexels"
+    assert result.provider == "pexels"\n    assert result.quality_decision == "accept"\n    assert result.visual_quality == 0.865\n    assert result.beautifiable is False
     search.execute_strategy_until_selected.assert_awaited_once()
     kwargs = search.execute_strategy_until_selected.await_args.kwargs
     assert kwargs["relevance_context"].entities == beat.entities
