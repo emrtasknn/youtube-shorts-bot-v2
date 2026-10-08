@@ -100,8 +100,10 @@ class JudgeDrivenRetryOrchestrator:
         plan = self.plan(report, attempt=attempt)
         return RetryDecision(
             plan=plan,
-            next_status="RETRYING" if plan.retryable else (
-                "FAILED_PERMANENT" if plan.exhausted else "UNCHANGED"
+            next_status=(
+                "RETRYING"
+                if plan.retryable
+                else ("FAILED_PERMANENT" if plan.exhausted else "UNCHANGED")
             ),
         )
 
