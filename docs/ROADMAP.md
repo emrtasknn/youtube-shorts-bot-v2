@@ -126,6 +126,20 @@ Deliverables:
 Exit: M30 RETRY → M31 plan → M32 execution → M30 re-judge → M33 effectiveness measurement → adapt next action set → bounded retry/pass.
 Evidence: PR #138; final branch CI run #861 passed Static checks, Database/tests (461 passed) and Docker build. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
 
+
+## M34 — Retry Economics & Action Ranking — IN PROGRESS
+Goal: choose retry interventions by expected quality gain per intervention cost and preserve successful intermediate work whenever possible.
+Deliverables:
+- RetryEconomicsPolicy with deterministic relative intervention costs
+- expected quality-gain estimation from current judge deficits, retry-reason alignment and prior bundle evidence
+- efficiency-based retry action ordering
+- adaptive M33 actions fed into the economics ranking stage
+- explicit preservation metadata for targeted actions not selected on the current retry
+- retry economics metadata persisted in QC
+- regression coverage for cost/gain ranking and preservation behavior
+
+Exit: M30 RETRY → M31 plan → M32 execution → M30 re-judge → M33 effectiveness adaptation → M34 cost/benefit ranking → execute only the highest-value interventions → preserve untouched successful work → bounded retry/pass.
+
 ## Dependency
 M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32 → M33. M26 and M27 can partly run in parallel.
 
