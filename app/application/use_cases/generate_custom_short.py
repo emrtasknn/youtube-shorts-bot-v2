@@ -390,6 +390,7 @@ class GenerateCustomShort:
             if stage is not None:
                 stage.stage_metadata = {
                     **(stage.stage_metadata or {}),
+                    "m29_synchronization": render.synchronization,
                     "audio_qc": {
                         "passed": audio_qc.passed,
                         "failures": list(audio_qc.failures),
