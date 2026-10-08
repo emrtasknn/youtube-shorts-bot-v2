@@ -12,6 +12,11 @@ from app.application.services.visual_beat import VisualBeat
 from app.application.services.visual_beat_retrieval import to_visual_relevance_context
 from app.application.services.visual_candidate_pool import VisualCandidatePool
 from app.application.services.visual_query_expansion import VisualQueryExpander
+from app.application.services.real_vision_verifier import (
+    CostAwareVisionVerifier,
+    GeminiVisionSemanticVerifier,
+    VisionVerificationConfig,
+)
 from app.application.services.visual_semantic_verifier import (
     DeterministicVisualSemanticVerifier,
     VisualSemanticVerifier,
@@ -19,6 +24,7 @@ from app.application.services.visual_semantic_verifier import (
     to_visual_verification_context,
 )
 from app.application.services.visual_source_resolver import VisualSourceResolver
+from app.config.settings import get_settings
 from app.application.use_cases.search_stock_media import SearchStockMedia
 
 
@@ -61,7 +67,24 @@ class VisualBeatRetriever:
         self._search = SearchStockMedia(gateway)
         self._selector = StockMediaSelector(StockMediaScorer())
         self._quality_evaluator = StockMediaQualityEvaluator()
-        self._semantic_verifier = semantic_verifier or DeterministicVisualSemanticVerifier()
+        if semantic_verifier is not None:
+            self._semantic_verifier = semantic_verifier
+        else:
+            settings = get_settings()
+            if settings.gemini_enabled and settings.gemini_api_key:
+                self._semantic_verifier = CostAwareVisionVerifier(
+                    GeminiVisionSemanticVerifier(
+                        VisionVerificationConfig(
+                            api_key=settings.gemini_api_key,
+                            model=settings.gemini_model,
+                            base_url=settings.gemini_base_url,
+                            timeout_seconds=settings.gemini_timeout_seconds,
+                        )
+                    ),
+                    max_verified_candidates=6,
+                )
+            else:
+                self._semantic_verifier = DeterministicVisualSemanticVerifier()
         self._query_expander = VisualQueryExpander()
         self._max_queries = max_queries
         self._max_candidates = max_candidates
@@ -145,7 +168,8 @@ class VisualBeatRetriever:
             attempts.append(f"{variant.name}:provider={result.provider}:candidates={len(eligible)}")
 
         ranked_pool = pool.ranked()
-        for entry in ranked_pool:
+        vision_shortlist = ranked_pool[:6]
+        for entry in vision_shortlist:
             quality_result = self._quality_evaluator.evaluate(entry.score)
             candidate_id = entry.asset_id or "unknown"
             if quality_result.decision.value == "reject":
