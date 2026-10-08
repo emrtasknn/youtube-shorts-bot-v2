@@ -642,6 +642,27 @@ class GenerateCustomShort:
                                 for adaptation in retry_result.adaptations
                             ],
                         },
+                        "m34_retry_economics": {
+                            "decisions": [
+                                {
+                                    "actions": [action.value for action in economics.actions],
+                                    "preserved_actions": [
+                                        action.value for action in economics.preserved_actions
+                                    ],
+                                    "reason": economics.reason,
+                                    "rankings": [
+                                        {
+                                            "action": item.action.value,
+                                            "estimated_cost": item.estimated_cost,
+                                            "expected_gain": item.expected_gain,
+                                            "efficiency": item.efficiency,
+                                        }
+                                        for item in economics.rankings
+                                    ],
+                                }
+                                for economics in retry_result.economics
+                            ],
+                        },
                     }
                 if judge.decision == "RETRY":
                     run.status = RunStatus.FAILED_PERMANENT
