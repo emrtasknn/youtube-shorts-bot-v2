@@ -240,9 +240,8 @@ async def test_visual_beat_retriever_falls_through_to_broader_strategy() -> None
     assert result.item["id"] == "broader-accepted"
     assert search.execute_strategy.await_count >= 2
     assert (
-        search.execute_strategy.await_args_list[1]
-        .kwargs["strategies"][0]
-        .name == "entity_action"
+        search.execute_strategy.await_args_list[1].kwargs["strategies"][0].name
+        == "entity_action"
     )
 
 
