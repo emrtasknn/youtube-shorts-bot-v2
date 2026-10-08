@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Iterable
 
 from app.application.services.video_judge import VideoJudgeReport
 
