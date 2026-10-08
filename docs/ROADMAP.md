@@ -195,7 +195,7 @@ Deliverables:
 
 Exit: providers with sufficient historical evidence can be ranked by measured reliability/latency/quality; sparse or missing history preserves declared provider order; unhealthy/open-circuit providers remain ineligible.
 
-Evidence: PR pending merge; CI and production smoke are reported after merge validation.
+Evidence: PR #142 merged to main as commit `03e5a8562c2a76df06f860489f262cd9de781575`. No completed CI workflow run was exposed for the final M37 head during this session, so green CI is not claimed. Production provider/MP4 smoke remains dependent on a workflow dispatch path that is not currently exposed.
 
 ## Dependency
 M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32 → M33 → M34 → M35 → M36 → M37. M26 and M27 can partly run in parallel.
