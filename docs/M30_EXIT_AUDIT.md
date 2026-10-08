@@ -72,5 +72,7 @@ Unit coverage includes:
 
 The generation use case is wired so approval is created only for PASS/PASS_WITH_WARNINGS. RETRY and REJECT terminate before Telegram approval with explicit run statuses.
 
+CI evidence: final branch workflow run #835 passed Static checks, Database/tests and Docker build. Database/tests: 449 passed.
+
 ## Production validation caveat
 Production MP4 smoke/visual inspection was not dispatched because the available GitHub workflow does not expose a production-smoke dispatch path. M30 therefore has CI/test evidence but not a newly generated production MP4 visual sign-off.
