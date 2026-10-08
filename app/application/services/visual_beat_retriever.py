@@ -198,7 +198,13 @@ class VisualBeatRetriever:
                 attempts.append(f"pool:{candidate_id}:semantic_{verification.decision.value}")
                 continue
 
-            self._variety.remember(\n                run_id=run_id,\n                item=dict(entry.item),\n                provider=entry.providers[0] if entry.providers else "unknown",\n                subject_terms=beat.entities,\n            )\n            selected_query = entry.queries[0] if entry.queries else ""
+            self._variety.remember(
+                run_id=run_id,
+                item=dict(entry.item),
+                provider=entry.providers[0] if entry.providers else "unknown",
+                subject_terms=beat.entities,
+            )
+            selected_query = entry.queries[0] if entry.queries else ""
             selected_query_name = entry.query_names[0] if entry.query_names else "unknown"
             return VisualBeatRetrievalResult(
                 beat=beat,
