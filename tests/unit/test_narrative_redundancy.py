@@ -13,7 +13,9 @@ def _payload(**overrides):
             {"narration": "One decision changed the entire battle."},
             {"narration": "The commander moved his ships through the narrow channel before dawn."},
             {"narration": "The maneuver cut the enemy fleet off from its supply route."},
-            {"narration": "Without reinforcements, the defenders were forced to retreat before sunset."},
+            {
+                "narration": "Without reinforcements, the defenders were forced to retreat before sunset."
+            },
         ],
     }
     payload.update(overrides)
