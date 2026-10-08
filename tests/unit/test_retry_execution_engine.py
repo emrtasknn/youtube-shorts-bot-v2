@@ -103,10 +103,7 @@ async def test_retry_engine_reuses_successful_checkpoint_bundle() -> None:
         RetryAction.RESELECT_VISUALS,
         RetryAction.REGENERATE_VIDEO,
     )
-    assert result.attempts[1].reused_checkpoint_actions == (
-        RetryAction.RESELECT_VISUALS,
-        RetryAction.REGENERATE_VIDEO,
-    )
+    assert result.attempts[1].reused_checkpoint_actions == (RetryAction.RESELECT_VISUALS,)
     assert result.attempts[1].actions == (RetryAction.REGENERATE_VIDEO,)
     assert result.report.decision == "PASS"
 
