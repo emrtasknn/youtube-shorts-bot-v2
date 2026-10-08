@@ -188,15 +188,11 @@ class VisualNarrationSynchronizer:
         issues: list[SynchronizationIssue],
     ) -> None:
         if not cues:
-            issues.append(
-                SynchronizationIssue(code="missing_caption_cues", severity="error")
-            )
+            issues.append(SynchronizationIssue(code="missing_caption_cues", severity="error"))
             return
         for cue in cues:
             if cue.start_seconds < 0 or cue.end_seconds <= cue.start_seconds:
-                issues.append(
-                    SynchronizationIssue(code="invalid_caption_timing", severity="error")
-                )
+                issues.append(SynchronizationIssue(code="invalid_caption_timing", severity="error"))
                 continue
             if not any(
                 cue.start_seconds < scene.start_seconds + scene.duration_seconds
