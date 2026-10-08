@@ -16,10 +16,7 @@ def _format_ass_time(seconds: float) -> str:
 
 def _wrap_text(text: str, max_words: int = 3) -> list[str]:
     words = re.findall(r"\S+", text.strip())
-    return [
-        " ".join(words[index : index + max_words])
-        for index in range(0, len(words), max_words)
-    ]
+    return [" ".join(words[index : index + max_words]) for index in range(0, len(words), max_words)]
 
 
 def _dynamic_text(cue: SubtitleCue) -> str:
@@ -80,9 +77,7 @@ def _build_static_event(cue: SubtitleCue) -> str:
 
 
 def _static_fallback_cues(text: str, duration_seconds: float) -> tuple[SubtitleCue, ...]:
-    return SubtitleEngine(max_words=6, max_characters=34).build_cues(
-        text, duration_seconds
-    )
+    return SubtitleEngine(max_words=6, max_characters=34).build_cues(text, duration_seconds)
 
 
 def write_ass(path: Path, text: str, duration_seconds: float) -> Path:
