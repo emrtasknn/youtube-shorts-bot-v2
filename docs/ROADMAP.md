@@ -127,6 +127,24 @@ Exit: M30 RETRY → M31 plan → M32 execution → M30 re-judge → M33 effectiv
 Evidence: PR #138; final branch CI run #861 passed Static checks, Database/tests (461 passed) and Docker build. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
 
 
+## M35 — Measured Retry Economics & Checkpoint Reuse — COMPLETE
+Goal: replace static retry-cost assumptions with measured execution telemetry and avoid re-executing successful retry work when the bounded retry loop revisits the same action bundle.
+
+Deliverables:
+- measured retry duration captured at the execution boundary
+- RetryCostCalibration with minimum-sample protection and smoothed runtime calibration
+- M34 economics ranking consumes calibrated costs when measured telemetry exists
+- explicit distinction between observed runtime cost and the normalized fallback baseline
+- checkpoint reuse metadata for successful retry action bundles
+- later retries skip already-successful checkpoint actions instead of regenerating them
+- regression coverage for calibration, measured ranking and checkpoint reuse
+- M35 exit audit
+
+Exit: M30 RETRY → M31 plan → M32 execution → M30 re-judge → M33 effectiveness → M34 gain/cost ranking → M35 measured cost calibration → reuse successful checkpoint work → bounded retry/pass.
+
+Evidence: M35 branch CI must pass Static checks, Database/tests and Docker build. Production MP4 smoke/visual inspection remains an explicit caveat until a production-smoke dispatch path is exposed.
+
+
 ## M34 — Retry Economics & Action Ranking — COMPLETE
 Goal: choose retry interventions by expected quality gain per intervention cost and preserve successful intermediate work whenever possible.
 Deliverables:
