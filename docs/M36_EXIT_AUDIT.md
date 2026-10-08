@@ -50,7 +50,7 @@ Regression coverage includes:
 
 ## Production validation caveat
 
-The repository's currently exposed workflow path does not provide a production-smoke dispatch route for real MP4 inspection. Therefore M36 can validate the deterministic learning contract through CI, but production visual smoke remains an explicit follow-up requirement.
+PR #141 was merged to main as commit `8fe737b43efa9b7a3636cf42ff5558ad8ba4dcf0`. The PR CI run was in progress at merge time and the exposed workflow API did not return a completed green conclusion before merge, so green CI is not claimed here. Production MP4 smoke/visual inspection remains dependent on a workflow dispatch path that is not currently exposed.
 
 ## Exit criterion
 
