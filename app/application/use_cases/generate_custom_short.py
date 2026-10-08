@@ -381,6 +381,15 @@ class GenerateCustomShort:
                         "M15 audio QC failed after one bounded repair: "
                         + "; ".join(audio_qc.failures)
                     )
+            sync_total = render.synchronization.get(
+                "total_duration_seconds",
+                render.duration_seconds,
+            )
+            expected_duration = (
+                float(sync_total)
+                if isinstance(sync_total, (int, float))
+                else render.duration_seconds
+            )
             judge = AutomatedVideoJudge().evaluate(
                 VideoJudgeInput(
                     output_path=render.output_path,
@@ -389,12 +398,7 @@ class GenerateCustomShort:
                     height=render.height,
                     fps=render.fps,
                     has_audio=render.has_audio,
-                    expected_duration_seconds=float(
-                        render.synchronization.get(
-                            "total_duration_seconds",
-                            render.duration_seconds,
-                        )
-                    ),
+                    expected_duration_seconds=expected_duration,
                     scene_count=len(scenes),
                     asset_count=len(inputs),
                     narration_word_count=len(direction.tts_text.split()),
