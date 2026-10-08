@@ -447,7 +447,7 @@ class GenerateCustomShort:
                         "repair_applied": background_volume != 0.14,
                     },
                 }
-            retry_decision = JudgeDrivenRetryOrchestrator(max_attempts=2).decide(
+            retry_decision = JudgeDrivenRetryOrchestrator(max_attempts=3).decide(
                 judge,
                 attempt=1,
             )
@@ -614,6 +614,21 @@ class GenerateCustomShort:
                         "m32_retry_execution": {
                             "attempts": retry_history,
                             "attempt_count": len(retry_history),
+                            "effectiveness": [
+                                {
+                                    "attempt": observation.attempt,
+                                    "before_score": observation.before_score,
+                                    "after_score": observation.after_score,
+                                    "score_delta": observation.score_delta,
+                                    "improved": observation.improved,
+                                    "actions": [
+                                        action.value
+                                        for action in observation.actions
+                                    ],
+                                    "dimension_deltas": observation.dimension_deltas,
+                                }
+                                for observation in retry_result.effectiveness
+                            ],
                             "exhausted": retry_result.exhausted,
                             "terminal_reason": retry_result.terminal_reason,
                             "final_decision": judge.decision,
