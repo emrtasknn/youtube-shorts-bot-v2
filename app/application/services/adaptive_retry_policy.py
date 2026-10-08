@@ -15,6 +15,7 @@ class RetryEffectivenessObservation:
     score_delta: float
     improved: bool
     dimension_deltas: dict[str, float]
+    duration_seconds: float = 0.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,12 +26,7 @@ class AdaptiveRetryDecision:
 
 
 class AdaptiveRetryPolicy:
-    """Chooses retry actions using measured quality improvement.
-
-    An action that failed to improve the judge score is not repeated on a
-    subsequent attempt. The policy is conservative: semantic regeneration
-    remains available when targeted actions are exhausted.
-    """
+    """Chooses retry actions using measured quality improvement."""
 
     def __init__(self, *, minimum_score_improvement: float = 1.0) -> None:
         if minimum_score_improvement < 0:
@@ -44,6 +40,7 @@ class AdaptiveRetryPolicy:
         current: VideoJudgeReport,
         actions: tuple[RetryAction, ...],
         attempt: int,
+        duration_seconds: float = 0.0,
     ) -> RetryEffectivenessObservation:
         deltas = {
             key: round(
@@ -61,6 +58,7 @@ class AdaptiveRetryPolicy:
             score_delta=delta,
             improved=delta >= self._minimum_score_improvement,
             dimension_deltas=deltas,
+            duration_seconds=max(0.0, round(duration_seconds, 4)),
         )
 
     def adapt(
@@ -81,11 +79,7 @@ class AdaptiveRetryPolicy:
             for observation in observations
             if not observation.improved
             for action in observation.actions
-            if action
-            not in {
-                RetryAction.REGENERATE_VIDEO,
-                RetryAction.ESCALATE,
-            }
+            if action not in {RetryAction.REGENERATE_VIDEO, RetryAction.ESCALATE}
         }
         actions = tuple(action for action in plan.actions if action not in failed_actions)
         excluded = tuple(action for action in plan.actions if action in failed_actions)
