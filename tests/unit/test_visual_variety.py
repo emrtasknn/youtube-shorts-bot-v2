@@ -54,7 +54,7 @@ def test_variety_prefers_new_provider_and_shot_type() -> None:
     varied = _candidate(
         "varied",
         provider="pixabay",
-        title="Roman Empire aerial wide view",
+        title="aerial wide landscape",
         width=1440,
         height=1920,
     )
