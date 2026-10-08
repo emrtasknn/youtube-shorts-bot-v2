@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Sequence
 
 from app.application.services.subtitle_engine import SubtitleCue, SubtitleEngine
-from app.application.services.visual_beat import VisualBeatTimeline
+from app.application.services.visual_beat import VisualBeat, VisualBeatTimeline
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,7 +19,7 @@ class SynchronizedBeat:
     @classmethod
     def from_beat(
         cls,
-        beat: object,
+        beat: VisualBeat,
         *,
         start_seconds: float,
         duration_seconds: float,
@@ -83,8 +83,8 @@ class VisualNarrationSynchronizer:
     def __init__(
         self,
         *,
-        major_drift_seconds: float = 1.5,
-        major_drift_ratio: float = 0.20,
+        major_drift_seconds: float = 2.0,
+        major_drift_ratio: float = 0.25,
         subtitle_engine: SubtitleEngine | None = None,
     ) -> None:
         if major_drift_seconds <= 0 or major_drift_ratio <= 0:
