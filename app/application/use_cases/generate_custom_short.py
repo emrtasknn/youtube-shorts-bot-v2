@@ -550,7 +550,9 @@ class GenerateCustomShort:
                             ducking_threshold=0.02,
                             ducking_ratio=10.0 if RetryAction.REPAIR_AUDIO in actions else 8.0,
                             ducking_attack_ms=15.0 if RetryAction.REPAIR_AUDIO in actions else 20.0,
-                            ducking_release_ms=300.0 if RetryAction.REPAIR_AUDIO in actions else 250.0,
+                            ducking_release_ms=300.0
+                            if RetryAction.REPAIR_AUDIO in actions
+                            else 250.0,
                         )
                     )
                     validate_output(render.output_path, render.duration_seconds)
