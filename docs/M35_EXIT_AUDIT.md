@@ -47,7 +47,7 @@ Regression coverage includes:
 
 ## Production validation caveat
 
-Production MP4 smoke/visual inspection remains dependent on a workflow dispatch path that is not currently exposed. CI validates the M35 contract and regression suite, but this does not constitute a new production MP4 visual sign-off.
+PR #140 was merged to main as commit `23d13e00bc8d2669f626e3f9c622cb6e735987f8`. The GitHub workflow-run API exposed to this session returned no run for the M35 merge commit, so a green CI run is not claimed here. Production MP4 smoke/visual inspection remains dependent on a workflow dispatch path that is not currently exposed.
 
 ## Next step
 
