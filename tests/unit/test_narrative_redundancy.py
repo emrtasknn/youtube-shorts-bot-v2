@@ -54,7 +54,9 @@ def test_gate_rejects_hook_first_body_repetition():
         )
     )
     assert report.passed is False
-    assert any("hook repeats the first body claim" in failure for failure in report.failures)
+    assert any(
+        "hook repeats the first body claim" in failure for failure in report.failures
+    )
     assert "hook_body_repetition" in report.signals
 
 
