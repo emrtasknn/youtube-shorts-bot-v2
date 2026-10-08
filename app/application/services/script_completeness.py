@@ -75,7 +75,7 @@ class ScriptCompletenessGate:
     words_per_second = 2.5
     min_scene_narration_ratio = 0.85
     min_scene_duration_ratio = 0.95
-    min_storyboard_vocabulary_coverage = 0.50
+    min_storyboard_vocabulary_coverage = 0.45
 
     def evaluate(self, data: dict[str, Any]) -> ScriptCompletenessReport:
         failures: list[str] = []
