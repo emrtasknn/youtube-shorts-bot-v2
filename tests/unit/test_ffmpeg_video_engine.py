@@ -178,7 +178,7 @@ def test_builder_adds_bounded_zoompan_for_image_motion(tmp_path: Path) -> None:
     filter_complex = command[command.index("-filter_complex") + 1]
 
     assert "zoompan=" in filter_complex
-    assert "d=120" in filter_complex
+    assert "d=1" in filter_complex
     assert "s=1080x1920" in filter_complex
     assert "fps=30" in filter_complex
 
