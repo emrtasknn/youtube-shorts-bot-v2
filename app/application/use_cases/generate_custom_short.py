@@ -523,8 +523,32 @@ class GenerateCustomShort:
                 ):
                     scene["duration"] = duration
 
-        ScriptCompletenessGate().evaluate(data).raise_if_failed()
-        NarrativeRedundancyGate().evaluate(data).raise_if_failed()
+        completeness_report = ScriptCompletenessGate().evaluate(data)
+        completeness_report.raise_if_failed()
+        narrative_report = NarrativeRedundancyGate().evaluate(data)
+        self._session.add(
+            StageExecutionModel(
+                run_id=run.id,
+                stage=Stage.SCRIPTING,
+                attempt=1,
+                status=(
+                    StageStatus.SUCCESS
+                    if narrative_report.passed
+                    else StageStatus.FAILED_PERMANENT
+                ),
+                provider="deterministic-m23-narrative-redundancy",
+                stage_metadata={
+                    "gate": "NarrativeRedundancyGate",
+                    "passed": narrative_report.passed,
+                    "signals": list(narrative_report.signals),
+                    "failures": list(narrative_report.failures),
+                    "max_similarity": narrative_report.max_similarity,
+                    "compared_pairs": narrative_report.compared_pairs,
+                },
+            )
+        )
+        self._session.flush()
+        narrative_report.raise_if_failed()
 
         script = ScriptModel(
             content_id=run.content_id,
