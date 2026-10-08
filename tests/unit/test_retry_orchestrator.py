@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from app.application.services.video_judge import VideoJudgeReport
 from app.application.services.retry_orchestrator import (
     JudgeDrivenRetryOrchestrator,
     RetryAction,
 )
+from app.application.services.video_judge import VideoJudgeReport
 
 
 def _report(
