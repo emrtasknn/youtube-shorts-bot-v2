@@ -76,6 +76,7 @@ class JudgeDrivenRetryExecutionEngine:
         report: VideoJudgeReport,
         *,
         attempt: int = 1,
+        historical_effectiveness: tuple[RetryEffectivenessObservation, ...] = (),
     ) -> RetryExecutionResult:
         history: list[RetryExecutionAttempt] = []
         observations: list[RetryEffectivenessObservation] = []
@@ -113,6 +114,7 @@ class JudgeDrivenRetryExecutionEngine:
                 adapted_plan,
                 report=current,
                 observations=tuple(observations),
+                historical_observations=historical_effectiveness,
             )
             economics_history.append(economics)
 
