@@ -208,7 +208,9 @@ class FFmpegVideoEngine:
         if request.voiceover_path is not None:
             audio_duration = await self._probe_duration(request.voiceover_path)
 
-        scene_durations, unified_timeline = self._resolve_scene_durations_with_sync(request, audio_duration)
+        scene_durations, unified_timeline = self._resolve_scene_durations_with_sync(
+            request, audio_duration
+        )
 
         subtitle_path: Path | None = None
         if request.subtitle_text:
