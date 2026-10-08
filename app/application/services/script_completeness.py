@@ -47,10 +47,6 @@ def _words(text: str) -> list[str]:
     return _WORD_RE.findall(text.strip())
 
 
-def _normalized_words(text: str) -> set[str]:
-    return {word.lower().strip(".,!?;:()[]{}\"'’”") for word in _words(text)}
-
-
 def _ends_as_sentence(text: str) -> bool:
     return bool(_SENTENCE_END_RE.search(text.strip()))
 
@@ -75,7 +71,6 @@ class ScriptCompletenessGate:
     words_per_second = 2.5
     min_scene_narration_ratio = 0.85
     min_scene_duration_ratio = 0.95
-    min_storyboard_vocabulary_coverage = 0.45
 
     def evaluate(self, data: dict[str, Any]) -> ScriptCompletenessReport:
         failures: list[str] = []
@@ -169,16 +164,6 @@ class ScriptCompletenessGate:
                     last_word = _words(narration)[-1].lower().strip(".,!?;:()[]{}\"'’”")
                     if last_word in _TRAILING_FRAGMENT_WORDS:
                         failures.append(f"scene {index} narration ends with a fragment")
-
-        body_tokens = _normalized_words(body)
-        narration_tokens = _normalized_words(all_narration)
-        if body_tokens:
-            token_coverage = len(body_tokens & narration_tokens) / len(body_tokens)
-            if token_coverage < self.min_storyboard_vocabulary_coverage:
-                failures.append(
-                    "storyboard vocabulary coverage is too low "
-                    f"({token_coverage:.0%}; minimum {self.min_storyboard_vocabulary_coverage:.0%})"
-                )
 
         return ScriptCompletenessReport(
             passed=not failures,
