@@ -9,6 +9,7 @@ from app.application.services.adaptive_retry_policy import (
     AdaptiveRetryPolicy,
     RetryEffectivenessObservation,
 )
+from app.application.services.retry_economics import RetryEconomicsDecision, RetryEconomicsPolicy
 from app.application.services.retry_orchestrator import (
     JudgeDrivenRetryOrchestrator,
     RetryAction,
@@ -42,6 +43,7 @@ class RetryExecutionResult:
     terminal_reason: str | None
     effectiveness: tuple[RetryEffectivenessObservation, ...] = ()
     adaptations: tuple[AdaptiveRetryDecision, ...] = ()
+    economics: tuple[RetryEconomicsDecision, ...] = ()
 
 
 class JudgeDrivenRetryExecutionEngine:
@@ -58,10 +60,12 @@ class JudgeDrivenRetryExecutionEngine:
         orchestrator: JudgeDrivenRetryOrchestrator | None = None,
         executor: RetryAttemptExecutor | Callable[..., Awaitable[VideoJudgeReport]],
         policy: AdaptiveRetryPolicy | None = None,
+        economics_policy: RetryEconomicsPolicy | None = None,
     ) -> None:
         self._orchestrator = orchestrator or JudgeDrivenRetryOrchestrator(max_attempts=3)
         self._executor = executor
         self._policy = policy or AdaptiveRetryPolicy()
+        self._economics = economics_policy or RetryEconomicsPolicy()
 
     async def execute(
         self,
@@ -72,6 +76,7 @@ class JudgeDrivenRetryExecutionEngine:
         history: list[RetryExecutionAttempt] = []
         observations: list[RetryEffectivenessObservation] = []
         adaptations: list[AdaptiveRetryDecision] = []
+        economics_history: list[RetryEconomicsDecision] = []
         current = report
         current_attempt = attempt
 
@@ -89,6 +94,7 @@ class JudgeDrivenRetryExecutionEngine:
                     terminal_reason=plan.terminal_reason,
                     effectiveness=tuple(observations),
                     adaptations=tuple(adaptations),
+                    economics=tuple(economics_history),
                 )
 
             adaptive = self._policy.adapt(
@@ -96,7 +102,13 @@ class JudgeDrivenRetryExecutionEngine:
                 observations=tuple(observations),
             )
             adaptations.append(adaptive)
-            next_plan_actions = adaptive.actions
+            economics = self._economics.rank(
+                plan,
+                report=current,
+                observations=tuple(observations),
+            )
+            economics_history.append(economics)
+            next_plan_actions = economics.actions
 
             next_attempt = current_attempt + 1
             history.append(
@@ -130,6 +142,7 @@ class JudgeDrivenRetryExecutionEngine:
             terminal_reason=None,
             effectiveness=tuple(observations),
             adaptations=tuple(adaptations),
+            economics=tuple(economics_history),
         )
 
     async def _execute_attempt(
