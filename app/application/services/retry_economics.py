@@ -70,7 +70,8 @@ class RetryEconomicsPolicy:
         ranked = tuple(sorted(scored, key=lambda item: (-item.efficiency, item.estimated_cost)))
         actions = tuple(item.action for item in ranked)
         preserved = tuple(
-            action for action in (
+            action
+            for action in (
                 RetryAction.RESELECT_VISUALS,
                 RetryAction.REPAIR_AUDIO,
                 RetryAction.RECONCILE_TIMELINE,
@@ -95,7 +96,11 @@ class RetryEconomicsPolicy:
             return 0.0
 
         dimension = self._DIMENSION_MAP.get(action)
-        deficit = max(0.0, 100.0 - report.dimension_scores.get(dimension, 100.0)) if dimension else 0.0
+        deficit = (
+            max(0.0, 100.0 - report.dimension_scores.get(dimension, 100.0))
+            if dimension
+            else 0.0
+        )
         alignment = 8.0 if self._reason_maps_to_action(plan.reasons, action) else 2.0
         historical = [
             observation.score_delta
