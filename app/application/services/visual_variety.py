@@ -69,7 +69,7 @@ class VisualVarietyEngine:
                 scored,
                 key=lambda entry: (
                     entry[0].duplicate,
-                    entry[0].score,
+                    -entry[0].score,
                     -entry[1],
                 ),
             )
