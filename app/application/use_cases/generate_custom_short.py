@@ -39,6 +39,7 @@ from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.topic_selection_production_adapter import (
     TopicSelectionProductionAdapter,
 )
+from app.application.services.retry_orchestrator import JudgeDrivenRetryOrchestrator
 from app.application.services.video_judge import AutomatedVideoJudge, VideoJudgeInput
 from app.application.services.visual_beat import VisualBeatCompiler, VisualBeatTimeline
 from app.application.services.visual_beat_render import to_video_scene_inputs
@@ -441,8 +442,29 @@ class GenerateCustomShort:
                         "repair_applied": background_volume != 0.14,
                     },
                 }
+            retry_decision = JudgeDrivenRetryOrchestrator(max_attempts=2).decide(
+                judge,
+                attempt=1,
+            )
+            if stage is not None:
+                stage.stage_metadata = {
+                    **(stage.stage_metadata or {}),
+                    "m31_retry_orchestration": {
+                        "attempt": retry_decision.plan.attempt,
+                        "max_attempts": retry_decision.plan.max_attempts,
+                        "retryable": retry_decision.plan.retryable,
+                        "actions": [action.value for action in retry_decision.plan.actions],
+                        "reasons": list(retry_decision.plan.reasons),
+                        "terminal_reason": retry_decision.plan.terminal_reason,
+                        "next_status": retry_decision.next_status,
+                    },
+                }
             if judge.decision == "RETRY":
-                run.status = RunStatus.FAILED_RETRYABLE
+                run.status = (
+                    RunStatus.FAILED_RETRYABLE
+                    if retry_decision.plan.retryable
+                    else RunStatus.FAILED_PERMANENT
+                )
                 self._session.commit()
                 return CustomShortResult(
                     run.id,
