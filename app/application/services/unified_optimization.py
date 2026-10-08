@@ -181,8 +181,8 @@ class UnifiedOptimization:
             )
         return learned
 
-    @staticmethod
     def _cost_multiplier(
+        self,
         provider_cost: ProviderCost | None,
         all_costs: dict[str, ProviderCost],
     ) -> float:
@@ -193,7 +193,10 @@ class UnifiedOptimization:
         if baseline <= 0:
             return 1.0
         ratio = baseline / max(provider_cost.median_cost, 1e-9)
-        return max(0.75, min(1.25, 1.0 + (ratio - 1.0) * 0.25))
+        return max(
+            0.75,
+            min(1.25, 1.0 + (ratio - 1.0) * self._cost_weight),
+        )
 
     def _combined_confidence(
         self,
