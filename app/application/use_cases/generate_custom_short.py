@@ -45,6 +45,7 @@ from app.application.services.visual_beat_retriever import VisualBeatRetriever
 from app.application.services.visual_beautifier import VisualBeautifier
 from app.application.services.visual_quality import VisualQualityDecision
 from app.application.services.visual_relevance import VisualRelevanceContext
+from app.application.services.video_judge import AutomatedVideoJudge, VideoJudgeInput
 from app.application.services.visual_source_resolver import VisualSourceResolver
 from app.application.use_cases.search_stock_media import SearchStockMedia
 from app.domain.decision import ProductionDecision
@@ -201,6 +202,7 @@ class GenerateCustomShort:
         self._session.add(run)
         self._session.flush()
         try:
+            fallback_asset_count = 0
             run.status = RunStatus.QUEUED
             run.status = RunStatus.RUNNING
             run.status = RunStatus.RESEARCHING
@@ -237,6 +239,7 @@ class GenerateCustomShort:
                     )
                     assets = selection.assets
                 except Exception:
+                    fallback_asset_count += 1
                     path, asset = await self._select_asset_scene_fallback(run, scene)
                     fallback_duration = float(scene.duration or 5)
                     fallback_contract = build_scene_contract(
@@ -378,6 +381,30 @@ class GenerateCustomShort:
                         "M15 audio QC failed after one bounded repair: "
                         + "; ".join(audio_qc.failures)
                     )
+            judge = AutomatedVideoJudge().evaluate(
+                VideoJudgeInput(
+                    output_path=render.output_path,
+                    duration_seconds=render.duration_seconds,
+                    width=render.width,
+                    height=render.height,
+                    fps=render.fps,
+                    has_audio=render.has_audio,
+                    expected_duration_seconds=float(
+                        render.synchronization.get(
+                            "total_duration_seconds",
+                            render.duration_seconds,
+                        )
+                    ),
+                    scene_count=len(scenes),
+                    asset_count=len(inputs),
+                    narration_word_count=len(direction.tts_text.split()),
+                    subtitle_text=direction.tts_text,
+                    synchronization=render.synchronization,
+                    audio_qc_passed=audio_qc.passed,
+                    audio_qc_failures=tuple(audio_qc.failures),
+                    fallback_asset_count=fallback_asset_count,
+                )
+            )
             stage = (
                 self._session.query(StageExecutionModel)
                 .filter_by(
@@ -391,6 +418,16 @@ class GenerateCustomShort:
                 stage.stage_metadata = {
                     **(stage.stage_metadata or {}),
                     "m29_synchronization": render.synchronization,
+                    "m30_automated_video_judge": {
+                        "decision": judge.decision,
+                        "score": judge.score,
+                        "dimension_scores": judge.dimension_scores,
+                        "failures": list(judge.failures),
+                        "warnings": list(judge.warnings),
+                        "retry_reasons": list(judge.retry_reasons),
+                        "evaluated_path": judge.evaluated_path,
+                        "fallback_asset_count": fallback_asset_count,
+                    },
                     "audio_qc": {
                         "passed": audio_qc.passed,
                         "failures": list(audio_qc.failures),
@@ -400,6 +437,28 @@ class GenerateCustomShort:
                         "repair_applied": background_volume != 0.14,
                     },
                 }
+            if judge.decision == "RETRY":
+                run.status = RunStatus.FAILED_RETRYABLE
+                self._session.commit()
+                return CustomShortResult(
+                    run.id,
+                    content.id,
+                    script.id,
+                    render.output_path,
+                    render.duration_seconds,
+                    run.status,
+                )
+            if judge.decision == "REJECT":
+                run.status = RunStatus.FAILED_PERMANENT
+                self._session.commit()
+                return CustomShortResult(
+                    run.id,
+                    content.id,
+                    script.id,
+                    render.output_path,
+                    render.duration_seconds,
+                    run.status,
+                )
             if event_candidate is not None:
                 EventMemoryService(self._session).upsert(
                     EventMemoryCandidate(
