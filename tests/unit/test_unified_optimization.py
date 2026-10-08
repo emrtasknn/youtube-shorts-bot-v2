@@ -20,8 +20,10 @@ def _report() -> VideoJudgeReport:
             "synchronization": 90.0,
             "product": 90.0,
         },
-        reasons=("excessive_visual_fallbacks",),
-        blocking_failures=(),
+        failures=(),
+        warnings=(),
+        retry_reasons=("excessive_visual_fallbacks",),
+        evaluated_path="test.mp4",
     )
 
 
@@ -29,6 +31,7 @@ def _plan() -> RetryPlan:
     return RetryPlan(
         actions=(RetryAction.RESELECT_VISUALS, RetryAction.REPAIR_AUDIO),
         reasons=("excessive_visual_fallbacks",),
+        retryable=True,
         attempt=1,
         max_attempts=3,
     )
