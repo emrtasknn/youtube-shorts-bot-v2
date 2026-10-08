@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.application.services.adaptive_retry_policy import RetryEffectivenessObservation
 from app.application.services.retry_orchestrator import RetryAction, RetryPlan
 from app.application.services.video_judge import VideoJudgeReport
-from app.application.services.adaptive_retry_policy import RetryEffectivenessObservation
 
 
 @dataclass(frozen=True, slots=True)
