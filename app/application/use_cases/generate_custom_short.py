@@ -244,7 +244,7 @@ class GenerateCustomShort:
                             "narration": scene.narration or "",
                             "visual_goal": scene.visual_goal,
                             "visual_query": scene.primary_subject,
-                            "purpose": scene.purpose,
+                            "purpose": "support_narration",
                             "subject": scene.primary_subject,
                             "action": scene.action,
                             "location": scene.location,
