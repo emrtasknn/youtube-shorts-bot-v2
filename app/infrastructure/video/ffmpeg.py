@@ -13,7 +13,9 @@ from app.application.ports.video_engine import (
 from app.application.services.audio_ducking import AudioDucking, DuckingConfig
 from app.application.services.scene_timing import SceneTimingAllocator
 from app.application.services.subtitles import write_ass
+from app.application.services.synchronization import UnifiedTimeline, VisualNarrationSynchronizer
 from app.application.services.video_quality import VideoQualityGate
+from app.application.services.visual_beat import VisualBeatTimeline
 
 
 class MediaProbe(TypedDict):
@@ -206,7 +208,9 @@ class FFmpegVideoEngine:
         if request.voiceover_path is not None:
             audio_duration = await self._probe_duration(request.voiceover_path)
 
-        scene_durations = self._resolve_scene_durations(request, audio_duration)
+        scene_durations, unified_timeline = self._resolve_scene_durations_with_sync(
+            request, audio_duration
+        )
 
         subtitle_path: Path | None = None
         if request.subtitle_text:
@@ -267,6 +271,23 @@ class FFmpegVideoEngine:
             height=metadata["height"],
             fps=metadata["fps"],
             has_audio=metadata["has_audio"],
+            synchronization=(
+                {}
+                if unified_timeline is None
+                else {
+                    "total_duration_seconds": unified_timeline.total_duration_seconds,
+                    "max_scene_drift_seconds": unified_timeline.max_scene_drift_seconds,
+                    "issue_count": len(unified_timeline.issues),
+                    "issues": [
+                        {
+                            "code": issue.code,
+                            "severity": issue.severity,
+                            "drift_seconds": issue.drift_seconds,
+                        }
+                        for issue in unified_timeline.issues
+                    ],
+                }
+            ),
         )
 
     def _resolve_scene_durations(
@@ -274,10 +295,81 @@ class FFmpegVideoEngine:
         request: VideoRenderRequest,
         audio_duration: float,
     ) -> tuple[float, ...]:
+        durations, _ = self._resolve_scene_durations_with_sync(request, audio_duration)
+        return durations
+
+    def _resolve_scene_durations_with_sync(
+        self,
+        request: VideoRenderRequest,
+        audio_duration: float,
+    ) -> tuple[tuple[float, ...], UnifiedTimeline | None]:
         scene_durations = tuple(scene.duration_seconds for scene in request.scenes)
         if not audio_duration:
-            return scene_durations
-        return SceneTimingAllocator().allocate(scene_durations, audio_duration)
+            return scene_durations, None
+
+        timelines_by_scene: dict[int, VisualBeatTimeline] = {}
+        beat_counts: dict[int, int] = {}
+        for scene in request.scenes:
+            if scene.scene_index is None or scene.visual_timeline is None:
+                continue
+            existing = timelines_by_scene.get(scene.scene_index)
+            if existing is None:
+                timelines_by_scene[scene.scene_index] = scene.visual_timeline
+            elif existing != scene.visual_timeline:
+                raise ValueError("All beats in a scene must share one visual timeline")
+            beat_counts[scene.scene_index] = beat_counts.get(scene.scene_index, 0) + 1
+
+        if not timelines_by_scene:
+            return SceneTimingAllocator().allocate(scene_durations, audio_duration), None
+
+        ordered_scene_indexes = tuple(sorted(timelines_by_scene))
+        if ordered_scene_indexes != tuple(range(len(ordered_scene_indexes))):
+            raise ValueError("Visual timeline scene indexes must be contiguous")
+        timelines = tuple(timelines_by_scene[index] for index in ordered_scene_indexes)
+        if any(
+            beat_counts.get(index, 0) != len(timelines[index].beats)
+            for index in ordered_scene_indexes
+        ):
+            raise ValueError("Render beats must match their visual timeline")
+
+        planned_scene_durations = tuple(
+            sum(scene.duration_seconds for scene in request.scenes if scene.scene_index == index)
+            for index in ordered_scene_indexes
+        )
+        actual_scene_durations = SceneTimingAllocator().allocate(
+            planned_scene_durations,
+            audio_duration,
+        )
+        unified = VisualNarrationSynchronizer().synchronize(
+            timelines,
+            actual_scene_durations,
+            request.subtitle_text,
+            total_audio_duration=audio_duration,
+        )
+        if not unified.passed:
+            raise RuntimeError(
+                "Visual-narration synchronization failed: "
+                + ", ".join(issue.code for issue in unified.issues)
+            )
+
+        durations_by_scene = {
+            scene_index: synchronized_scene
+            for scene_index, synchronized_scene in zip(
+                ordered_scene_indexes,
+                unified.scenes,
+                strict=True,
+            )
+        }
+        resolved: list[float] = []
+        for scene in request.scenes:
+            if scene.scene_index is None or scene.beat_index is None:
+                raise ValueError("Synchronized render inputs require scene and beat indexes")
+            synchronized_scene = durations_by_scene[scene.scene_index]
+            if scene.beat_index >= len(synchronized_scene.beats):
+                raise ValueError("Render beat index exceeds synchronized timeline")
+            resolved.append(synchronized_scene.beats[scene.beat_index].duration_seconds)
+
+        return tuple(resolved), unified
 
     async def _probe_duration(self, path: Path) -> float:
         result = await self._run_probe(

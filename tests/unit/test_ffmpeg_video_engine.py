@@ -4,6 +4,8 @@ import pytest
 
 from app.application.ports.video_engine import VideoRenderRequest, VideoSceneInput
 from app.application.services.camera_motion import CameraMotionPlan, CameraMotionType
+from app.application.services.scene_contract import build_scene_contract
+from app.application.services.visual_beat import VisualBeatCompiler
 from app.infrastructure.video.ffmpeg import FFmpegCommandBuilder, FFmpegVideoEngine
 
 
@@ -209,3 +211,75 @@ def test_builder_rejects_invalid_motion_contract(tmp_path: Path) -> None:
 
     with pytest.raises(TypeError, match="CameraMotionPlan"):
         FFmpegCommandBuilder().build(request)
+
+
+def _sync_timeline():
+    scene = build_scene_contract(
+        {
+            "narration": "Rome expanded across the Mediterranean. Its armies secured key ports.",
+            "visual_goal": "Show Roman expansion",
+            "visual_query": "Roman Empire Mediterranean expansion",
+            "purpose": "event",
+            "subject": "Roman Empire",
+            "action": "expanding",
+            "entities": ["Rome"],
+            "location": "Mediterranean",
+            "era": "ancient Rome",
+            "visual_intent": "territorial expansion",
+            "visual_style": "documentary",
+            "must_show": ["Roman territory"],
+            "must_avoid": ["modern borders"],
+        }
+    )
+    return VisualBeatCompiler().compile(
+        scene,
+        scene_index=0,
+        scene_duration_seconds=6.0,
+    )
+
+
+def test_engine_resolves_beat_durations_from_unified_timeline() -> None:
+    timeline = _sync_timeline()
+    request = VideoRenderRequest(
+        scenes=tuple(
+            VideoSceneInput(
+                Path(f"/tmp/beat-{index}.jpg"),
+                beat.duration_seconds,
+                is_image=True,
+                scene_index=0,
+                beat_index=index,
+                visual_timeline=timeline,
+            )
+            for index, beat in enumerate(timeline.beats)
+        ),
+        output_path=Path("/tmp/output.mp4"),
+        subtitle_text="Rome expanded across the Mediterranean. Its armies secured key ports.",
+    )
+
+    durations, unified = FFmpegVideoEngine()._resolve_scene_durations_with_sync(request, 6.5)
+
+    assert unified is not None
+    assert sum(durations) == 6.5
+    assert tuple(scene.duration_seconds for scene in unified.scenes) == (6.5,)
+    assert durations == tuple(beat.duration_seconds for beat in unified.scenes[0].beats)
+
+
+def test_engine_rejects_mismatched_timeline_beats() -> None:
+    timeline = _sync_timeline()
+    request = VideoRenderRequest(
+        scenes=(
+            VideoSceneInput(
+                Path("/tmp/beat-0.jpg"),
+                timeline.beats[0].duration_seconds,
+                is_image=True,
+                scene_index=0,
+                beat_index=0,
+                visual_timeline=timeline,
+            ),
+        ),
+        output_path=Path("/tmp/output.mp4"),
+        subtitle_text="Rome expanded.",
+    )
+
+    with pytest.raises(ValueError, match="match their visual timeline"):
+        FFmpegVideoEngine()._resolve_scene_durations_with_sync(request, 6.0)

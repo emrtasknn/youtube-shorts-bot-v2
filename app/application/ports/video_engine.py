@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Protocol
 
 from app.application.services.camera_motion import CameraMotionPlan
+from app.application.services.visual_beat import VisualBeatTimeline
 
 
 @dataclass(frozen=True, slots=True)
@@ -13,6 +14,9 @@ class VideoSceneInput:
     duration_seconds: float
     is_image: bool = False
     motion: CameraMotionPlan | None = None
+    scene_index: int | None = None
+    beat_index: int | None = None
+    visual_timeline: VisualBeatTimeline | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,6 +45,7 @@ class VideoRenderResult:
     height: int = 0
     fps: float = 0.0
     has_audio: bool = False
+    synchronization: dict[str, object] = field(default_factory=dict)
 
 
 class VideoEngine(Protocol):

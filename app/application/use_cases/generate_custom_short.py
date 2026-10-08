@@ -238,17 +238,34 @@ class GenerateCustomShort:
                     assets = selection.assets
                 except Exception:
                     path, asset = await self._select_asset_scene_fallback(run, scene)
+                    fallback_duration = float(scene.duration or 5)
+                    fallback_contract = build_scene_contract(
+                        {
+                            "narration": scene.narration or "",
+                            "visual_goal": scene.visual_goal,
+                            "visual_query": scene.primary_subject,
+                            "purpose": "support_narration",
+                            "subject": scene.primary_subject,
+                            "action": scene.action,
+                            "location": scene.location,
+                            "era": scene.era,
+                            "must_show": scene.must_show or [],
+                            "must_avoid": scene.must_avoid or [],
+                        }
+                    )
+                    fallback_timeline = VisualBeatCompiler().compile(
+                        fallback_contract,
+                        scene_index=scene.scene_index,
+                        scene_duration_seconds=fallback_duration,
+                    )
                     fallback_motion = CameraMotionEngine().plan(
                         purpose="support_narration",
-                        duration_seconds=float(scene.duration or 5),
+                        duration_seconds=fallback_timeline.beats[0].duration_seconds,
                     )
-                    scene_inputs = (
-                        VideoSceneInput(
-                            path=path,
-                            duration_seconds=float(scene.duration or 5),
-                            is_image=True,
-                            motion=fallback_motion,
-                        ),
+                    scene_inputs = to_video_scene_inputs(
+                        fallback_timeline,
+                        (path,),
+                        (fallback_motion,),
                     )
                     assets = (asset,)
                 scene.status = SceneStatus.READY
@@ -373,6 +390,7 @@ class GenerateCustomShort:
             if stage is not None:
                 stage.stage_metadata = {
                     **(stage.stage_metadata or {}),
+                    "m29_synchronization": render.synchronization,
                     "audio_qc": {
                         "passed": audio_qc.passed,
                         "failures": list(audio_qc.failures),
