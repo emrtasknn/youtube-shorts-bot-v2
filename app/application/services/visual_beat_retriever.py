@@ -27,6 +27,8 @@ from app.application.services.visual_source_resolver import VisualSourceResolver
 from app.application.use_cases.search_stock_media import SearchStockMedia
 from app.config.settings import get_settings
 
+
+
 @dataclass(frozen=True, slots=True)
 class VisualBeatRetrievalResult:
     beat: VisualBeat
