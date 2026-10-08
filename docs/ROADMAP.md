@@ -41,11 +41,13 @@ Deliverables: deterministic word-level timestamps proportional to narration dura
 Exit: captions align with narration timing, stay within validated safe-area constraints, and degrade to static cue rendering when dynamic timing/emphasis cannot be built.
 Evidence: PR #132; final branch CI passed Static checks, Database/tests and Docker build. Production MP4 smoke/visual inspection was not dispatched for M27.
 
-## M28 — Dynamic Camera Motion
+## M28 — Dynamic Camera Motion — COMPLETE
 Goal: controlled motion for still visuals.
 Initial motions: zoom in/out, pan left/right/up/down, subtle push/pull.
-Selection uses scene purpose, composition, duration and recent motion.
-Exit: motion is bounded, deterministic, subject-safe and has a static fallback.
+Selection uses scene purpose, duration and recent motion; normalized focus bounds keep motion conservative.
+Deliverables: deterministic CameraMotionEngine; bounded push/pull and pan variants; recent-motion de-prioritization; short-beat static fallback; typed motion propagation through VideoSceneInput; FFmpeg zoompan integration for still images; M28 camera-motion audit metadata; regression coverage for planning and render contracts.
+Exit: motion is bounded, deterministic, subject-safe within normalized focus constraints, and has a static fallback.
+Evidence: PR #133; final branch CI run #803 passed Static checks, Database/tests and Docker build. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
 
 ## M29 — Visual–Narration Synchronization
 Goal: unify narration, visual, caption and motion timing.
