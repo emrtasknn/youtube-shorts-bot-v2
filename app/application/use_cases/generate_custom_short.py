@@ -532,9 +532,7 @@ class GenerateCustomShort:
                 stage=Stage.SCRIPTING,
                 attempt=1,
                 status=(
-                    StageStatus.SUCCESS
-                    if narrative_report.passed
-                    else StageStatus.FAILED_PERMANENT
+                    StageStatus.SUCCESS if narrative_report.passed else StageStatus.FAILED_PERMANENT
                 ),
                 provider="deterministic-m23-narrative-redundancy",
                 stage_metadata={
