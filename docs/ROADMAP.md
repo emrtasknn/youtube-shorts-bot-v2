@@ -22,10 +22,11 @@ Flow: Scene Contract → Query Expansion → Candidate Pool → M17 ranking → 
 Deliverables: primary/entity/action/context queries, canonical candidate pool, query/provider trace, ranking integration, bounded retry/fallback.
 Exit: multiple candidates are evaluated per scene and selected assets are traceable.
 
-## M25 — Real Vision Verification
+## M25 — Real Vision Verification — COMPLETE
 Goal: inspect actual image pixels.
-Deliverables: vision provider using existing verifier contract, entity/action/context checks, must_show/must_avoid checks, confidence calibration, failover and cost-aware shortlist verification.
+Deliverables: Gemini multimodal vision verifier using the existing verifier contract; entity/action/context checks; must_show/must_avoid checks; confidence calibration; deterministic failover; bounded top-6 shortlist verification; traceable verifier identity and pixel-verification metadata.
 Exit: actual image content affects decisions and the verifier is traceable.
+Evidence: PR #130 merged; CI on the final M25 commit passed Static checks, Database/tests and Docker build.
 
 ## M26 — Visual Variety Engine
 Goal: reduce unnecessary repetition using candidate reuse, source reuse, composition, shot type and subject signals.
