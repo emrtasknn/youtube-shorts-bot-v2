@@ -31,7 +31,8 @@ from app.application.services.novelty_hardening import NoveltyHardeningService
 from app.application.services.optimization_persistence import OptimizationDecisionPersistenceService
 from app.application.services.optimization_production_adapter import OptimizationProductionAdapter
 from app.application.services.production_decision_adapter import ProductionDecisionAdapter
-from app.application.services.retry_orchestrator import JudgeDrivenRetryOrchestrator
+from app.application.services.retry_execution_engine import JudgeDrivenRetryExecutionEngine
+from app.application.services.retry_orchestrator import JudgeDrivenRetryOrchestrator, RetryAction
 from app.application.services.scene_contract import build_scene_contract
 from app.application.services.scene_timing import SceneTimingAllocator
 from app.application.services.script_completeness import ScriptCompletenessGate
@@ -460,20 +461,180 @@ class GenerateCustomShort:
                     },
                 }
             if judge.decision == "RETRY":
-                run.status = (
-                    RunStatus.FAILED_RETRYABLE
-                    if retry_decision.plan.retryable
-                    else RunStatus.FAILED_PERMANENT
+                retry_history: list[dict[str, object]] = []
+
+                async def execute_retry_attempt(
+                    *,
+                    actions: tuple[RetryAction, ...],
+                    attempt: int,
+                ) -> object:
+                    nonlocal inputs, fallback_asset_count, background_volume, render
+
+                    if RetryAction.RESELECT_VISUALS in actions:
+                        refreshed_inputs: list[VideoSceneInput] = []
+                        refreshed_fallbacks = 0
+                        for scene in scenes:
+                            try:
+                                selection = await self._select_visual_beats(run, scene)
+                                refreshed_inputs.extend(
+                                    to_video_scene_inputs(
+                                        selection.timeline,
+                                        selection.paths,
+                                        selection.motions,
+                                    )
+                                )
+                                for asset in selection.assets:
+                                    self._session.add(asset)
+                            except Exception:
+                                refreshed_fallbacks += 1
+                                path, asset = await self._select_asset_scene_fallback(
+                                    run,
+                                    scene,
+                                )
+                                fallback_duration = float(scene.duration or 5)
+                                fallback_contract = build_scene_contract(
+                                    {
+                                        "narration": scene.narration or "",
+                                        "visual_goal": scene.visual_goal,
+                                        "visual_query": scene.primary_subject,
+                                        "purpose": "support_narration",
+                                        "subject": scene.primary_subject,
+                                        "action": scene.action,
+                                        "location": scene.location,
+                                        "era": scene.era,
+                                        "must_show": scene.must_show or [],
+                                        "must_avoid": scene.must_avoid or [],
+                                    }
+                                )
+                                fallback_timeline = VisualBeatCompiler().compile(
+                                    fallback_contract,
+                                    scene_index=scene.scene_index,
+                                    scene_duration_seconds=fallback_duration,
+                                )
+                                fallback_motion = CameraMotionEngine().plan(
+                                    purpose="support_narration",
+                                    duration_seconds=fallback_timeline.beats[0].duration_seconds,
+                                )
+                                refreshed_inputs.extend(
+                                    to_video_scene_inputs(
+                                        fallback_timeline,
+                                        (path,),
+                                        (fallback_motion,),
+                                    )
+                                )
+                                self._session.add(asset)
+                        self._session.flush()
+                        inputs = refreshed_inputs
+                        fallback_asset_count = refreshed_fallbacks
+
+                    if RetryAction.REPAIR_AUDIO in actions:
+                        background_volume = max(background_volume * 0.5, 0.01)
+
+                    if RetryAction.RECONCILE_TIMELINE in actions:
+                        # M29 reconciliation is executed by the render engine
+                        # against the actual voiceover duration.
+                        pass
+
+                    render = await self._video_engine.render(
+                        VideoRenderRequest(
+                            scenes=tuple(inputs),
+                            output_path=output_path,
+                            voiceover_path=audio_path,
+                            background_audio_path=audio_plan.background_audio_path,
+                            subtitle_text=direction.tts_text,
+                            background_volume=background_volume,
+                            ducking_threshold=0.02,
+                            ducking_ratio=10.0 if RetryAction.REPAIR_AUDIO in actions else 8.0,
+                            ducking_attack_ms=15.0 if RetryAction.REPAIR_AUDIO in actions else 20.0,
+                            ducking_release_ms=300.0 if RetryAction.REPAIR_AUDIO in actions else 250.0,
+                        )
+                    )
+                    validate_output(render.output_path, render.duration_seconds)
+                    retry_audio_qc = await AudioQualityAnalyzer().analyze_file(
+                        render.output_path,
+                        duration_seconds=render.duration_seconds,
+                    )
+                    sync_total = render.synchronization.get(
+                        "total_duration_seconds",
+                        render.duration_seconds,
+                    )
+                    retry_expected_duration = (
+                        float(sync_total)
+                        if isinstance(sync_total, (int, float))
+                        else render.duration_seconds
+                    )
+                    retry_judge = AutomatedVideoJudge().evaluate(
+                        VideoJudgeInput(
+                            output_path=render.output_path,
+                            duration_seconds=render.duration_seconds,
+                            width=render.width,
+                            height=render.height,
+                            fps=render.fps,
+                            has_audio=render.has_audio,
+                            expected_duration_seconds=retry_expected_duration,
+                            scene_count=len(scenes),
+                            asset_count=len(inputs),
+                            narration_word_count=len(direction.tts_text.split()),
+                            subtitle_text=direction.tts_text,
+                            synchronization=render.synchronization,
+                            audio_qc_passed=retry_audio_qc.passed,
+                            audio_qc_failures=tuple(retry_audio_qc.failures),
+                            fallback_asset_count=fallback_asset_count,
+                        )
+                    )
+                    retry_history.append(
+                        {
+                            "attempt": attempt,
+                            "actions": [action.value for action in actions],
+                            "decision": retry_judge.decision,
+                            "score": retry_judge.score,
+                            "retry_reasons": list(retry_judge.retry_reasons),
+                            "fallback_asset_count": fallback_asset_count,
+                            "audio_qc_passed": retry_audio_qc.passed,
+                            "synchronization": render.synchronization,
+                        }
+                    )
+                    return retry_judge
+
+                retry_engine = JudgeDrivenRetryExecutionEngine(
+                    orchestrator=JudgeDrivenRetryOrchestrator(max_attempts=2),
+                    executor=execute_retry_attempt,
                 )
-                self._session.commit()
-                return CustomShortResult(
-                    run.id,
-                    content.id,
-                    script.id,
-                    render.output_path,
-                    render.duration_seconds,
-                    run.status,
-                )
+                retry_result = await retry_engine.execute(judge, attempt=1)
+                judge = retry_result.report
+                if stage is not None:
+                    stage.stage_metadata = {
+                        **(stage.stage_metadata or {}),
+                        "m32_retry_execution": {
+                            "attempts": retry_history,
+                            "attempt_count": len(retry_history),
+                            "exhausted": retry_result.exhausted,
+                            "terminal_reason": retry_result.terminal_reason,
+                            "final_decision": judge.decision,
+                        },
+                    }
+                if judge.decision == "RETRY":
+                    run.status = RunStatus.FAILED_PERMANENT
+                    self._session.commit()
+                    return CustomShortResult(
+                        run.id,
+                        content.id,
+                        script.id,
+                        render.output_path,
+                        render.duration_seconds,
+                        run.status,
+                    )
+                if judge.decision == "REJECT":
+                    run.status = RunStatus.FAILED_PERMANENT
+                    self._session.commit()
+                    return CustomShortResult(
+                        run.id,
+                        content.id,
+                        script.id,
+                        render.output_path,
+                        render.duration_seconds,
+                        run.status,
+                    )
             if judge.decision == "REJECT":
                 run.status = RunStatus.FAILED_PERMANENT
                 self._session.commit()
