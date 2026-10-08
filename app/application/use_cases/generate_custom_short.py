@@ -39,13 +39,13 @@ from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.topic_selection_production_adapter import (
     TopicSelectionProductionAdapter,
 )
+from app.application.services.video_judge import AutomatedVideoJudge, VideoJudgeInput
 from app.application.services.visual_beat import VisualBeatCompiler, VisualBeatTimeline
 from app.application.services.visual_beat_render import to_video_scene_inputs
 from app.application.services.visual_beat_retriever import VisualBeatRetriever
 from app.application.services.visual_beautifier import VisualBeautifier
 from app.application.services.visual_quality import VisualQualityDecision
 from app.application.services.visual_relevance import VisualRelevanceContext
-from app.application.services.video_judge import AutomatedVideoJudge, VideoJudgeInput
 from app.application.services.visual_source_resolver import VisualSourceResolver
 from app.application.use_cases.search_stock_media import SearchStockMedia
 from app.domain.decision import ProductionDecision
