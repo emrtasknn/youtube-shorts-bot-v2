@@ -83,7 +83,12 @@ class RetryOutcomeLearning:
             ]
             weight_sum = sum(weight for _, weight in weighted)
             success_rate = (
-                sum(weight for item, weight in weighted if item.improved) / weight_sum
+                sum(
+                    weight
+                    for item, weight in weighted
+                    if item.improved and item.score_delta >= self._minimum_improvement
+                )
+                / weight_sum
                 if weight_sum
                 else 0.0
             )
