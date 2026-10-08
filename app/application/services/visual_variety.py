@@ -109,28 +109,19 @@ class VisualVarietyEngine:
             penalties.append("recent_provider_reuse")
 
         same_composition = any(
-            item.composition == profile.composition
-            for item in history[-3:]
-            if item.composition
+            item.composition == profile.composition for item in history[-3:] if item.composition
         )
         if same_composition:
             score -= 0.18
             penalties.append("recent_composition_reuse")
 
-        same_shot = any(
-            item.shot_type == profile.shot_type
-            for item in history[-3:]
-            if item.shot_type
-        )
+        same_shot = any(item.shot_type == profile.shot_type for item in history[-3:] if item.shot_type)
         if same_shot:
             score -= 0.15
             penalties.append("recent_shot_type_reuse")
 
         overlap = max(
-            (
-                self._jaccard(profile.subject_tokens, item.subject_tokens)
-                for item in history[-3:]
-            ),
+            (self._jaccard(profile.subject_tokens, item.subject_tokens) for item in history[-3:]),
             default=0.0,
         )
         if overlap >= 0.75:
@@ -166,7 +157,7 @@ class VisualVarietyEngine:
     ) -> None:
         history = self._history.setdefault(run_id, [])
         history.append(self._profile_from_item(item, provider, subject_terms))
-        del history[:-self._max_history]
+        del history[: -self._max_history]
 
     def history_size(self, run_id: str) -> int:
         return len(self._history.get(run_id, []))
@@ -175,7 +166,11 @@ class VisualVarietyEngine:
     def _profile(cls, candidate: Any, *, subject_terms: tuple[str, ...]) -> VisualVarietyProfile:
         item = candidate.item if hasattr(candidate, "item") else candidate
         provider_values = getattr(candidate, "providers", ())
-        provider = str(getattr(candidate, "provider", "") or (provider_values[0] if provider_values else "") or item.get("_provider", ""))
+        provider = str(
+            getattr(candidate, "provider", "")
+            or (provider_values[0] if provider_values else "")
+            or item.get("_provider", "")
+        )
         return cls._profile_from_item(item, provider, subject_terms)
 
     @classmethod
@@ -191,11 +186,7 @@ class VisualVarietyEngine:
         ]
         text_parts.extend(subject_terms)
         text = " ".join(text_parts).lower()
-        tokens = frozenset(
-            token
-            for token in re.findall(r"[a-z0-9]+", text)
-            if len(token) > 2
-        )
+        tokens = frozenset(token for token in re.findall(r"[a-z0-9]+", text) if len(token) > 2)
         width = cls._number(item.get("width"))
         height = cls._number(item.get("height"))
         ratio = width / height if width and height else 0.0
