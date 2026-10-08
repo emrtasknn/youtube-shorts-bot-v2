@@ -256,7 +256,7 @@ def test_engine_resolves_beat_durations_from_unified_timeline() -> None:
         subtitle_text="Rome expanded across the Mediterranean. Its armies secured key ports.",
     )
 
-    durations, unified = FFmpegVideoEngine()._resolve_scene_durations(request, 6.5)
+    durations, unified = FFmpegVideoEngine()._resolve_scene_durations_with_sync(request, 6.5)
 
     assert unified is not None
     assert sum(durations) == 6.5
@@ -282,4 +282,4 @@ def test_engine_rejects_mismatched_timeline_beats() -> None:
     )
 
     with pytest.raises(ValueError, match="match their visual timeline"):
-        FFmpegVideoEngine()._resolve_scene_durations(request, 6.0)
+        FFmpegVideoEngine()._resolve_scene_durations_with_sync(request, 6.0)
