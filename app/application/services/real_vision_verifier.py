@@ -255,11 +255,7 @@ class GeminiVisionSemanticVerifier:
         must_show = score("must_show_match")
         avoid = score("must_avoid_compliance")
         overall = (
-            entity * 0.30
-            + action * 0.15
-            + context_match * 0.20
-            + must_show * 0.25
-            + avoid * 0.10
+            entity * 0.30 + action * 0.15 + context_match * 0.20 + must_show * 0.25 + avoid * 0.10
         ) * (0.70 + 0.30 * confidence)
         return VisualSemanticScore(
             entity_match=entity,
