@@ -39,9 +39,7 @@ def test_visual_retry_is_targeted_and_bounded() -> None:
 
 def test_multiple_retry_reasons_deduplicate_actions() -> None:
     plan = JudgeDrivenRetryOrchestrator().plan(
-        _report(
-            reasons=("excessive_visual_fallbacks", "audio_qc_failed")
-        ),
+        _report(reasons=("excessive_visual_fallbacks", "audio_qc_failed")),
         attempt=1,
     )
 
