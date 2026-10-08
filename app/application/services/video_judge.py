@@ -2,22 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
-
-
-
-JudgeDecision = Literal["PASS", "PASS_WITH_WARNINGS", "RETRY", "REJECT"]
-DimensionName = Literal[
-    "technical",
-    "narrative",
-    "visual",
-    "audio",
-    "captions",
-    "synchronization",
-    "product",
-]
-
-
 @dataclass(frozen=True, slots=True)
 class VideoJudgeInput:
     output_path: Path
