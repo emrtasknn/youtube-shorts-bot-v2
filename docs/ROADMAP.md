@@ -142,7 +142,7 @@ Deliverables:
 
 Exit: M30 RETRY → M31 plan → M32 execution → M30 re-judge → M33 effectiveness → M34 gain/cost ranking → M35 measured cost calibration → reuse successful checkpoint work → bounded retry/pass.
 
-Evidence: M35 branch CI must pass Static checks, Database/tests and Docker build. Production MP4 smoke/visual inspection remains an explicit caveat until a production-smoke dispatch path is exposed.
+Evidence: PR #140 merged to main as commit `23d13e00bc8d2669f626e3f9c622cb6e735987f8`. The workflow-run API exposed to this session returned no M35 run, so green CI is not claimed. Production MP4 smoke/visual inspection remains an explicit caveat until a production-smoke dispatch path is exposed.
 
 
 ## M34 — Retry Economics & Action Ranking — COMPLETE
