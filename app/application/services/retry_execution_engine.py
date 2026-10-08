@@ -117,8 +117,13 @@ class JudgeDrivenRetryExecutionEngine:
             economics_history.append(economics)
 
             ranked_actions = economics.actions
-            reusable = tuple(action for action in ranked_actions if action in checkpoint_actions)
-            next_plan_actions = tuple(action for action in ranked_actions if action not in checkpoint_actions)
+            reusable = tuple(
+                action
+                for action in ranked_actions
+                if action in checkpoint_actions
+                and action not in {RetryAction.REGENERATE_VIDEO, RetryAction.ESCALATE}
+            )
+            next_plan_actions = tuple(action for action in ranked_actions if action not in reusable)
             if not next_plan_actions and ranked_actions:
                 next_plan_actions = (RetryAction.REGENERATE_VIDEO,)
             next_attempt = current_attempt + 1
@@ -148,7 +153,11 @@ class JudgeDrivenRetryExecutionEngine:
             observations.append(observation)
 
             if observation.improved and next_plan_actions:
-                checkpoint_actions = next_plan_actions
+                checkpoint_actions = tuple(
+                    action
+                    for action in next_plan_actions
+                    if action not in {RetryAction.REGENERATE_VIDEO, RetryAction.ESCALATE}
+                )
             current = next_report
             current_attempt = next_attempt
 
