@@ -1,4 +1,4 @@
-# Active Roadmap — M23–M30
+# Active Roadmap — M23–M38
 
 ## Baseline
 M22 is the production-smoke baseline. Historical details: docs/M0-M22_PROJECT_HISTORY.md.
@@ -197,11 +197,29 @@ Exit: providers with sufficient historical evidence can be ranked by measured re
 
 Evidence: PR #142 merged to main as commit `03e5a8562c2a76df06f860489f262cd9de781575`. No completed CI workflow run was exposed for the final M37 head during this session, so green CI is not claimed. Production provider/MP4 smoke remains dependent on a workflow dispatch path that is not currently exposed.
 
+## M38 — Unified Quality / Reliability / Cost Optimization — COMPLETE
+Goal: compose retry-action economics, historical action learning, provider performance learning and measured provider cost into one bounded action/provider decision score.
+
+Deliverables:
+- UnifiedOptimization decision service
+- action + provider candidate ranking
+- capability/operation-scoped measured provider cost evidence
+- minimum-sample and confidence protection for provider cost
+- bounded provider cost multiplier
+- composition of M34/M35 action economics with M36/M37 learning
+- deterministic cold-start and sparse-data behavior
+- regression coverage for combined ranking and isolation
+- M38 exit audit
+
+Exit: a retry intervention and eligible provider can be ranked together from measured quality/reliability/cost evidence without bypassing existing health, circuit-breaker, retry-budget or checkpoint safeguards.
+
+Evidence: implementation and focused regression coverage added on branch `feat/m38-unified-optimization`; final CI and merge evidence to be recorded after PR validation.
+
 ## Dependency
-M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32 → M33 → M34 → M35 → M36 → M37. M26 and M27 can partly run in parallel.
+M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32 → M33 → M34 → M35 → M36 → M37 → M38. M26 and M27 can partly run in parallel.
 
 ## Priority
-Current execution focus: M37 → M38 → M39 → M40 → M41 → M42.
+Current execution focus: M38 → M39 → M40 → M41 → M42.
 
 ## Definition of Done
 Each milestone requires contract, implementation, unit tests, integration tests, failure tests, audit/observability, CI green, production smoke, actual MP4 inspection and documentation update.
