@@ -13,6 +13,7 @@ from app.application.ports.video_engine import (
 from app.application.services.audio_ducking import AudioDucking, DuckingConfig
 from app.application.services.scene_timing import SceneTimingAllocator
 from app.application.services.synchronization import UnifiedTimeline, VisualNarrationSynchronizer
+from app.application.services.visual_beat import VisualBeatTimeline
 from app.application.services.subtitles import write_ass
 from app.application.services.video_quality import VideoQualityGate
 
@@ -296,7 +297,7 @@ class FFmpegVideoEngine:
         if not audio_duration:
             return scene_durations, None
 
-        timelines_by_scene: dict[int, object] = {}
+        timelines_by_scene: dict[int, VisualBeatTimeline] = {}
         beat_counts: dict[int, int] = {}
         for scene in request.scenes:
             if scene.scene_index is None or scene.visual_timeline is None:
