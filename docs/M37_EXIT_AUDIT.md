@@ -57,7 +57,7 @@ Regression coverage includes:
 
 ## Production validation caveat
 
-The repository's exposed workflow does not currently provide a production-smoke dispatch route for real provider-backed MP4 generation and inspection. CI can validate the deterministic learning/routing contract, while production smoke remains an explicit validation gap.
+PR #142 was merged to main as commit `03e5a8562c2a76df06f860489f262cd9de781575`. No completed CI workflow run was exposed for the final M37 head during this session, so green CI is not claimed. Production provider/MP4 smoke remains dependent on a workflow dispatch path that is not currently exposed.
 
 ## Exit criterion
 
