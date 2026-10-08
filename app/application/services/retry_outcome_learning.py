@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import exp
+from math import exp, log
 from statistics import median
 
 from app.application.services.retry_orchestrator import RetryAction
@@ -124,7 +124,7 @@ class RetryOutcomeLearning:
         return round(min(1.5, max(0.5, multiplier)), 4)
 
     def _weight(self, age: int) -> float:
-        return exp(age * __import__("math").log(self._recency_decay))
+        return exp(age * log(self._recency_decay))
 
     @property
     def minimum_samples(self) -> int:
