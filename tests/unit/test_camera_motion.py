@@ -1,11 +1,9 @@
-from pathlib import Path
-
 import pytest
 
 from app.application.services.camera_motion import (
     CameraMotionEngine,
-    CameraMotionType,
     CameraMotionPlan,
+    CameraMotionType,
 )
 
 
