@@ -94,5 +94,5 @@ def test_flatten_and_render_durations_follow_one_timeline() -> None:
         "Rome expanded across the Mediterranean. Its armies secured key ports.",
         total_audio_duration=6.0,
     )
-    assert len(result.flatten_beats(result)) == 2
-    assert result.build_render_durations(result) == (6.0,)
+    assert len(VisualNarrationSynchronizer.flatten_beats(result)) == 2
+    assert VisualNarrationSynchronizer.build_render_durations(result) == (6.0,)
