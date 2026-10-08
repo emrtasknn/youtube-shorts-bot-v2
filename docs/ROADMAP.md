@@ -1,4 +1,4 @@
-# Active Roadmap — M23–M38
+# Active Roadmap — M23–M39
 
 ## Baseline
 M22 is the production-smoke baseline. Historical details: docs/M0-M22_PROJECT_HISTORY.md.
@@ -214,6 +214,23 @@ Deliverables:
 Exit: a retry intervention and eligible provider can be ranked together from measured quality/reliability/cost evidence without bypassing existing health, circuit-breaker, retry-budget or checkpoint safeguards.
 
 Evidence: PR #143 merged to main as commit `2ced7a5186ba209b4d37570ada38519e79d3e3a5`. No completed green main workflow was exposed at final verification; green CI is not claimed. Production provider/MP4 smoke remains dependent on the unavailable production-smoke dispatch path.
+
+## M39 — Production Provider Telemetry Learning — COMPLETE
+Goal: close the historical-evidence gap by reconstructing durable provider performance and measured-cost telemetry from persisted production events.
+
+Deliverables:
+- durable provider success/error evidence in existing SystemEventModel metadata
+- capability/operation/request telemetry on provider execution events
+- measured cost and optional quality telemetry persistence
+- ProductionProviderTelemetryStore
+- deterministic reconstruction into M37 performance and M38 cost observations
+- optional ReliabilityExecutor integration for fresh-process historical learning
+- regression coverage for reconstruction, scoping and incomplete evidence
+- M39 exit audit
+
+Exit: provider learning can consume persisted production evidence across process restarts without bypassing circuit breakers, health checks, retry budgets or bounded learning.
+
+Evidence: implementation added on branch `feat/m39-production-telemetry-learning`; final CI and merge evidence to be recorded after PR validation.
 
 ## Dependency
 M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32 → M33 → M34 → M35 → M36 → M37 → M38. M26 and M27 can partly run in parallel.
