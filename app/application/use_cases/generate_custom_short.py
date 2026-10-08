@@ -31,6 +31,7 @@ from app.application.services.novelty_hardening import NoveltyHardeningService
 from app.application.services.optimization_persistence import OptimizationDecisionPersistenceService
 from app.application.services.optimization_production_adapter import OptimizationProductionAdapter
 from app.application.services.production_decision_adapter import ProductionDecisionAdapter
+from app.application.services.retry_orchestrator import JudgeDrivenRetryOrchestrator
 from app.application.services.scene_contract import build_scene_contract
 from app.application.services.scene_timing import SceneTimingAllocator
 from app.application.services.script_completeness import ScriptCompletenessGate
@@ -39,7 +40,6 @@ from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.topic_selection_production_adapter import (
     TopicSelectionProductionAdapter,
 )
-from app.application.services.retry_orchestrator import JudgeDrivenRetryOrchestrator
 from app.application.services.video_judge import AutomatedVideoJudge, VideoJudgeInput
 from app.application.services.visual_beat import VisualBeatCompiler, VisualBeatTimeline
 from app.application.services.visual_beat_render import to_video_scene_inputs
