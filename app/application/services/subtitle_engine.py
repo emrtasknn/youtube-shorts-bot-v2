@@ -31,15 +31,18 @@ class SubtitleSafeArea:
     max_characters: int = 34
 
     def validate(self) -> None:
-        if min(
-            self.width,
-            self.height,
-            self.margin_left,
-            self.margin_right,
-            self.margin_top,
-            self.margin_bottom,
-            self.max_characters,
-        ) <= 0:
+        if (
+            min(
+                self.width,
+                self.height,
+                self.margin_left,
+                self.margin_right,
+                self.margin_top,
+                self.margin_bottom,
+                self.max_characters,
+            )
+            <= 0
+        ):
             raise ValueError("Subtitle safe-area dimensions must be positive")
         if self.margin_left + self.margin_right >= self.width:
             raise ValueError("Subtitle horizontal margins leave no usable width")
@@ -139,11 +142,7 @@ class SubtitleEngine:
     def build_word_timestamps(
         self, text: str, duration_seconds: float
     ) -> tuple[SubtitleWordTiming, ...]:
-        return tuple(
-            word
-            for cue in self.build_cues(text, duration_seconds)
-            for word in cue.words
-        )
+        return tuple(word for cue in self.build_cues(text, duration_seconds) for word in cue.words)
 
     def _word_timings(
         self, chunk: str, start_seconds: float, end_seconds: float
