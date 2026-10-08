@@ -19,9 +19,7 @@ def _tokens(text: str) -> set[str]:
 
 def _sentences(text: str) -> tuple[str, ...]:
     return tuple(
-        sentence.strip()
-        for sentence in _SENTENCE_RE.findall(text.strip())
-        if _normalize(sentence)
+        sentence.strip() for sentence in _SENTENCE_RE.findall(text.strip()) if _normalize(sentence)
     )
 
 
@@ -49,9 +47,7 @@ class NarrativeRedundancyReport:
 
     def raise_if_failed(self) -> None:
         if not self.passed:
-            raise ValueError(
-                "Narrative redundancy gate failed: " + "; ".join(self.failures)
-            )
+            raise ValueError("Narrative redundancy gate failed: " + "; ".join(self.failures))
 
 
 class NarrativeRedundancyGate:
@@ -105,8 +101,7 @@ class NarrativeRedundancyGate:
                 max_similarity = max(max_similarity, similarity)
                 if similarity >= self.hook_body_threshold:
                     failures.append(
-                        "hook repeats the first body claim "
-                        f"(similarity {similarity:.2f})"
+                        f"hook repeats the first body claim (similarity {similarity:.2f})"
                     )
                     signals.append("hook_body_repetition")
 
