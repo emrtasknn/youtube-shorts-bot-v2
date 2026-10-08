@@ -21,6 +21,7 @@ from app.application.services.event_memory import EventMemoryCandidate, EventMem
 from app.application.services.experiment_persistence import ExperimentPersistenceService
 from app.application.services.experiment_production_adapter import ExperimentProductionAdapter
 from app.application.services.hook_engine import HookEngine
+from app.application.services.narrative_redundancy import NarrativeRedundancyGate
 from app.application.services.novelty_hardening import NoveltyHardeningService
 from app.application.services.optimization_persistence import OptimizationDecisionPersistenceService
 from app.application.services.optimization_production_adapter import OptimizationProductionAdapter
@@ -456,6 +457,9 @@ class GenerateCustomShort:
                     "hook, context, event, consequence, payoff; first scene must be hook and final scene must be payoff. "
                     "Include at least three distinct narrative purposes. Never end a body or scene narration mid-sentence. "
                     "The hook must be 4-18 words and strongly favor one of these types: shocking fact, unanswered question, impossible event, curiosity gap, contradiction.\n"
+                    "Narrative progression is mandatory: each sentence must add a new fact, consequence, mechanism, contrast, or payoff. "
+                    "Do not restate the hook in the first body sentence. Do not repeat an adjacent claim with superficial wording changes. "
+                    "If two sentences express the same claim, rewrite one so the story advances.\n"
                     "Do not invent uncertain historical facts."
                 ),
                 system_instruction="Return valid JSON only, with no markdown fences.",
@@ -519,7 +523,30 @@ class GenerateCustomShort:
                 ):
                     scene["duration"] = duration
 
-        ScriptCompletenessGate().evaluate(data).raise_if_failed()
+        completeness_report = ScriptCompletenessGate().evaluate(data)
+        completeness_report.raise_if_failed()
+        narrative_report = NarrativeRedundancyGate().evaluate(data)
+        self._session.add(
+            StageExecutionModel(
+                run_id=run.id,
+                stage=Stage.SCRIPTING,
+                attempt=1,
+                status=(
+                    StageStatus.SUCCESS if narrative_report.passed else StageStatus.FAILED_PERMANENT
+                ),
+                provider="deterministic-m23-narrative-redundancy",
+                stage_metadata={
+                    "gate": "NarrativeRedundancyGate",
+                    "passed": narrative_report.passed,
+                    "signals": list(narrative_report.signals),
+                    "failures": list(narrative_report.failures),
+                    "max_similarity": narrative_report.max_similarity,
+                    "compared_pairs": narrative_report.compared_pairs,
+                },
+            )
+        )
+        self._session.flush()
+        narrative_report.raise_if_failed()
 
         script = ScriptModel(
             content_id=run.content_id,
