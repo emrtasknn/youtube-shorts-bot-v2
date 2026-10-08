@@ -95,7 +95,7 @@ Exit: generate → render/QC → M30 Judge → RETRY → M31 plan → bounded re
 
 Evidence: PR #136; final branch CI passed Static checks, Database/tests and Docker build. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
 
-## M32 — Judge-Driven Retry Execution Engine — IN PROGRESS
+## M32 — Judge-Driven Retry Execution Engine — COMPLETE
 Goal: execute M31 retry plans against the real generation/render pipeline and re-judge the regenerated artifact.
 Deliverables:
 - JudgeDrivenRetryExecutionEngine
@@ -109,7 +109,7 @@ Deliverables:
 - M32 exit audit
 
 Exit: M30 RETRY → M31 plan → M32 actual execution → rerender/QC → M30 re-judge → PASS/PASS_WITH_WARNINGS or bounded escalation.
-Evidence will be recorded after final branch CI and merge. Production MP4 smoke/visual inspection remains subject to the available workflow dispatch limitation.
+Evidence: PR #137; final branch CI run #851 passed Static checks, Database/tests (457 passed) and Docker build. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
 
 ## Dependency
 M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32. M26 and M27 can partly run in parallel.
