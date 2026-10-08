@@ -49,11 +49,12 @@ Deliverables: deterministic CameraMotionEngine; bounded push/pull and pan varian
 Exit: motion is bounded, deterministic, subject-safe within normalized focus constraints, and has a static fallback.
 Evidence: PR #133 merged as main commit `4d8258a12af3534c2e214f99c5fb8f020a8cd4ea`; final branch CI #803 and main CI #806 passed Static checks, Database/tests and Docker build. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
 
-## M29 — Visual–Narration Synchronization
+## M29 — Visual–Narration Synchronization — COMPLETE
 Goal: unify narration, visual, caption and motion timing.
-VisualBeat is the temporal contract.
-Checks: duration, semantic focus, caption timing, motion duration, transition timing and drift.
-Exit: major timing drift is detected automatically and one timeline drives render inputs.
+VisualBeat remains the source temporal contract, but final render timing is reconciled against the actual TTS duration.
+Deliverables: UnifiedTimeline; synchronized scene/beat start/end times; proportional beat-duration reconciliation; automatic major scene-drift detection; caption cue coverage validation; render-input scene/beat identity; unified timing consumed by FFmpeg; synchronization audit metadata persisted with render results; regression and render integration coverage.
+Exit: major timing drift is detected automatically, minor drift is reconciled without gaps/overlaps, caption cues remain inside the visual timeline, and one authoritative timeline drives final render durations.
+Evidence: PR #134; final branch CI run #809 passed Static checks, Database/tests (443 passed) and Docker build. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
 
 ## M30 — Automated Video Judge
 Goal: machine-check final video quality before Telegram approval.
