@@ -27,9 +27,9 @@ def _timelines() -> tuple:
 def test_synchronizer_builds_one_contiguous_timeline() -> None:
     result = VisualNarrationSynchronizer().synchronize(
         _timelines(),
-        (8.0,),
+        (6.5,),
         "Rome expanded across the Mediterranean. Its armies secured key ports.",
-        total_audio_duration=8.0,
+        total_audio_duration=6.5,
     )
     assert result.passed
     assert result.total_duration_seconds == 8.0
