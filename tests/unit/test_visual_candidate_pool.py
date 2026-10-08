@@ -25,7 +25,9 @@ def test_candidate_pool_deduplicates_and_merges_query_provider_trace() -> None:
     first = VisualQueryVariant("primary", "Roman Empire", 100)
     second = VisualQueryVariant("entity_action", "Roman Empire expanding", 90)
 
-    pool.add([_candidate("asset-1", 0.80), _candidate("asset-2", 0.70)], query=first, provider="pexels")
+    pool.add(
+        [_candidate("asset-1", 0.80), _candidate("asset-2", 0.70)], query=first, provider="pexels"
+    )
     pool.add([_candidate("asset-1", 0.92)], query=second, provider="pixabay")
 
     ranked = pool.ranked()
