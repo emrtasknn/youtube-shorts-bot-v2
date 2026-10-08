@@ -119,12 +119,10 @@ async def test_engine_records_effectiveness_and_changes_next_action() -> None:
     )
 
     assert result.report.decision == "PASS"
-    assert len(result.effectiveness) == 1
+    assert len(result.effectiveness) == 2
     assert result.effectiveness[0].score_delta == 0.0
-    assert executor.calls[0][1] == (
-        RetryAction.REPAIR_AUDIO,
-        RetryAction.REGENERATE_VIDEO,
-    )
+    assert result.effectiveness[1].score_delta == 30.0
+    assert [attempt for attempt, _ in executor.calls] == [2, 3]
 
 
 def test_policy_rejects_negative_threshold() -> None:
