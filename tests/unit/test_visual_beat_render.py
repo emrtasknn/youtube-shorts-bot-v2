@@ -57,8 +57,7 @@ def test_visual_beat_render_adapter_attaches_motion_plans() -> None:
     timeline = _timeline()
     assets = tuple(Path(f"/tmp/beat-{index}.jpg") for index in range(len(timeline.beats)))
     motions = tuple(
-        CameraMotionPlan(CameraMotionType.PUSH_IN, intensity=0.5)
-        for _ in timeline.beats
+        CameraMotionPlan(CameraMotionType.PUSH_IN, intensity=0.5) for _ in timeline.beats
     )
 
     inputs = to_video_scene_inputs(timeline, assets, motions)
