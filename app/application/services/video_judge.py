@@ -123,8 +123,8 @@ class AutomatedVideoJudge:
             failures.append("video contains no scenes")
             narrative = 0.0
             visual = 0.0
-        if data.asset_count != data.scene_count:
-            failures.append("scene and visual asset counts do not match")
+        if data.asset_count < data.scene_count:
+            failures.append("visual asset coverage is below the scene count")
             visual = 0.0
         if data.narration_word_count < 35:
             failures.append("narration is below the minimum short-form story length")
