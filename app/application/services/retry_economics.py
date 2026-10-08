@@ -97,9 +97,7 @@ class RetryEconomicsPolicy:
 
         dimension = self._DIMENSION_MAP.get(action)
         deficit = (
-            max(0.0, 100.0 - report.dimension_scores.get(dimension, 100.0))
-            if dimension
-            else 0.0
+            max(0.0, 100.0 - report.dimension_scores.get(dimension, 100.0)) if dimension else 0.0
         )
         alignment = 8.0 if self._reason_maps_to_action(plan.reasons, action) else 2.0
         historical = [
