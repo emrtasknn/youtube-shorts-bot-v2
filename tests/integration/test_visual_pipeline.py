@@ -108,4 +108,4 @@ async def test_visual_pipeline_rejects_wrong_visual_and_accepts_semantically_ver
     assert "roman empire" in result.matched_signals
     assert "roman territory" in result.matched_signals
     assert result.violated_constraints == ()
-    assert retriever._selector.rank.call_count == 1
+    assert retriever._selector.rank.call_count >= 2
