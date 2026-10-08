@@ -124,7 +124,7 @@ Deliverables:
 - M33 exit audit
 
 Exit: M30 RETRY → M31 plan → M32 execution → M30 re-judge → M33 effectiveness measurement → adapt next action set → bounded retry/pass.
-Evidence: PR #138; final branch CI and main CI evidence recorded after merge. Production MP4 smoke/visual inspection remains subject to the available workflow dispatch limitation.
+Evidence: PR #138; final branch CI run #861 passed Static checks, Database/tests (461 passed) and Docker build. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
 
 ## Dependency
 M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32 → M33. M26 and M27 can partly run in parallel.
