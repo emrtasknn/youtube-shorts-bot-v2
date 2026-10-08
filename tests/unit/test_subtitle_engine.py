@@ -1,4 +1,4 @@
-from app.application.services.subtitle_engine import SubtitleEngine
+from app.application.services.subtitle_engine import SubtitleEngine, SubtitleSafeArea
 
 
 def test_engine_breaks_on_punctuation_before_word_limit() -> None:
@@ -39,6 +39,30 @@ def test_engine_allocates_monotonic_duration() -> None:
     assert cues[-1].end_seconds - cues[-1].start_seconds > (
         cues[0].end_seconds - cues[0].start_seconds
     )
+
+
+def test_engine_builds_word_timestamps_and_emphasis() -> None:
+    words = SubtitleEngine().build_word_timestamps(
+        "The ancient empire conquered Rome quickly.",
+        6.0,
+    )
+
+    assert words[0].start_seconds == 0.0
+    assert words[-1].end_seconds == 6.0
+    assert all(word.start_seconds < word.end_seconds for word in words)
+    cue_groups = SubtitleEngine().build_cues("The ancient empire conquered Rome quickly.", 6.0)
+    assert all(sum(word.emphasized for word in cue.words) <= 2 for cue in cue_groups)
+    assert words[-1].word == "quickly."
+
+
+def test_engine_validates_safe_area() -> None:
+    safe_area = SubtitleSafeArea(margin_left=500, margin_right=600)
+    try:
+        SubtitleEngine(safe_area=safe_area)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Expected invalid safe area to be rejected")
 
 
 def test_engine_rejects_invalid_input() -> None:

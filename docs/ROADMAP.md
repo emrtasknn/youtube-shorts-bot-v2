@@ -35,10 +35,11 @@ Deliverables: run-scoped bounded variety history; exact asset reuse detection; r
 Exit: duplicates are prevented where alternatives exist and low-candidate cases degrade gracefully.
 Evidence: PR #131; final branch CI passed Static checks, Database/tests (419 passed) and Docker build. Production Gemini/MP4 smoke was not dispatched for M26; M25 production contract and CI baseline remain unchanged.
 
-## M27 — Dynamic Subtitle Engine
+## M27 — Dynamic Subtitle Engine — COMPLETE
 Goal: timed, readable, emphasis-aware Shorts captions.
-Deliverables: word timestamps, segmentation, emphasis selection, safe-area validation, renderer integration and static fallback.
-Exit: captions align with narration and do not overflow.
+Deliverables: deterministic word-level timestamps proportional to narration duration; bounded cue segmentation by word count, character count and punctuation; deterministic emphasis selection; 9:16 safe-area validation; dynamic ASS rendering; existing FFmpeg renderer integration; cue-level static fallback; regression and integration coverage.
+Exit: captions align with narration timing, stay within validated safe-area constraints, and degrade to static cue rendering when dynamic timing/emphasis cannot be built.
+Evidence: PR #132; final branch CI passed Static checks, Database/tests and Docker build. Production MP4 smoke/visual inspection was not dispatched for M27.
 
 ## M28 — Dynamic Camera Motion
 Goal: controlled motion for still visuals.
