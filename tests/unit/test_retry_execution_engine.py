@@ -2,9 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from app.application.services.retry_execution_engine import (
-    JudgeDrivenRetryExecutionEngine,
-)
+from app.application.services.retry_execution_engine import JudgeDrivenRetryExecutionEngine
 from app.application.services.retry_orchestrator import RetryAction
 from app.application.services.video_judge import VideoJudgeReport
 
@@ -59,6 +57,7 @@ async def test_retry_engine_executes_targeted_attempt_and_stops_on_pass() -> Non
         RetryAction.RESELECT_VISUALS,
         RetryAction.REGENERATE_VIDEO,
     )
+    assert result.attempts[0].duration_seconds >= 0
     assert executor.calls == [
         (
             2,
@@ -69,6 +68,44 @@ async def test_retry_engine_executes_targeted_attempt_and_stops_on_pass() -> Non
         )
     ]
     assert not result.exhausted
+
+
+@pytest.mark.asyncio
+async def test_retry_engine_reuses_successful_checkpoint_bundle() -> None:
+    class RetryThenPass(FakeExecutor):
+        async def execute(
+            self,
+            *,
+            actions: tuple[RetryAction, ...],
+            attempt: int,
+        ) -> VideoJudgeReport:
+            self.calls.append((attempt, actions))
+            if attempt == 2:
+                return _report(
+                    decision="RETRY",
+                    reasons=("excessive_visual_fallbacks",),
+                    score=70.0,
+                )
+            return _report(decision="PASS", score=80.0)
+
+    executor = RetryThenPass()
+    engine = JudgeDrivenRetryExecutionEngine(executor=executor)
+
+    result = await engine.execute(
+        _report(
+            decision="RETRY",
+            reasons=("excessive_visual_fallbacks",),
+            score=60.0,
+        )
+    )
+
+    assert result.attempts[0].actions == (
+        RetryAction.RESELECT_VISUALS,
+        RetryAction.REGENERATE_VIDEO,
+    )
+    assert result.attempts[1].reused_checkpoint_actions == (RetryAction.RESELECT_VISUALS,)
+    assert result.attempts[1].actions == (RetryAction.REGENERATE_VIDEO,)
+    assert result.report.decision == "PASS"
 
 
 @pytest.mark.asyncio

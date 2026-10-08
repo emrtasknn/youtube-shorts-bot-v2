@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.application.services.adaptive_retry_policy import RetryEffectivenessObservation
+from app.application.services.retry_cost_calibration import RetryCostCalibration, RetryCostObservation
 from app.application.services.retry_orchestrator import RetryAction, RetryPlan
 from app.application.services.video_judge import VideoJudgeReport
 
@@ -24,11 +25,7 @@ class RetryEconomicsDecision:
 
 
 class RetryEconomicsPolicy:
-    """Ranks retry interventions by expected quality gain per relative cost.
-
-    Costs are normalized engineering units rather than currency. Historical
-    observations are treated as bundle evidence, not causal attribution.
-    """
+    """Ranks retry interventions by expected quality gain per measured cost."""
 
     _BASE_COSTS = {
         RetryAction.RESELECT_VISUALS: 4.0,
@@ -43,6 +40,9 @@ class RetryEconomicsPolicy:
         RetryAction.RECONCILE_TIMELINE: "synchronization",
     }
 
+    def __init__(self, *, cost_calibration: RetryCostCalibration | None = None) -> None:
+        self._cost_calibration = cost_calibration or RetryCostCalibration()
+
     def rank(
         self,
         plan: RetryPlan,
@@ -53,15 +53,16 @@ class RetryEconomicsPolicy:
         if not plan.actions:
             return RetryEconomicsDecision((), (), (), "no_retry_actions")
 
+        costs = self._calibrated_costs(observations)
         scored: list[RetryActionEconomics] = []
         for action in plan.actions:
-            cost = self._BASE_COSTS[action]
+            cost = costs[action]
             gain = self._expected_gain(action, plan, report, observations)
             efficiency = round(gain / cost, 4) if cost else gain
             scored.append(
                 RetryActionEconomics(
                     action=action,
-                    estimated_cost=cost,
+                    estimated_cost=round(cost, 4),
                     expected_gain=round(gain, 2),
                     efficiency=efficiency,
                 )
@@ -78,11 +79,34 @@ class RetryEconomicsPolicy:
             )
             if action not in actions
         )
+        reason = (
+            "ranked_by_measured_gain_per_cost"
+            if any(observation.duration_seconds > 0 for observation in observations)
+            else "ranked_by_expected_gain_per_cost"
+        )
         return RetryEconomicsDecision(
             actions=actions,
             rankings=ranked,
             preserved_actions=preserved,
-            reason="ranked_by_expected_gain_per_cost",
+            reason=reason,
+        )
+
+    def _calibrated_costs(
+        self,
+        observations: tuple[RetryEffectivenessObservation, ...],
+    ) -> dict[RetryAction, float]:
+        telemetry = tuple(
+            RetryCostObservation(
+                attempt=observation.attempt,
+                actions=observation.actions,
+                duration_seconds=observation.duration_seconds,
+            )
+            for observation in observations
+            if observation.duration_seconds > 0
+        )
+        return self._cost_calibration.calibrate(
+            telemetry,
+            base_costs=self._BASE_COSTS,
         )
 
     def _expected_gain(

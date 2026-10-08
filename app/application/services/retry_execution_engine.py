@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from time import monotonic
 from typing import Protocol
 
 from app.application.services.adaptive_retry_policy import (
@@ -34,6 +35,8 @@ class RetryExecutionAttempt:
     reasons: tuple[str, ...]
     decision: str
     score: float
+    duration_seconds: float = 0.0
+    reused_checkpoint_actions: tuple[RetryAction, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,9 +53,9 @@ class RetryExecutionResult:
 class JudgeDrivenRetryExecutionEngine:
     """Executes bounded retry plans and re-judges each produced artifact.
 
-    The engine owns retry-loop control only. The injected executor owns actual
-    provider, asset and render operations, keeping resource ownership in the
-    generation pipeline.
+    The executor owns actual provider, asset and render operations. The engine
+    records measured runtime cost and reuses successful retry checkpoints by
+    not re-executing an already successful action bundle on later attempts.
     """
 
     def __init__(
@@ -78,14 +81,12 @@ class JudgeDrivenRetryExecutionEngine:
         observations: list[RetryEffectivenessObservation] = []
         adaptations: list[AdaptiveRetryDecision] = []
         economics_history: list[RetryEconomicsDecision] = []
+        checkpoint_actions: tuple[RetryAction, ...] = ()
         current = report
         current_attempt = attempt
 
         while current.decision == "RETRY":
-            decision = self._orchestrator.decide(
-                current,
-                attempt=current_attempt,
-            )
+            decision = self._orchestrator.decide(current, attempt=current_attempt)
             plan = decision.plan
             if not plan.retryable:
                 return RetryExecutionResult(
@@ -98,10 +99,7 @@ class JudgeDrivenRetryExecutionEngine:
                     economics=tuple(economics_history),
                 )
 
-            adaptive = self._policy.adapt(
-                plan,
-                observations=tuple(observations),
-            )
+            adaptive = self._policy.adapt(plan, observations=tuple(observations))
             adaptations.append(adaptive)
             adapted_plan = RetryPlan(
                 attempt=plan.attempt,
@@ -117,9 +115,23 @@ class JudgeDrivenRetryExecutionEngine:
                 observations=tuple(observations),
             )
             economics_history.append(economics)
-            next_plan_actions = economics.actions
 
+            ranked_actions = economics.actions
+            reusable = tuple(
+                action
+                for action in ranked_actions
+                if action in checkpoint_actions
+                and action not in {RetryAction.REGENERATE_VIDEO, RetryAction.ESCALATE}
+            )
+            next_plan_actions = tuple(action for action in ranked_actions if action not in reusable)
+            if not next_plan_actions and ranked_actions:
+                next_plan_actions = (RetryAction.REGENERATE_VIDEO,)
             next_attempt = current_attempt + 1
+
+            started = monotonic()
+            next_report = await self._execute_attempt(next_plan_actions, next_attempt)
+            duration = monotonic() - started
+
             history.append(
                 RetryExecutionAttempt(
                     attempt=next_attempt,
@@ -127,21 +139,26 @@ class JudgeDrivenRetryExecutionEngine:
                     reasons=plan.reasons,
                     decision=current.decision,
                     score=current.score,
+                    duration_seconds=round(duration, 4),
+                    reused_checkpoint_actions=reusable,
                 )
             )
-            current = await self._execute_attempt(
-                next_plan_actions,
-                next_attempt,
+            observation = self._policy.observe(
+                previous=current,
+                current=next_report,
+                actions=next_plan_actions,
+                attempt=next_attempt,
+                duration_seconds=duration,
             )
-            observations.append(
-                self._policy.observe(
-                    previous=report,
-                    current=current,
-                    actions=next_plan_actions,
-                    attempt=next_attempt,
+            observations.append(observation)
+
+            if observation.improved and next_plan_actions:
+                checkpoint_actions = tuple(
+                    action
+                    for action in next_plan_actions
+                    if action not in {RetryAction.REGENERATE_VIDEO, RetryAction.ESCALATE}
                 )
-            )
-            report = current
+            current = next_report
             current_attempt = next_attempt
 
         return RetryExecutionResult(
