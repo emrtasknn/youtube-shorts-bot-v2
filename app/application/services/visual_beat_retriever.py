@@ -173,13 +173,18 @@ class VisualBeatRetriever:
             attempts.append(f"{variant.name}:provider={result.provider}:candidates={len(eligible)}")
 
         ranked_pool = pool.ranked()
-        vision_shortlist = ranked_pool[:6]
+        variety_ranked_pool = self._variety.rank(
+            ranked_pool,
+            run_id=run_id,
+            subject_terms=beat.entities,
+        )
+        vision_shortlist = variety_ranked_pool[:6]
         for entry in vision_shortlist:
             quality_result = self._quality_evaluator.evaluate(entry.score)
             candidate_id = entry.asset_id or "unknown"
             variety = self._variety.evaluate(
-                self._variety._profile(entry, subject_terms=beat.entities),
-                history=self._variety._history.get(run_id, []),
+                self._variety.profile(entry, subject_terms=beat.entities),
+                history=self._variety.history(run_id),
             )
             if quality_result.decision.value == "reject":
                 attempts.append(f"pool:{candidate_id}:quality_reject")
