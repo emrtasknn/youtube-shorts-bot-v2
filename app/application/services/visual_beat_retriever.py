@@ -139,13 +139,10 @@ class VisualBeatRetriever:
             eligible = [
                 candidate
                 for candidate in ranked
-                if candidate.score.eligible
-                and candidate.score.relevance >= variant.min_relevance
+                if candidate.score.eligible and candidate.score.relevance >= variant.min_relevance
             ][: self._candidates_per_query]
             pool.add(eligible, query=variant, provider=result.provider)
-            attempts.append(
-                f"{variant.name}:provider={result.provider}:candidates={len(eligible)}"
-            )
+            attempts.append(f"{variant.name}:provider={result.provider}:candidates={len(eligible)}")
 
         ranked_pool = pool.ranked()
         for entry in ranked_pool:
@@ -165,15 +162,11 @@ class VisualBeatRetriever:
                 continue
 
             if verification.decision.value in {"uncertain", "reject"}:
-                attempts.append(
-                    f"pool:{candidate_id}:semantic_{verification.decision.value}"
-                )
+                attempts.append(f"pool:{candidate_id}:semantic_{verification.decision.value}")
                 continue
 
             selected_query = entry.queries[0] if entry.queries else ""
-            selected_query_name = (
-                entry.query_names[0] if entry.query_names else "unknown"
-            )
+            selected_query_name = entry.query_names[0] if entry.query_names else "unknown"
             return VisualBeatRetrievalResult(
                 beat=beat,
                 provider=entry.providers[0] if entry.providers else "unknown",
