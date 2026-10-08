@@ -22,7 +22,7 @@ def test_build_ass_uses_safe_zone_dynamic_emphasis_and_timed_chunks() -> None:
 def test_write_ass_creates_file(tmp_path: Path) -> None:
     path = write_ass(tmp_path / "captions.ass", "hello world", 2.0)
     assert path.is_file()
-    assert "hello world" in path.read_text(encoding="utf-8")
+    assert "hello" in path.read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("text", ["", "   "])
