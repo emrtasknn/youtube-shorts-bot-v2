@@ -123,10 +123,26 @@ def test_gate_accepts_paraphrased_storyboard_with_full_narration():
             "The conquest reshaped the region and became a turning point in world history."
         ),
         scenes=[
-            {"narration": "A city thought impossible to conquer finally fell.", "purpose": "hook", "duration": 4},
-            {"narration": "Mehmed II surrounded Constantinople and attacked from multiple directions during the siege.", "purpose": "context", "duration": 7},
-            {"narration": "Ottoman cannons battered the walls while ships entered the harbor, overwhelming Byzantine defenses.", "purpose": "event", "duration": 8},
-            {"narration": "The fall ended Byzantine rule and changed the balance of power across the region.", "purpose": "payoff", "duration": 6},
+            {
+                "narration": "A city thought impossible to conquer finally fell.",
+                "purpose": "hook",
+                "duration": 4,
+            },
+            {
+                "narration": "Mehmed II surrounded Constantinople and attacked from multiple directions during the siege.",
+                "purpose": "context",
+                "duration": 7,
+            },
+            {
+                "narration": "Ottoman cannons battered the walls while ships entered the harbor, overwhelming Byzantine defenses.",
+                "purpose": "event",
+                "duration": 8,
+            },
+            {
+                "narration": "The fall ended Byzantine rule and changed the balance of power across the region.",
+                "purpose": "payoff",
+                "duration": 6,
+            },
         ],
     )
     report = ScriptCompletenessGate().evaluate(payload)
