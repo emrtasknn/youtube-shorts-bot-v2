@@ -626,21 +626,16 @@ class GenerateCustomShort:
                                     "after_score": observation.after_score,
                                     "score_delta": observation.score_delta,
                                     "improved": observation.improved,
-                                    "actions": [
-                                        action.value for action in observation.actions
-                                    ],
+                                    "actions": [action.value for action in observation.actions],
                                     "dimension_deltas": observation.dimension_deltas,
                                 }
                                 for observation in retry_result.effectiveness
                             ],
                             "adaptations": [
                                 {
-                                    "actions": [
-                                        action.value for action in adaptation.actions
-                                    ],
+                                    "actions": [action.value for action in adaptation.actions],
                                     "excluded_actions": [
-                                        action.value
-                                        for action in adaptation.excluded_actions
+                                        action.value for action in adaptation.excluded_actions
                                     ],
                                     "reason": adaptation.reason,
                                 }
