@@ -88,9 +88,12 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
     assert result.semantic_verification_score == 0.9
     assert result.semantic_verifier == "test-verifier"
     assert result.retrieval_attempts == ("exact:asset-1:accepted",)
-    search.execute_strategy.assert_awaited_once()
-    kwargs = search.execute_strategy.await_args.kwargs
-    assert kwargs["strategies"][0].name == "exact"
+    assert search.execute_strategy.await_count >= 2
+    query_names = [
+        call.kwargs["strategies"][0].name for call in search.execute_strategy.await_args_list
+    ]
+    assert query_names[0] == "primary"
+    assert len(query_names) >= 2
     rank_kwargs = retriever._selector.rank.call_args.kwargs
     assert rank_kwargs["relevance_context"].entities == beat.entities
     assert rank_kwargs["relevance_context"].location == beat.location
