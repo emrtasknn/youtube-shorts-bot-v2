@@ -165,7 +165,6 @@ class FFmpegCommandBuilder:
         )
         return command
 
-
     @staticmethod
     def _build_motion_filter(
         motion: object,
@@ -185,10 +184,7 @@ class FFmpegCommandBuilder:
         zoom = f"{start:.6f}+({end - start:.6f})*on/{frames - 1}"
         x = f"(iw-iw/zoom)*{motion.focus_x:.6f}"
         y = f"(ih-ih/zoom)*{motion.focus_y:.6f}"
-        return (
-            f"zoompan=z='{zoom}':x='{x}':y='{y}':"
-            f"d=1:s=1080x1920:fps={fps},"
-        )
+        return f"zoompan=z='{zoom}':x='{x}':y='{y}':d=1:s=1080x1920:fps={fps},"
 
 
 class FFmpegVideoEngine:
