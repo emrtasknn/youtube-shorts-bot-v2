@@ -323,11 +323,7 @@ class FFmpegVideoEngine:
             raise ValueError("Render beats must match their visual timeline")
 
         planned_scene_durations = tuple(
-            sum(
-                scene.duration_seconds
-                for scene in request.scenes
-                if scene.scene_index == index
-            )
+            sum(scene.duration_seconds for scene in request.scenes if scene.scene_index == index)
             for index in ordered_scene_indexes
         )
         actual_scene_durations = SceneTimingAllocator().allocate(
