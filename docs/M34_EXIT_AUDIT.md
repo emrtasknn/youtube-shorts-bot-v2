@@ -43,6 +43,8 @@ QC metadata now contains:
 
 ## Validation
 
+Final branch CI run #868 (workflow run `37789227632`) passed Static checks, Database/tests and Docker build; Database/tests reported 464 passed.
+
 M34 adds regression coverage for:
 
 - audio repair being preferred when audio quality is the dominant deficit
