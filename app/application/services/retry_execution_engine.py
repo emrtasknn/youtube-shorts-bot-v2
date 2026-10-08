@@ -13,6 +13,7 @@ from app.application.services.retry_economics import RetryEconomicsDecision, Ret
 from app.application.services.retry_orchestrator import (
     JudgeDrivenRetryOrchestrator,
     RetryAction,
+    RetryPlan,
 )
 from app.application.services.video_judge import VideoJudgeReport
 
@@ -102,8 +103,16 @@ class JudgeDrivenRetryExecutionEngine:
                 observations=tuple(observations),
             )
             adaptations.append(adaptive)
+            adapted_plan = RetryPlan(
+                attempt=plan.attempt,
+                max_attempts=plan.max_attempts,
+                actions=adaptive.actions,
+                reasons=plan.reasons,
+                retryable=plan.retryable,
+                terminal_reason=plan.terminal_reason,
+            )
             economics = self._economics.rank(
-                plan,
+                adapted_plan,
                 report=current,
                 observations=tuple(observations),
             )
