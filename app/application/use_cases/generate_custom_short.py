@@ -14,7 +14,7 @@ from app.application.ports.text_generation import TextGenerationGateway, TextGen
 from app.application.ports.tts import TTSGateway, TTSRequest
 from app.application.ports.video_engine import VideoEngine, VideoRenderRequest, VideoSceneInput
 from app.application.services.audio_direction import AudioDirector
-from app.application.services.camera_motion import CameraMotionEngine
+from app.application.services.camera_motion import CameraMotionEngine, CameraMotionPlan
 from app.application.services.audio_quality import AudioQualityAnalyzer
 from app.application.services.autonomous_audio import AutonomousAudioPlanner
 from app.application.services.custom_short_support import parse_script, validate_output
@@ -100,6 +100,7 @@ class VisualBeatAssetSelection:
     timeline: VisualBeatTimeline
     paths: tuple[Path, ...]
     assets: tuple[AssetModel, ...]
+    motions: tuple[CameraMotionPlan, ...]
 
 
 class GenerateCustomShort:
@@ -225,22 +226,10 @@ class GenerateCustomShort:
             for scene in scenes:
                 try:
                     selection = await self._select_visual_beats(run, scene)
-                    motion_engine = CameraMotionEngine()
-                    motions = []
-                    recent_motion = []
-                    for beat in selection.timeline.beats:
-                        motion = motion_engine.plan(
-                            purpose=beat.purpose,
-                            duration_seconds=beat.duration_seconds,
-                            beat_index=beat.beat_index,
-                            recent_motion=tuple(recent_motion[-2:]),
-                        )
-                        motions.append(motion)
-                        recent_motion.append(motion.motion_type)
                     scene_inputs = to_video_scene_inputs(
                         selection.timeline,
                         selection.paths,
-                        tuple(motions),
+                        selection.motions,
                     )
                     assets = selection.assets
                 except Exception:
@@ -672,6 +661,19 @@ class GenerateCustomShort:
                 )
             )
 
+        motion_engine = CameraMotionEngine()
+        motions: list[CameraMotionPlan] = []
+        recent_motion = []
+        for beat in timeline.beats:
+            motion = motion_engine.plan(
+                purpose=beat.purpose,
+                duration_seconds=beat.duration_seconds,
+                beat_index=beat.beat_index,
+                recent_motion=tuple(recent_motion[-2:]),
+            )
+            motions.append(motion)
+            recent_motion.append(motion.motion_type)
+
         paths: list[Path] = []
         assets: list[AssetModel] = []
         beautifier = VisualBeautifier()
@@ -756,6 +758,7 @@ class GenerateCustomShort:
             timeline=timeline,
             paths=tuple(paths),
             assets=tuple(assets),
+            motions=tuple(motions),
         )
 
     async def _select_asset_scene_fallback(
