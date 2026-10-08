@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+
+
+JudgeDecision = str
+
+
 @dataclass(frozen=True, slots=True)
 class VideoJudgeInput:
     output_path: Path
