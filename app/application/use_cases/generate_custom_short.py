@@ -31,6 +31,7 @@ from app.application.services.novelty_hardening import NoveltyHardeningService
 from app.application.services.optimization_persistence import OptimizationDecisionPersistenceService
 from app.application.services.optimization_production_adapter import OptimizationProductionAdapter
 from app.application.services.production_decision_adapter import ProductionDecisionAdapter
+from app.application.services.retry_orchestrator import JudgeDrivenRetryOrchestrator
 from app.application.services.scene_contract import build_scene_contract
 from app.application.services.scene_timing import SceneTimingAllocator
 from app.application.services.script_completeness import ScriptCompletenessGate
@@ -441,8 +442,29 @@ class GenerateCustomShort:
                         "repair_applied": background_volume != 0.14,
                     },
                 }
+            retry_decision = JudgeDrivenRetryOrchestrator(max_attempts=2).decide(
+                judge,
+                attempt=1,
+            )
+            if stage is not None:
+                stage.stage_metadata = {
+                    **(stage.stage_metadata or {}),
+                    "m31_retry_orchestration": {
+                        "attempt": retry_decision.plan.attempt,
+                        "max_attempts": retry_decision.plan.max_attempts,
+                        "retryable": retry_decision.plan.retryable,
+                        "actions": [action.value for action in retry_decision.plan.actions],
+                        "reasons": list(retry_decision.plan.reasons),
+                        "terminal_reason": retry_decision.plan.terminal_reason,
+                        "next_status": retry_decision.next_status,
+                    },
+                }
             if judge.decision == "RETRY":
-                run.status = RunStatus.FAILED_RETRYABLE
+                run.status = (
+                    RunStatus.FAILED_RETRYABLE
+                    if retry_decision.plan.retryable
+                    else RunStatus.FAILED_PERMANENT
+                )
                 self._session.commit()
                 return CustomShortResult(
                     run.id,
