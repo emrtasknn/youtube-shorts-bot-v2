@@ -59,4 +59,6 @@ def test_query_expander_is_bounded_and_deduplicates_empty_variants() -> None:
 
     assert len(plan.bounded_variants) <= 5
     assert plan.bounded_variants[0].name == "primary"
-    assert len({variant.query.lower() for variant in plan.bounded_variants}) == len(plan.bounded_variants)
+    assert len({variant.query.lower() for variant in plan.bounded_variants}) == len(
+        plan.bounded_variants
+    )
