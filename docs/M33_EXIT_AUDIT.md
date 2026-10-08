@@ -35,7 +35,7 @@ QC metadata now contains an `effectiveness` history alongside the existing retry
 
 ## Validation
 
-The M33 regression suite covers:
+Final branch CI run #861 passed Static checks, Database/tests (461 passed) and Docker build. The M33 regression suite covers:
 
 - non-improving targeted action exclusion
 - retaining actions that improve quality
