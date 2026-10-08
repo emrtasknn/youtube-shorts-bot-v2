@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from app.application.ports.video_engine import VideoRenderRequest, VideoSceneInput
+from app.application.services.camera_motion import CameraMotionPlan, CameraMotionType
 from app.infrastructure.video.ffmpeg import FFmpegCommandBuilder, FFmpegVideoEngine
 
 
@@ -149,3 +150,62 @@ def test_builder_integrates_subtitle_file_filter(tmp_path: Path) -> None:
     assert str(subtitle) in filter_complex
     assert "subtitles=" in filter_complex
     assert "[vsub]" in filter_complex
+
+
+def test_builder_adds_bounded_zoompan_for_image_motion(tmp_path: Path) -> None:
+    image = tmp_path / "scene.jpg"
+    image.touch()
+    output = tmp_path / "output.mp4"
+    request = VideoRenderRequest(
+        scenes=(
+            VideoSceneInput(
+                image,
+                4.0,
+                is_image=True,
+                motion=CameraMotionPlan(
+                    CameraMotionType.PUSH_IN,
+                    intensity=0.8,
+                    focus_x=0.5,
+                    focus_y=0.5,
+                ),
+            ),
+        ),
+        output_path=output,
+        fps=30,
+    )
+
+    command = FFmpegCommandBuilder().build(request)
+    filter_complex = command[command.index("-filter_complex") + 1]
+
+    assert "zoompan=" in filter_complex
+    assert "d=120" in filter_complex
+    assert "s=1080x1920" in filter_complex
+    assert "fps=30" in filter_complex
+
+
+def test_builder_keeps_static_image_without_motion_filter(tmp_path: Path) -> None:
+    image = tmp_path / "scene.jpg"
+    image.touch()
+    output = tmp_path / "output.mp4"
+    request = VideoRenderRequest(
+        scenes=(VideoSceneInput(image, 2.0, is_image=True),),
+        output_path=output,
+    )
+
+    command = FFmpegCommandBuilder().build(request)
+    filter_complex = command[command.index("-filter_complex") + 1]
+
+    assert "zoompan=" not in filter_complex
+
+
+def test_builder_rejects_invalid_motion_contract(tmp_path: Path) -> None:
+    image = tmp_path / "scene.jpg"
+    image.touch()
+    output = tmp_path / "output.mp4"
+    request = VideoRenderRequest(
+        scenes=(VideoSceneInput(image, 2.0, is_image=True, motion=object()),),
+        output_path=output,
+    )
+
+    with pytest.raises(TypeError, match="CameraMotionPlan"):
+        FFmpegCommandBuilder().build(request)
