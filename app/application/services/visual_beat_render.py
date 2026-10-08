@@ -45,8 +45,6 @@ def to_video_scene_inputs(
             path=path,
             duration_seconds=beat.duration_seconds,
             beat_index=beat.beat_index,
-        ).to_video_scene_input(
-            None if motions is None else motions[index]
-        )
+        ).to_video_scene_input(None if motions is None else motions[index])
         for index, (beat, path) in enumerate(zip(timeline.beats, assets, strict=True))
     )
