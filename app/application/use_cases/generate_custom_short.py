@@ -646,7 +646,7 @@ class GenerateCustomShort:
                                 }
                                 for adaptation in retry_result.adaptations
                             ],
-                        },,
+                        },
                     }
                 if judge.decision == "RETRY":
                     run.status = RunStatus.FAILED_PERMANENT
