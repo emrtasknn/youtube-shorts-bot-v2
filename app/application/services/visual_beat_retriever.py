@@ -23,7 +23,7 @@ from app.application.services.visual_semantic_verifier import (
     VisualVerificationContext,
     to_visual_verification_context,
 )
-from app.application.services.visual_source_resolver import VisualSourceResolver
+from app.application.services.visual_source_resolver import VisualSourceResolver\nfrom app.application.services.visual_variety import VisualVarietyEngine
 from app.application.use_cases.search_stock_media import SearchStockMedia
 from app.config.settings import get_settings
 
@@ -49,7 +49,7 @@ class VisualBeatRetrievalResult:
     query_trace: tuple[str, ...] = ()
     candidate_pool_size: int = 0
     candidate_queries: tuple[str, ...] = ()
-    candidate_providers: tuple[str, ...] = ()
+    candidate_providers: tuple[str, ...] = ()\n    variety_score: float = 1.0\n    variety_penalties: tuple[str, ...] = ()\n    variety_signals: tuple[str, ...] = ()
 
 
 class VisualBeatRetriever:
@@ -88,7 +88,7 @@ class VisualBeatRetriever:
         self._query_expander = VisualQueryExpander()
         self._max_queries = max_queries
         self._max_candidates = max_candidates
-        self._candidates_per_query = candidates_per_query
+        self._candidates_per_query = candidates_per_query\n        self._variety = VisualVarietyEngine()
 
     async def retrieve(
         self,
@@ -171,7 +171,7 @@ class VisualBeatRetriever:
         vision_shortlist = ranked_pool[:6]
         for entry in vision_shortlist:
             quality_result = self._quality_evaluator.evaluate(entry.score)
-            candidate_id = entry.asset_id or "unknown"
+            candidate_id = entry.asset_id or "unknown"\n            variety = self._variety.evaluate(\n                self._variety._profile(entry, subject_terms=beat.entities),\n                history=self._variety._history.get(run_id, []),\n            )
             if quality_result.decision.value == "reject":
                 attempts.append(f"pool:{candidate_id}:quality_reject")
                 continue
@@ -211,7 +211,7 @@ class VisualBeatRetriever:
                 query_trace=tuple(query_trace),
                 candidate_pool_size=len(pool),
                 candidate_queries=entry.queries,
-                candidate_providers=entry.providers,
+                candidate_providers=entry.providers,\n                variety_score=variety.score,\n                variety_penalties=variety.penalties,\n                variety_signals=variety.signals,
             )
 
         detail = "; ".join(attempts) or "no strategies executed"
