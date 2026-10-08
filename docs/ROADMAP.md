@@ -28,10 +28,12 @@ Deliverables: Gemini multimodal vision verifier using the existing verifier cont
 Exit: actual image content affects decisions and the verifier is traceable.
 Evidence: PR #130 merged; CI on the final M25 commit passed Static checks, Database/tests and Docker build.
 
-## M26 — Visual Variety Engine
+## M26 — Visual Variety Engine — COMPLETE
 Goal: reduce unnecessary repetition using candidate reuse, source reuse, composition, shot type and subject signals.
 Rule: variety never overrides semantic correctness.
+Deliverables: run-scoped bounded variety history; exact asset reuse detection; recent provider reuse penalty; composition and shot-type diversity signals; subject-token overlap scoring; bounded candidate reordering before the existing M25 semantic verification shortlist; variety audit metadata; regression coverage for reuse, diversity, empty history and bounded state.
 Exit: duplicates are prevented where alternatives exist and low-candidate cases degrade gracefully.
+Evidence: PR #131; final branch CI passed Static checks, Database/tests (419 passed) and Docker build. Production Gemini/MP4 smoke was not dispatched for M26; M25 production contract and CI baseline remain unchanged.
 
 ## M27 — Dynamic Subtitle Engine
 Goal: timed, readable, emphasis-aware Shorts captions.
