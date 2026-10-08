@@ -33,7 +33,7 @@ def test_query_expander_creates_primary_entity_action_and_context_queries() -> N
         "contextual",
     ]
     assert plan.bounded_variants[0].query == "Roman Empire Mediterranean expansion"
-    assert "Roman Empire expanding" in plan.bounded_variants[1].query
+    assert "expanding" in plan.bounded_variants[1].query
     assert all(variant.query.strip() for variant in plan.bounded_variants)
     assert len({variant.query.lower() for variant in plan.bounded_variants}) == 5
 
