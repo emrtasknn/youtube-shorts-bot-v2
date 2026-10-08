@@ -40,7 +40,7 @@ QC metadata now records:
 
 ## Validation
 
-The M32 unit suite verifies:
+The final M32 branch CI validates Static checks, Database/tests (457 passed), and Docker build. The M32 unit suite verifies:
 
 - targeted retry execution
 - second-attempt success
