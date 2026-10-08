@@ -50,9 +50,7 @@ def test_engine_builds_word_timestamps_and_emphasis() -> None:
     assert words[0].start_seconds == 0.0
     assert words[-1].end_seconds == 6.0
     assert all(word.start_seconds < word.end_seconds for word in words)
-    cue_groups = SubtitleEngine().build_cues(
-        "The ancient empire conquered Rome quickly.", 6.0
-    )
+    cue_groups = SubtitleEngine().build_cues("The ancient empire conquered Rome quickly.", 6.0)
     assert all(sum(word.emphasized for word in cue.words) <= 2 for cue in cue_groups)
     assert words[-1].word == "quickly."
 
