@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-
 from app.application.services.real_vision_verifier import (
     CostAwareVisionVerifier,
     GeminiVisionSemanticVerifier,
@@ -36,8 +34,9 @@ class FakeClient:
     def get(self, url):
         return FakeResponse({})
 
-    def post(self, url, headers=None, json=None):
-        self.posts.append((url, headers, json))
+    def post(self, url, headers=None, json_payload=None, **kwargs):
+        payload = kwargs.get("json", json_payload)
+        self.posts.append((url, headers, payload))
         return FakeResponse(
             {
                 "candidates": [
@@ -45,7 +44,7 @@ class FakeClient:
                         "content": {
                             "parts": [
                                 {
-                                    "text": json.dumps(
+                                    "text": __import__("json").dumps(
                                         {
                                             "entity_match": 1.0,
                                             "action_match": 0.9,
