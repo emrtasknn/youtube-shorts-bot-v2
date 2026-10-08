@@ -39,6 +39,7 @@ class RetryExecutionResult:
     attempts: tuple[RetryExecutionAttempt, ...]
     exhausted: bool
     terminal_reason: str | None
+    effectiveness: tuple[RetryEffectivenessObservation, ...] = ()
 
 
 class JudgeDrivenRetryExecutionEngine:
@@ -56,7 +57,7 @@ class JudgeDrivenRetryExecutionEngine:
         executor: RetryAttemptExecutor | Callable[..., Awaitable[VideoJudgeReport]],
         policy: AdaptiveRetryPolicy | None = None,
     ) -> None:
-        self._orchestrator = orchestrator or JudgeDrivenRetryOrchestrator(max_attempts=2)
+        self._orchestrator = orchestrator or JudgeDrivenRetryOrchestrator(max_attempts=3)
         self._executor = executor
         self._policy = policy or AdaptiveRetryPolicy()
 
@@ -83,6 +84,7 @@ class JudgeDrivenRetryExecutionEngine:
                     attempts=tuple(history),
                     exhausted=plan.exhausted,
                     terminal_reason=plan.terminal_reason,
+                    effectiveness=tuple(observations),
                 )
 
             adaptive = self._policy.adapt(
@@ -121,6 +123,7 @@ class JudgeDrivenRetryExecutionEngine:
             attempts=tuple(history),
             exhausted=False,
             terminal_reason=None,
+            effectiveness=tuple(observations),
         )
 
     async def _execute_attempt(
