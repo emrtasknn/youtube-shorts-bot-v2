@@ -115,7 +115,9 @@ class VisualVarietyEngine:
             score -= 0.18
             penalties.append("recent_composition_reuse")
 
-        same_shot = any(item.shot_type == profile.shot_type for item in history[-3:] if item.shot_type)
+        same_shot = any(
+            item.shot_type == profile.shot_type for item in history[-3:] if item.shot_type
+        )
         if same_shot:
             score -= 0.15
             penalties.append("recent_shot_type_reuse")
