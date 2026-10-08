@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import Protocol
 
 from app.application.services.retry_orchestrator import (
