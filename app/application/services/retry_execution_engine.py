@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from app.application.services.adaptive_retry_policy import (
+    AdaptiveRetryDecision,
     AdaptiveRetryPolicy,
     RetryEffectivenessObservation,
 )
@@ -40,6 +41,7 @@ class RetryExecutionResult:
     exhausted: bool
     terminal_reason: str | None
     effectiveness: tuple[RetryEffectivenessObservation, ...] = ()
+    adaptations: tuple[AdaptiveRetryDecision, ...] = ()
 
 
 class JudgeDrivenRetryExecutionEngine:
@@ -69,6 +71,7 @@ class JudgeDrivenRetryExecutionEngine:
     ) -> RetryExecutionResult:
         history: list[RetryExecutionAttempt] = []
         observations: list[RetryEffectivenessObservation] = []
+        adaptations: list[AdaptiveRetryDecision] = []
         current = report
         current_attempt = attempt
 
@@ -85,12 +88,14 @@ class JudgeDrivenRetryExecutionEngine:
                     exhausted=plan.exhausted,
                     terminal_reason=plan.terminal_reason,
                     effectiveness=tuple(observations),
+                    adaptations=tuple(adaptations),
                 )
 
             adaptive = self._policy.adapt(
                 plan,
                 observations=tuple(observations),
             )
+            adaptations.append(adaptive)
             next_plan_actions = adaptive.actions
 
             next_attempt = current_attempt + 1
@@ -124,6 +129,7 @@ class JudgeDrivenRetryExecutionEngine:
             exhausted=False,
             terminal_reason=None,
             effectiveness=tuple(observations),
+            adaptations=tuple(adaptations),
         )
 
     async def _execute_attempt(
