@@ -97,7 +97,7 @@ class VisualNarrationSynchronizer:
         self,
         timelines: Sequence[VisualBeatTimeline],
         actual_scene_durations: Sequence[float],
-        subtitle_text: str,
+        subtitle_text: str | None,
         *,
         total_audio_duration: float,
     ) -> UnifiedTimeline:
@@ -157,11 +157,13 @@ class VisualNarrationSynchronizer:
             )
             scene_cursor += target_duration
 
-        subtitle_cues = self._subtitle_engine.build_cues(
-            subtitle_text,
-            total_audio_duration,
+        subtitle_cues = (
+            self._subtitle_engine.build_cues(subtitle_text, total_audio_duration)
+            if subtitle_text and subtitle_text.strip()
+            else ()
         )
-        self._validate_caption_coverage(subtitle_cues, scenes, issues)
+        if subtitle_cues:
+            self._validate_caption_coverage(subtitle_cues, scenes, issues)
         if abs(scene_cursor - total_audio_duration) > 1e-4:
             issues.append(
                 SynchronizationIssue(
