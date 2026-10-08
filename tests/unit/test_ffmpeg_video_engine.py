@@ -128,3 +128,24 @@ def test_builder_passes_paths_as_arguments(tmp_path: Path) -> None:
 
     assert str(image) in command
     assert "touch-HACKED.jpg" not in command[:-1]
+
+
+def test_builder_integrates_subtitle_file_filter(tmp_path: Path) -> None:
+    image = tmp_path / "scene.jpg"
+    subtitle = tmp_path / "captions.ass"
+    output = tmp_path / "output.mp4"
+    image.touch()
+    subtitle.write_text("[Script Info]\\n", encoding="utf-8")
+
+    request = VideoRenderRequest(
+        scenes=(VideoSceneInput(image, 2.0, is_image=True),),
+        output_path=output,
+        subtitle_text="hello world",
+    )
+
+    command = FFmpegCommandBuilder().build(request, subtitle_path=subtitle)
+    filter_complex = command[command.index("-filter_complex") + 1]
+
+    assert str(subtitle) in filter_complex
+    assert "subtitles=" in filter_complex
+    assert "[vsub]" in filter_complex
