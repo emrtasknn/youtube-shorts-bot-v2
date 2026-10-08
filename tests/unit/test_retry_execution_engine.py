@@ -101,7 +101,7 @@ async def test_retry_engine_executes_second_attempt_then_escalates() -> None:
     assert result.report.decision == "RETRY"
     assert result.exhausted
     assert result.terminal_reason == "retry_budget_exhausted"
-    assert [attempt for attempt, _ in executor.calls] == [2]
+    assert [attempt for attempt, _ in executor.calls] == [2, 3]
 
 
 @pytest.mark.asyncio

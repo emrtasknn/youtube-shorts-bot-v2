@@ -447,7 +447,7 @@ class GenerateCustomShort:
                         "repair_applied": background_volume != 0.14,
                     },
                 }
-            retry_decision = JudgeDrivenRetryOrchestrator(max_attempts=2).decide(
+            retry_decision = JudgeDrivenRetryOrchestrator(max_attempts=3).decide(
                 judge,
                 attempt=1,
             )
@@ -603,7 +603,7 @@ class GenerateCustomShort:
                     return retry_judge
 
                 retry_engine = JudgeDrivenRetryExecutionEngine(
-                    orchestrator=JudgeDrivenRetryOrchestrator(max_attempts=2),
+                    orchestrator=JudgeDrivenRetryOrchestrator(max_attempts=3),
                     executor=execute_retry_attempt,
                 )
                 retry_result = await retry_engine.execute(judge, attempt=1)
@@ -617,6 +617,30 @@ class GenerateCustomShort:
                             "exhausted": retry_result.exhausted,
                             "terminal_reason": retry_result.terminal_reason,
                             "final_decision": judge.decision,
+                        },
+                        "m33_adaptive_retry": {
+                            "effectiveness": [
+                                {
+                                    "attempt": observation.attempt,
+                                    "before_score": observation.before_score,
+                                    "after_score": observation.after_score,
+                                    "score_delta": observation.score_delta,
+                                    "improved": observation.improved,
+                                    "actions": [action.value for action in observation.actions],
+                                    "dimension_deltas": observation.dimension_deltas,
+                                }
+                                for observation in retry_result.effectiveness
+                            ],
+                            "adaptations": [
+                                {
+                                    "actions": [action.value for action in adaptation.actions],
+                                    "excluded_actions": [
+                                        action.value for action in adaptation.excluded_actions
+                                    ],
+                                    "reason": adaptation.reason,
+                                }
+                                for adaptation in retry_result.adaptations
+                            ],
                         },
                     }
                 if judge.decision == "RETRY":
