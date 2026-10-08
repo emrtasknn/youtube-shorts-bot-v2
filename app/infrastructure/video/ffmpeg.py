@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 from pathlib import Path
 from typing import TypedDict
 
@@ -58,10 +59,18 @@ class FFmpegCommandBuilder:
             if scene.is_image:
                 command.extend(["-loop", "1", "-t", str(duration)])
             command.extend(["-i", str(scene.path)])
+            motion_filter = ""
+            if scene.is_image and scene.motion is not None:
+                motion_filter = self._build_motion_filter(
+                    scene.motion,
+                    duration=duration,
+                    fps=request.fps,
+                )
             filter_inputs.append(
                 f"[{index}:v]scale={request.width}:{request.height}:"
                 f"force_original_aspect_ratio=increase,"
                 f"crop={request.width}:{request.height},setsar=1,fps={request.fps},"
+                f"{motion_filter}"
                 f"trim=duration={duration},setpts=PTS-STARTPTS[v{index}]"
             )
 
@@ -155,6 +164,31 @@ class FFmpegCommandBuilder:
             ]
         )
         return command
+
+
+    @staticmethod
+    def _build_motion_filter(
+        motion: object,
+        *,
+        duration: float,
+        fps: int,
+    ) -> str:
+        from app.application.services.camera_motion import CameraMotionPlan, CameraMotionType
+
+        if not isinstance(motion, CameraMotionPlan):
+            raise TypeError("Scene motion must be a CameraMotionPlan")
+        if motion.motion_type is CameraMotionType.STATIC:
+            return ""
+        frames = max(2, math.ceil(duration * fps))
+        start = motion.zoom_start
+        end = motion.zoom_end
+        zoom = f"{start:.6f}+({end - start:.6f})*on/{frames - 1}"
+        x = f"(iw-iw/zoom)*{motion.focus_x:.6f}"
+        y = f"(ih-ih/zoom)*{motion.focus_y:.6f}"
+        return (
+            f"zoompan=z='{zoom}':x='{x}':y='{y}':"
+            f"d={frames}:s=1080x1920:fps={fps},"
+        )
 
 
 class FFmpegVideoEngine:
