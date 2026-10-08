@@ -242,7 +242,7 @@ async def test_visual_beat_retriever_falls_through_to_broader_strategy() -> None
     assert (
         search.execute_strategy.await_args_list[1]
         .kwargs["strategies"][0]
-        .name.startswith("broader_")
+        .name == "entity_action"
     )
 
 
