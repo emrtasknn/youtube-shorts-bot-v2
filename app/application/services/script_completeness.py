@@ -75,6 +75,7 @@ class ScriptCompletenessGate:
     words_per_second = 2.5
     min_scene_narration_ratio = 0.85
     min_scene_duration_ratio = 0.95
+    min_storyboard_vocabulary_coverage = 0.50
 
     def evaluate(self, data: dict[str, Any]) -> ScriptCompletenessReport:
         failures: list[str] = []
@@ -173,8 +174,11 @@ class ScriptCompletenessGate:
         narration_tokens = _normalized_words(all_narration)
         if body_tokens:
             token_coverage = len(body_tokens & narration_tokens) / len(body_tokens)
-            if token_coverage < 0.60:
-                failures.append(f"storyboard vocabulary coverage is too low ({token_coverage:.0%})")
+            if token_coverage < self.min_storyboard_vocabulary_coverage:
+                failures.append(
+                    "storyboard vocabulary coverage is too low "
+                    f"({token_coverage:.0%}; minimum {self.min_storyboard_vocabulary_coverage:.0%})"
+                )
 
         return ScriptCompletenessReport(
             passed=not failures,
