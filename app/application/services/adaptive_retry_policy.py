@@ -47,8 +47,7 @@ class AdaptiveRetryPolicy:
     ) -> RetryEffectivenessObservation:
         deltas = {
             key: round(
-                current.dimension_scores.get(key, 0.0)
-                - previous.dimension_scores.get(key, 0.0),
+                current.dimension_scores.get(key, 0.0) - previous.dimension_scores.get(key, 0.0),
                 2,
             )
             for key in set(previous.dimension_scores) | set(current.dimension_scores)
@@ -82,7 +81,8 @@ class AdaptiveRetryPolicy:
             for observation in observations
             if not observation.improved
             for action in observation.actions
-            if action not in {
+            if action
+            not in {
                 RetryAction.REGENERATE_VIDEO,
                 RetryAction.ESCALATE,
             }
@@ -91,8 +91,7 @@ class AdaptiveRetryPolicy:
         excluded = tuple(action for action in plan.actions if action in failed_actions)
 
         if not actions or all(
-            action in {RetryAction.REGENERATE_VIDEO, RetryAction.ESCALATE}
-            for action in actions
+            action in {RetryAction.REGENERATE_VIDEO, RetryAction.ESCALATE} for action in actions
         ):
             actions = (RetryAction.REGENERATE_VIDEO,)
             reason = "targeted_actions_failed_use_general_regeneration"
