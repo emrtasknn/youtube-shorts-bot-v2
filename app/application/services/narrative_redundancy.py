@@ -80,9 +80,9 @@ class NarrativeRedundancyGate:
             if not normalized:
                 continue
             if normalized in normalized_seen:
-                previous = normalized_seen[normalized]
+                duplicate_index = normalized_seen[normalized]
                 failures.append(
-                    f"exact duplicate narrative claim between items {previous} and {index}"
+                    f"exact duplicate narrative claim between items {duplicate_index} and {index}"
                 )
                 signals.append("exact_duplicate")
             else:
