@@ -40,4 +40,6 @@ Scene/VisualBeat
 
 ## Exit evidence
 PR #133.
-CI evidence and final main merge commit are added here after the branch checks pass.
+Branch CI evidence: workflow run #803 (Static checks, Database/tests, Docker build all successful). PR #133. Main merge commit and main CI evidence are added after merge.
+
+Production validation caveat: no production MP4 smoke/visual inspection was performed because the available GitHub workflow does not expose a production-smoke dispatch path. This is not represented as completed validation.
