@@ -59,13 +59,15 @@ async def test_retry_engine_executes_targeted_attempt_and_stops_on_pass() -> Non
         RetryAction.RESELECT_VISUALS,
         RetryAction.REGENERATE_VIDEO,
     )
-    assert executor.calls == [(
-        2,
+    assert executor.calls == [
         (
-            RetryAction.RESELECT_VISUALS,
-            RetryAction.REGENERATE_VIDEO,
-        ),
-    )]
+            2,
+            (
+                RetryAction.RESELECT_VISUALS,
+                RetryAction.REGENERATE_VIDEO,
+            ),
+        )
+    ]
     assert not result.exhausted
 
 
