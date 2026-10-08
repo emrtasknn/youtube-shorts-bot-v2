@@ -7,15 +7,16 @@ import pytest
 from app.application.services.subtitles import build_ass, write_ass
 
 
-def test_build_ass_uses_safe_zone_and_timed_chunks() -> None:
+def test_build_ass_uses_safe_zone_dynamic_emphasis_and_timed_chunks() -> None:
     ass = build_ass("One two three four five six seven eight", 8.0)
 
     assert "PlayResX: 1080" in ass
     assert "PlayResY: 1920" in ass
-    assert "Alignment, MarginL, MarginR, MarginV" in ass
+    assert "MarginV, Encoding" in ass
     assert "390" in ass
     assert "0:00:00.00" in ass
     assert "0:00:08.00" in ass
+    assert r"{\b1\fs68}" in ass
 
 
 def test_write_ass_creates_file(tmp_path: Path) -> None:
