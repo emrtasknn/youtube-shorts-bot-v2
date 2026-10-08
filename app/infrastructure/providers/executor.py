@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from time import perf_counter
 
 from app.domain.enums import EventSeverity
+from app.application.services.provider_performance_learning import ProviderPerformanceObservation
 from app.infrastructure.providers.contracts import ProviderError, ProviderRequest, ProviderResult
 from app.infrastructure.providers.registry import ProviderRegistry
 from app.infrastructure.providers.reliability import (
@@ -41,6 +42,7 @@ class ReliabilityExecutor:
         request: ProviderRequest,
         candidates: list[str] | None = None,
         quota_key: str | None = None,
+        historical_performance: tuple[ProviderPerformanceObservation, ...] = (),
     ) -> ProviderResult:
         key = request.idempotency_key
         if key:
@@ -59,9 +61,16 @@ class ReliabilityExecutor:
         providers = candidates or [request.provider]
         attempted: set[str] = set()
         last_error: ProviderError | None = None
+        performance_history: list[ProviderPerformanceObservation] = list(historical_performance)
 
         while len(attempted) < len(providers):
-            provider_name = self.router.route(providers, attempted)
+            provider_name = self.router.route(
+                providers,
+                attempted,
+                observations=tuple(performance_history),
+                capability=request.capability.value,
+                operation=request.operation,
+            )
             attempted.add(provider_name)
             if len(attempted) > 1:
                 # CLI stdout is a machine-readable JSON contract. Keep
@@ -123,6 +132,17 @@ class ReliabilityExecutor:
                         metadata=result.metadata,
                     )
                     self.health.record_success(provider_name)
+                    performance_history.append(
+                        ProviderPerformanceObservation(
+                            sequence=len(performance_history) + 1,
+                            provider=provider_name,
+                            capability=request.capability.value,
+                            operation=request.operation,
+                            success=result.success,
+                            latency_ms=latency_ms,
+                            quality_score=_quality_score(result.metadata),
+                        )
+                    )
                     self.telemetry.emit(
                         "provider.success",
                         EventSeverity.INFO,
@@ -151,6 +171,17 @@ class ReliabilityExecutor:
                 except ProviderError as error:
                     last_error = error
                     self.health.record_failure(provider_name)
+                    performance_history.append(
+                        ProviderPerformanceObservation(
+                            sequence=len(performance_history) + 1,
+                            provider=provider_name,
+                            capability=request.capability.value,
+                            operation=request.operation,
+                            success=False,
+                            latency_ms=0,
+                            quality_score=None,
+                        )
+                    )
                     self.telemetry.emit(
                         "provider.error",
                         EventSeverity.WARNING if error.retryable else EventSeverity.ERROR,
@@ -180,3 +211,10 @@ class ReliabilityExecutor:
             run_id=request.run_id,
         )
         raise last_error
+
+
+def _quality_score(metadata: dict[str, object]) -> float | None:
+    value = metadata.get("quality_score")
+    if isinstance(value, (int, float)):
+        return float(value)
+    return None

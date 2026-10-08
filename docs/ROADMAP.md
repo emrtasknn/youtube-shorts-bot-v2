@@ -177,11 +177,31 @@ Exit: historical retry telemetry influences action ranking only when isolated ev
 
 Evidence: PR #141 merged to main as commit `8fe737b43efa9b7a3636cf42ff5558ad8ba4dcf0`. The exposed workflow API did not return a completed green conclusion before merge, so green CI is not claimed. Production MP4 smoke/visual inspection remains dependent on a workflow dispatch path that is not currently exposed.
 
+## M37 — Provider Performance Learning — COMPLETE
+Goal: learn provider reliability, latency and quality signals from historical telemetry and use them to improve eligible-provider routing without overriding circuit breakers or deterministic cold-start behavior.
+
+Deliverables:
+- provider performance observation contract
+- minimum-sample and confidence protection
+- capability/operation-scoped learning
+- recency-weighted success-rate learning
+- latency-aware provider ranking
+- optional quality-score learning when provider metadata supplies a validated score
+- bounded provider ranking multiplier
+- StrategyRouter integration that preserves health/circuit-breaker eligibility
+- executor support for historical provider telemetry
+- regression coverage for cold start, scoping, recency, quality and routing
+- M37 exit audit
+
+Exit: providers with sufficient historical evidence can be ranked by measured reliability/latency/quality; sparse or missing history preserves declared provider order; unhealthy/open-circuit providers remain ineligible.
+
+Evidence: PR pending merge; CI and production smoke are reported after merge validation.
+
 ## Dependency
-M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32 → M33 → M34 → M35 → M36. M26 and M27 can partly run in parallel.
+M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32 → M33 → M34 → M35 → M36 → M37. M26 and M27 can partly run in parallel.
 
 ## Priority
-Current execution focus: M36 → M37 → M38 → M39 → M40 → M41 → M42.
+Current execution focus: M37 → M38 → M39 → M40 → M41 → M42.
 
 ## Definition of Done
 Each milestone requires contract, implementation, unit tests, integration tests, failure tests, audit/observability, CI green, production smoke, actual MP4 inspection and documentation update.

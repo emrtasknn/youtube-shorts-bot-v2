@@ -16,6 +16,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
+from app.application.services.provider_performance_learning import ProviderPerformanceLearning, ProviderPerformanceObservation
 from app.infrastructure.providers.contracts import (
     ErrorCategory,
     ProviderError,
@@ -285,11 +286,26 @@ class FallbackExhausted(ProviderError):
 
 
 class StrategyRouter:
-    def __init__(self, health: ProviderHealthManager) -> None:
+    def __init__(
+        self,
+        health: ProviderHealthManager,
+        *,
+        performance_learning: ProviderPerformanceLearning | None = None,
+    ) -> None:
         self.health = health
+        self.performance_learning = performance_learning
 
-    def route(self, providers: list[str], attempted: set[str] | None = None) -> str:
+    def route(
+        self,
+        providers: list[str],
+        attempted: set[str] | None = None,
+        *,
+        observations: tuple[ProviderPerformanceObservation, ...] = (),
+        capability: str | None = None,
+        operation: str | None = None,
+    ) -> str:
         attempted = attempted or set()
+        eligible: list[str] = []
         for provider in providers:
             if provider in attempted:
                 continue
@@ -297,8 +313,27 @@ class StrategyRouter:
                 self.health.allow(provider)
             except ProviderError:
                 continue
-            return provider
-        raise FallbackExhausted("No eligible provider remains")
+            eligible.append(provider)
+
+        if not eligible:
+            raise FallbackExhausted("No eligible provider remains")
+
+        if self.performance_learning is None or not observations:
+            return eligible[0]
+
+        learned = self.performance_learning.learn(
+            observations,
+            capability=capability,
+            operation=operation,
+        )
+        ranked = sorted(
+            enumerate(eligible),
+            key=lambda item: (
+                -self.performance_learning.ranking_score(item[1], learned=learned),
+                item[0],
+            ),
+        )
+        return ranked[0][1]
 
 
 @dataclass(frozen=True, slots=True)
