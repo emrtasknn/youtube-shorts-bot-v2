@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Literal
 
 
+
 JudgeDecision = Literal["PASS", "PASS_WITH_WARNINGS", "RETRY", "REJECT"]
 DimensionName = Literal[
     "technical",
