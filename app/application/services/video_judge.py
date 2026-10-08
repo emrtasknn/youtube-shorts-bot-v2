@@ -131,7 +131,8 @@ class AutomatedVideoJudge:
         sync_issues = data.synchronization.get("issues", [])
         if isinstance(sync_issues, list):
             errors = [
-                item for item in sync_issues
+                item
+                for item in sync_issues
                 if isinstance(item, dict) and item.get("severity") == "error"
             ]
             if errors:
