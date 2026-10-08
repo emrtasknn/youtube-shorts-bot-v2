@@ -187,7 +187,7 @@ class FFmpegCommandBuilder:
         y = f"(ih-ih/zoom)*{motion.focus_y:.6f}"
         return (
             f"zoompan=z='{zoom}':x='{x}':y='{y}':"
-            f"d={frames}:s=1080x1920:fps={fps},"
+            f"d=1:s=1080x1920:fps={fps},"
         )
 
 
