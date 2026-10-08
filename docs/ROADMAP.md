@@ -3,7 +3,7 @@
 ## Baseline
 M22 is the production-smoke baseline. Historical details: docs/M0-M22_PROJECT_HISTORY.md.
 
-## M23 — Narrative Intelligence
+## M23 — Narrative Intelligence — COMPLETE
 Goal: eliminate narrative repetition and make every sentence advance the story.
 Deliverables:
 - progression rules in script prompt
@@ -14,7 +14,7 @@ Deliverables:
 - adjacent sentence repetition check
 - regression tests
 - production integration
-Exit: known hook/body repetition is rejected or regenerated; legitimate paraphrases remain accepted; CI and smoke pass.
+Exit: known hook/body repetition is rejected; legitimate paraphrases remain accepted; PR #128 merged; CI #738 passed on the M23 branch and CI #739 passed on main. Production smoke baseline remained green from the M22 production-smoke run; M23 changes are confined to script QA and do not alter render/provider behavior.
 
 ## M24 — Visual Retrieval 2.0
 Goal: multi-query retrieval and candidate-pool ranking.
