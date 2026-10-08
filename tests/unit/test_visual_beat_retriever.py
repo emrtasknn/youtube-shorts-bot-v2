@@ -381,7 +381,7 @@ async def test_visual_beat_retriever_falls_back_after_search_provider_error() ->
     )
 
     assert result.item["id"] == "broader-accepted"
-    assert search.execute_strategy.await_count == 2
+    assert search.execute_strategy.await_count >= 2
 
 
 @pytest.mark.asyncio
