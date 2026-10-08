@@ -1,6 +1,6 @@
 from app.application.services.scene_contract import build_scene_contract
-from app.application.services.visual_beat import VisualBeatCompiler
 from app.application.services.synchronization import VisualNarrationSynchronizer
+from app.application.services.visual_beat import VisualBeatCompiler
 
 
 def _timelines() -> tuple:
