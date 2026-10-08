@@ -4,7 +4,7 @@ Production-oriented, provider-agnostic modular monolith for automated YouTube Sh
 
 ## Current release state
 
-**M0–M14: COMPLETE — V1 production hardening complete.**
+**M0–M22: COMPLETE — production pipeline, visual reliability, and production smoke baseline complete. M23 is NEXT.**
 
 The V1 pipeline keeps human approval as a mandatory control-plane gate. M10–M13 optimization decisions remain evidence-driven and reversible; experiments do not autonomously change production policy or publish content.
 
@@ -89,11 +89,20 @@ alembic upgrade head && python -m app telegram-poll
 
 Production secrets must be supplied through the deployment platform; do not commit .env or real API credentials.
 
-For the production configuration contract, failure handling, rollback rules, and M14 acceptance criteria, see:
+For current architecture, roadmap, failure history, and project decisions, see:
 
+- docs/CURRENT_ARCHITECTURE.md
+- docs/ROADMAP.md
+- docs/M0-M22_PROJECT_HISTORY.md
+- docs/PRODUCTION_SMOKE_HISTORY.md
+- docs/PROJECT_RULES_AND_DECISIONS.md
 - docs/M14_PRODUCTION_READINESS_AUDIT.md
 - docs/M14_FINAL_EXIT_AUDIT.md
 - docs/M13_EXIT_AUDIT.md
+
+## Current development state
+
+M22 is the current production-smoke baseline. The next implementation is **M23 — Narrative Intelligence**, starting with a conservative NarrativeRedundancyGate and prompt-level narrative progression rules. The repository `main` branch is the implementation source of truth; handoff documents preserve architecture, decisions, history, and roadmap.
 
 ## CI quality gate
 
@@ -106,7 +115,7 @@ Every production change is expected to pass:
 - PostgreSQL-backed pytest suite
 - Docker build
 
-The M14 exit verification reached **325 passing tests** with migration and Docker checks green.
+M22 established a manual production-smoke workflow that validates the real custom-short generation path. M23–M30 continue from this baseline with narrative quality, visual retrieval, real vision verification, visual variety, dynamic captions, motion, synchronization, and automated final-video judging.
 
 ## Troubleshooting
 
