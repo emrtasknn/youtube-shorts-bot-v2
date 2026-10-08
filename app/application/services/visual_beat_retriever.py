@@ -11,7 +11,7 @@ from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.visual_beat import VisualBeat
 from app.application.services.visual_beat_retrieval import to_visual_relevance_context
 from app.application.services.visual_candidate_pool import VisualCandidatePool
-from app.application.services.visual_query_expansion import VisualQueryExpander, VisualQueryVariant
+from app.application.services.visual_query_expansion import VisualQueryExpander
 from app.application.services.visual_semantic_verifier import (
     DeterministicVisualSemanticVerifier,
     VisualSemanticVerifier,
