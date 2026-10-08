@@ -174,7 +174,7 @@ class VisualVarietyEngine:
     @classmethod
     def _profile(cls, candidate: Any, *, subject_terms: tuple[str, ...]) -> VisualVarietyProfile:
         item = candidate.item if hasattr(candidate, "item") else candidate
-        provider = str(getattr(candidate, "provider", "") or item.get("_provider", ""))
+        provider_values = getattr(candidate, "providers", ())\n        provider = str(getattr(candidate, "provider", "") or (provider_values[0] if provider_values else "") or item.get("_provider", ""))
         return cls._profile_from_item(item, provider, subject_terms)
 
     @classmethod
