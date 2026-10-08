@@ -15,6 +15,8 @@ class VisualBeatRenderInput:
     path: Path
     duration_seconds: float
     beat_index: int
+    scene_index: int = 0
+    visual_timeline: VisualBeatTimeline | None = None
 
     def to_video_scene_input(
         self,
@@ -25,9 +27,9 @@ class VisualBeatRenderInput:
             duration_seconds=self.duration_seconds,
             is_image=self.path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"},
             motion=motion,
-            scene_index=self.beat_index,
+            scene_index=self.scene_index,
             beat_index=self.beat_index,
-            visual_timeline=None,
+            visual_timeline=self.visual_timeline,
         )
 
 
