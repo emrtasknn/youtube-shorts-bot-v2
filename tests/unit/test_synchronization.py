@@ -35,7 +35,7 @@ def test_synchronizer_builds_one_contiguous_timeline() -> None:
     assert result.total_duration_seconds == 6.5
     assert result.scenes[0].duration_seconds == 6.5
     assert result.scenes[0].beats[-1].end_seconds == 6.5
-    assert result.subtitle_cues[-1].end_seconds == 8.0
+    assert result.subtitle_cues[-1].end_seconds == 6.5
 
 
 def test_major_scene_drift_is_detected() -> None:
