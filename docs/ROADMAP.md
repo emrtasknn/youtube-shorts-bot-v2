@@ -47,7 +47,7 @@ Initial motions: zoom in/out, pan left/right/up/down, subtle push/pull.
 Selection uses scene purpose, duration and recent motion; normalized focus bounds keep motion conservative.
 Deliverables: deterministic CameraMotionEngine; bounded push/pull and pan variants; recent-motion de-prioritization; short-beat static fallback; typed motion propagation through VideoSceneInput; FFmpeg zoompan integration for still images; M28 camera-motion audit metadata; regression coverage for planning and render contracts.
 Exit: motion is bounded, deterministic, subject-safe within normalized focus constraints, and has a static fallback.
-Evidence: PR #133; final branch CI run #803 passed Static checks, Database/tests and Docker build. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
+Evidence: PR #133 merged as main commit `4d8258a12af3534c2e214f99c5fb8f020a8cd4ea`; final branch CI #803 and main CI #806 passed Static checks, Database/tests and Docker build. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
 
 ## M29 — Visual–Narration Synchronization
 Goal: unify narration, visual, caption and motion timing.
