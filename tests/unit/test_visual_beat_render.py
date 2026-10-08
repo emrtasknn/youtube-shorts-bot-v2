@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from app.application.services.camera_motion import CameraMotionPlan, CameraMotionType
 from app.application.services.scene_contract import build_scene_contract
 from app.application.services.visual_beat import VisualBeatCompiler
 from app.application.services.visual_beat_render import to_video_scene_inputs
@@ -50,3 +51,27 @@ def test_visual_beat_render_adapter_requires_one_asset_per_beat() -> None:
 
     with pytest.raises(ValueError, match="Beat asset count must match"):
         to_video_scene_inputs(timeline, (Path("/tmp/only-one.jpg"),))
+
+
+def test_visual_beat_render_adapter_attaches_motion_plans() -> None:
+    timeline = _timeline()
+    assets = tuple(Path(f"/tmp/beat-{index}.jpg") for index in range(len(timeline.beats)))
+    motions = tuple(
+        CameraMotionPlan(CameraMotionType.PUSH_IN, intensity=0.5) for _ in timeline.beats
+    )
+
+    inputs = to_video_scene_inputs(timeline, assets, motions)
+
+    assert tuple(item.motion for item in inputs) == motions
+
+
+def test_visual_beat_render_adapter_requires_one_motion_per_beat() -> None:
+    timeline = _timeline()
+    assets = tuple(Path(f"/tmp/beat-{index}.jpg") for index in range(len(timeline.beats)))
+
+    with pytest.raises(ValueError, match="Motion plan count must match"):
+        to_video_scene_inputs(
+            timeline,
+            assets,
+            (CameraMotionPlan(CameraMotionType.PUSH_IN, intensity=0.5),),
+        )

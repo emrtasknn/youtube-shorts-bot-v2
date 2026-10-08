@@ -16,6 +16,11 @@ from app.application.ports.video_engine import VideoEngine, VideoRenderRequest, 
 from app.application.services.audio_direction import AudioDirector
 from app.application.services.audio_quality import AudioQualityAnalyzer
 from app.application.services.autonomous_audio import AutonomousAudioPlanner
+from app.application.services.camera_motion import (
+    CameraMotionEngine,
+    CameraMotionPlan,
+    CameraMotionType,
+)
 from app.application.services.custom_short_support import parse_script, validate_output
 from app.application.services.event_memory import EventMemoryCandidate, EventMemoryService
 from app.application.services.experiment_persistence import ExperimentPersistenceService
@@ -99,6 +104,7 @@ class VisualBeatAssetSelection:
     timeline: VisualBeatTimeline
     paths: tuple[Path, ...]
     assets: tuple[AssetModel, ...]
+    motions: tuple[CameraMotionPlan, ...]
 
 
 class GenerateCustomShort:
@@ -227,15 +233,21 @@ class GenerateCustomShort:
                     scene_inputs = to_video_scene_inputs(
                         selection.timeline,
                         selection.paths,
+                        selection.motions,
                     )
                     assets = selection.assets
                 except Exception:
                     path, asset = await self._select_asset_scene_fallback(run, scene)
+                    fallback_motion = CameraMotionEngine().plan(
+                        purpose="support_narration",
+                        duration_seconds=float(scene.duration or 5),
+                    )
                     scene_inputs = (
                         VideoSceneInput(
                             path=path,
                             duration_seconds=float(scene.duration or 5),
                             is_image=True,
+                            motion=fallback_motion,
                         ),
                     )
                     assets = (asset,)
@@ -653,6 +665,19 @@ class GenerateCustomShort:
                 )
             )
 
+        motion_engine = CameraMotionEngine()
+        motions: list[CameraMotionPlan] = []
+        recent_motion: list[CameraMotionType] = []
+        for beat in timeline.beats:
+            motion = motion_engine.plan(
+                purpose=beat.purpose,
+                duration_seconds=beat.duration_seconds,
+                beat_index=beat.beat_index,
+                recent_motion=tuple(recent_motion[-2:]),
+            )
+            motions.append(motion)
+            recent_motion.append(motion.motion_type)
+
         paths: list[Path] = []
         assets: list[AssetModel] = []
         beautifier = VisualBeautifier()
@@ -713,6 +738,12 @@ class GenerateCustomShort:
                             "duration_seconds": result.beat.duration_seconds,
                             "beat_count": len(timeline.beats),
                         },
+                        "m28_camera_motion": {
+                            "motion_type": motions[result.beat.beat_index].motion_type.value,
+                            "intensity": motions[result.beat.beat_index].intensity,
+                            "focus_x": motions[result.beat.beat_index].focus_x,
+                            "focus_y": motions[result.beat.beat_index].focus_y,
+                        },
                         "m20_semantic_verification": {
                             "decision": result.verification_decision,
                             "overall": result.semantic_verification_score,
@@ -731,6 +762,7 @@ class GenerateCustomShort:
             timeline=timeline,
             paths=tuple(paths),
             assets=tuple(assets),
+            motions=tuple(motions),
         )
 
     async def _select_asset_scene_fallback(

@@ -4,12 +4,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
 
+from app.application.services.camera_motion import CameraMotionPlan
+
 
 @dataclass(frozen=True, slots=True)
 class VideoSceneInput:
     path: Path
     duration_seconds: float
     is_image: bool = False
+    motion: CameraMotionPlan | None = None
 
 
 @dataclass(frozen=True, slots=True)
