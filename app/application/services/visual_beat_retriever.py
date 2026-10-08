@@ -23,7 +23,8 @@ from app.application.services.visual_semantic_verifier import (
     VisualVerificationContext,
     to_visual_verification_context,
 )
-from app.application.services.visual_source_resolver import VisualSourceResolver\nfrom app.application.services.visual_variety import VisualVarietyEngine
+from app.application.services.visual_source_resolver import VisualSourceResolver
+from app.application.services.visual_variety import VisualVarietyEngine
 from app.application.use_cases.search_stock_media import SearchStockMedia
 from app.config.settings import get_settings
 
@@ -49,7 +50,10 @@ class VisualBeatRetrievalResult:
     query_trace: tuple[str, ...] = ()
     candidate_pool_size: int = 0
     candidate_queries: tuple[str, ...] = ()
-    candidate_providers: tuple[str, ...] = ()\n    variety_score: float = 1.0\n    variety_penalties: tuple[str, ...] = ()\n    variety_signals: tuple[str, ...] = ()
+    candidate_providers: tuple[str, ...] = ()
+    variety_score: float = 1.0
+    variety_penalties: tuple[str, ...] = ()
+    variety_signals: tuple[str, ...] = ()
 
 
 class VisualBeatRetriever:
@@ -88,7 +92,8 @@ class VisualBeatRetriever:
         self._query_expander = VisualQueryExpander()
         self._max_queries = max_queries
         self._max_candidates = max_candidates
-        self._candidates_per_query = candidates_per_query\n        self._variety = VisualVarietyEngine()
+        self._candidates_per_query = candidates_per_query
+        self._variety = VisualVarietyEngine()
 
     async def retrieve(
         self,
@@ -171,7 +176,11 @@ class VisualBeatRetriever:
         vision_shortlist = ranked_pool[:6]
         for entry in vision_shortlist:
             quality_result = self._quality_evaluator.evaluate(entry.score)
-            candidate_id = entry.asset_id or "unknown"\n            variety = self._variety.evaluate(\n                self._variety._profile(entry, subject_terms=beat.entities),\n                history=self._variety._history.get(run_id, []),\n            )
+            candidate_id = entry.asset_id or "unknown"
+            variety = self._variety.evaluate(
+                self._variety._profile(entry, subject_terms=beat.entities),
+                history=self._variety._history.get(run_id, []),
+            )
             if quality_result.decision.value == "reject":
                 attempts.append(f"pool:{candidate_id}:quality_reject")
                 continue
@@ -189,7 +198,7 @@ class VisualBeatRetriever:
                 attempts.append(f"pool:{candidate_id}:semantic_{verification.decision.value}")
                 continue
 
-            selected_query = entry.queries[0] if entry.queries else ""
+            self._variety.remember(\n                run_id=run_id,\n                item=dict(entry.item),\n                provider=entry.providers[0] if entry.providers else "unknown",\n                subject_terms=beat.entities,\n            )\n            selected_query = entry.queries[0] if entry.queries else ""
             selected_query_name = entry.query_names[0] if entry.query_names else "unknown"
             return VisualBeatRetrievalResult(
                 beat=beat,
@@ -211,7 +220,10 @@ class VisualBeatRetriever:
                 query_trace=tuple(query_trace),
                 candidate_pool_size=len(pool),
                 candidate_queries=entry.queries,
-                candidate_providers=entry.providers,\n                variety_score=variety.score,\n                variety_penalties=variety.penalties,\n                variety_signals=variety.signals,
+                candidate_providers=entry.providers,
+                variety_score=variety.score,
+                variety_penalties=variety.penalties,
+                variety_signals=variety.signals,
             )
 
         detail = "; ".join(attempts) or "no strategies executed"
