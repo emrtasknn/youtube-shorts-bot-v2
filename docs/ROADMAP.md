@@ -95,8 +95,24 @@ Exit: generate → render/QC → M30 Judge → RETRY → M31 plan → bounded re
 
 Evidence: PR #136; final branch CI passed Static checks, Database/tests and Docker build. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
 
+## M32 — Judge-Driven Retry Execution Engine — IN PROGRESS
+Goal: execute M31 retry plans against the real generation/render pipeline and re-judge the regenerated artifact.
+Deliverables:
+- JudgeDrivenRetryExecutionEngine
+- real targeted visual reselection
+- bounded audio repair and rerender
+- M29 timeline reconciliation on retry renders
+- automatic M30 re-judge after every retry
+- two-attempt execution budget with terminal escalation
+- retry execution audit metadata
+- regression coverage for success, exhaustion and no-op paths
+- M32 exit audit
+
+Exit: M30 RETRY → M31 plan → M32 actual execution → rerender/QC → M30 re-judge → PASS/PASS_WITH_WARNINGS or bounded escalation.
+Evidence will be recorded after final branch CI and merge. Production MP4 smoke/visual inspection remains subject to the available workflow dispatch limitation.
+
 ## Dependency
-M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31. M26 and M27 can partly run in parallel.
+M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32. M26 and M27 can partly run in parallel.
 
 ## Priority
 Tier 1: M23, M24, M25, M29, M30.
@@ -107,6 +123,6 @@ Tier 3: M28.
 Each milestone requires contract, implementation, unit tests, integration tests, failure tests, audit/observability, CI green, production smoke, actual MP4 inspection and documentation update.
 
 ## Final target
-Topic → Research → Story Plan → Script → Narrative QA → Scene Contract → Multi-query Retrieval → Quality → Real Vision → Variety → TTS → Dynamic Captions → Motion → Unified Sync → Render → Video Judge → Judge → Retry Orchestration → Retry/Pass → Telegram Approval → YouTube Publish.
+Topic → Research → Story Plan → Script → Narrative QA → Scene Contract → Multi-query Retrieval → Quality → Real Vision → Variety → TTS → Dynamic Captions → Motion → Unified Sync → Render → Video Judge → Judge → Retry Orchestration → Retry Execution → Re-judge → Retry/Pass → Telegram Approval → YouTube Publish.
 
 The target is a measurable, auditable, failure-tolerant, quality-controlled short-form video production system.
