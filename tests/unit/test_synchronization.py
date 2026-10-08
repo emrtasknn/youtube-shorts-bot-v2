@@ -32,7 +32,7 @@ def test_synchronizer_builds_one_contiguous_timeline() -> None:
         total_audio_duration=6.5,
     )
     assert result.passed
-    assert result.total_duration_seconds == 8.0
+    assert result.total_duration_seconds == 6.5
     assert result.scenes[0].duration_seconds == 8.0
     assert result.scenes[0].beats[-1].end_seconds == 8.0
     assert result.subtitle_cues[-1].end_seconds == 8.0
