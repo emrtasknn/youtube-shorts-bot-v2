@@ -4,6 +4,10 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Protocol
 
+from app.application.services.adaptive_retry_policy import (
+    AdaptiveRetryPolicy,
+    RetryEffectivenessObservation,
+)
 from app.application.services.retry_orchestrator import (
     JudgeDrivenRetryOrchestrator,
     RetryAction,
@@ -50,9 +54,11 @@ class JudgeDrivenRetryExecutionEngine:
         *,
         orchestrator: JudgeDrivenRetryOrchestrator | None = None,
         executor: RetryAttemptExecutor | Callable[..., Awaitable[VideoJudgeReport]],
+        policy: AdaptiveRetryPolicy | None = None,
     ) -> None:
         self._orchestrator = orchestrator or JudgeDrivenRetryOrchestrator(max_attempts=2)
         self._executor = executor
+        self._policy = policy or AdaptiveRetryPolicy()
 
     async def execute(
         self,
@@ -61,6 +67,7 @@ class JudgeDrivenRetryExecutionEngine:
         attempt: int = 1,
     ) -> RetryExecutionResult:
         history: list[RetryExecutionAttempt] = []
+        observations: list[RetryEffectivenessObservation] = []
         current = report
         current_attempt = attempt
 
@@ -78,20 +85,35 @@ class JudgeDrivenRetryExecutionEngine:
                     terminal_reason=plan.terminal_reason,
                 )
 
+            adaptive = self._policy.adapt(
+                plan,
+                observations=tuple(observations),
+            )
+            next_plan_actions = adaptive.actions
+
             next_attempt = current_attempt + 1
             history.append(
                 RetryExecutionAttempt(
                     attempt=next_attempt,
-                    actions=plan.actions,
+                    actions=next_plan_actions,
                     reasons=plan.reasons,
                     decision=current.decision,
                     score=current.score,
                 )
             )
             current = await self._execute_attempt(
-                plan.actions,
+                next_plan_actions,
                 next_attempt,
             )
+            observations.append(
+                self._policy.observe(
+                    previous=report,
+                    current=current,
+                    actions=next_plan_actions,
+                    attempt=next_attempt,
+                )
+            )
+            report = current
             current_attempt = next_attempt
 
         return RetryExecutionResult(
