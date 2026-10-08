@@ -77,7 +77,9 @@ class VisualVarietyEngine:
             )
         ]
 
-    def profile(self, candidate: Any, *, subject_terms: tuple[str, ...] = ()) -> VisualVarietyProfile:
+    def profile(
+        self, candidate: Any, *, subject_terms: tuple[str, ...] = ()
+    ) -> VisualVarietyProfile:
         return self._profile(candidate, subject_terms=subject_terms)
 
     def history(self, run_id: str) -> list[VisualVarietyProfile]:
