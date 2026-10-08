@@ -213,7 +213,7 @@ Deliverables:
 
 Exit: a retry intervention and eligible provider can be ranked together from measured quality/reliability/cost evidence without bypassing existing health, circuit-breaker, retry-budget or checkpoint safeguards.
 
-Evidence: implementation and focused regression coverage added on branch `feat/m38-unified-optimization`; final CI and merge evidence to be recorded after PR validation.
+Evidence: PR #143 merged to main as commit `2ced7a5186ba209b4d37570ada38519e79d3e3a5`. No completed green main workflow was exposed at final verification; green CI is not claimed. Production provider/MP4 smoke remains dependent on the unavailable production-smoke dispatch path.
 
 ## Dependency
 M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32 → M33 → M34 → M35 → M36 → M37 → M38. M26 and M27 can partly run in parallel.
