@@ -69,11 +69,6 @@ class RetryEconomicsPolicy:
 
         ranked = tuple(sorted(scored, key=lambda item: (-item.efficiency, item.estimated_cost)))
         actions = tuple(item.action for item in ranked)
-        targeted = {
-            RetryAction.RESELECT_VISUALS,
-            RetryAction.REPAIR_AUDIO,
-            RetryAction.RECONCILE_TIMELINE,
-        }
         preserved = tuple(
             action for action in (
                 RetryAction.RESELECT_VISUALS,
