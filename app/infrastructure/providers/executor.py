@@ -22,6 +22,7 @@ from app.infrastructure.providers.reliability import (
     StrategyRouter,
 )
 from app.infrastructure.providers.telemetry import ReliabilityTelemetry
+from app.infrastructure.providers.production_telemetry import ProductionProviderTelemetryStore
 
 
 @dataclass(slots=True)
@@ -36,6 +37,7 @@ class ReliabilityExecutor:
     costs: CostTracker
     router: StrategyRouter
     telemetry: ReliabilityTelemetry = field(default_factory=ReliabilityTelemetry)
+    production_telemetry: ProductionProviderTelemetryStore | None = None
 
     async def execute(
         self,
@@ -62,6 +64,12 @@ class ReliabilityExecutor:
         attempted: set[str] = set()
         last_error: ProviderError | None = None
         performance_history: list[ProviderPerformanceObservation] = list(historical_performance)
+        if self.production_telemetry is not None:
+            durable = self.production_telemetry.load(
+                capability=request.capability.value,
+                operation=request.operation,
+            )
+            performance_history = list(durable.observations) + performance_history
 
         while len(attempted) < len(providers):
             provider_name = self.router.route(
@@ -152,6 +160,10 @@ class ReliabilityExecutor:
                             "request_id": request.request_id,
                             "attempt": attempt,
                             "latency_ms": latency_ms,
+                            "cost": float(result.cost),
+                            "quality_score": _quality_score(result.metadata),
+                            "capability": request.capability.value,
+                            "operation": request.operation,
                         },
                         run_id=request.run_id,
                     )
@@ -191,6 +203,9 @@ class ReliabilityExecutor:
                             "request_id": request.request_id,
                             "attempt": attempt,
                             "error_code": error.code,
+                            "capability": request.capability.value,
+                            "operation": request.operation,
+                            "latency_ms": 0,
                             "category": error.category.value,
                         },
                         run_id=request.run_id,
