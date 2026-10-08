@@ -4,6 +4,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.application.ports.stock_media import StockMediaGateway, StockMediaStrategy
+from app.application.services.real_vision_verifier import (
+    CostAwareVisionVerifier,
+    GeminiVisionSemanticVerifier,
+    VisionVerificationConfig,
+)
 from app.application.services.scene_contract import SceneContract
 from app.application.services.stock_media_quality import StockMediaQualityEvaluator
 from app.application.services.stock_media_scoring import StockMediaScorer
@@ -12,11 +17,6 @@ from app.application.services.visual_beat import VisualBeat
 from app.application.services.visual_beat_retrieval import to_visual_relevance_context
 from app.application.services.visual_candidate_pool import VisualCandidatePool
 from app.application.services.visual_query_expansion import VisualQueryExpander
-from app.application.services.real_vision_verifier import (
-    CostAwareVisionVerifier,
-    GeminiVisionSemanticVerifier,
-    VisionVerificationConfig,
-)
 from app.application.services.visual_semantic_verifier import (
     DeterministicVisualSemanticVerifier,
     VisualSemanticVerifier,
@@ -24,9 +24,8 @@ from app.application.services.visual_semantic_verifier import (
     to_visual_verification_context,
 )
 from app.application.services.visual_source_resolver import VisualSourceResolver
-from app.config.settings import get_settings
 from app.application.use_cases.search_stock_media import SearchStockMedia
-
+from app.config.settings import get_settings
 
 @dataclass(frozen=True, slots=True)
 class VisualBeatRetrievalResult:
