@@ -52,6 +52,8 @@ class VisualVarietyEngine:
         subject_terms: tuple[str, ...] = (),
     ) -> list[Any]:
         history = self._history.setdefault(run_id, [])
+        if not history:
+            return list(candidates)
         scored = [
             (
                 self.evaluate(
