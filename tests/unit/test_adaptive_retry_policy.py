@@ -4,7 +4,11 @@ import pytest
 
 from app.application.services.adaptive_retry_policy import AdaptiveRetryPolicy
 from app.application.services.retry_execution_engine import JudgeDrivenRetryExecutionEngine
-from app.application.services.retry_orchestrator import RetryAction, RetryPlan
+from app.application.services.retry_orchestrator import (
+    JudgeDrivenRetryOrchestrator,
+    RetryAction,
+    RetryPlan,
+)
 from app.application.services.video_judge import VideoJudgeReport
 
 
@@ -103,10 +107,7 @@ async def test_engine_records_effectiveness_and_changes_next_action() -> None:
 
     executor = AdaptiveExecutor()
     engine = JudgeDrivenRetryExecutionEngine(
-        orchestrator=__import__(
-            "app.application.services.retry_orchestrator",
-            fromlist=["JudgeDrivenRetryOrchestrator"],
-        ).JudgeDrivenRetryOrchestrator(max_attempts=3),
+        orchestrator=JudgeDrivenRetryOrchestrator(max_attempts=3),
         executor=executor,
     )
     result = await engine.execute(
