@@ -34,7 +34,9 @@ class VisualQueryExpander:
     """Builds a bounded, deterministic query portfolio from one SceneContract."""
 
     def expand(self, scene: SceneContract) -> VisualQueryPlan:
-        entity = next((value.strip() for value in scene.entities if value.strip()), scene.subject.strip())
+        entity = next(
+            (value.strip() for value in scene.entities if value.strip()), scene.subject.strip()
+        )
         action = scene.action.strip()
         location = scene.location.strip()
         era = scene.era.strip()
