@@ -160,13 +160,28 @@ Exit: M30 RETRY → M31 plan → M32 execution → M30 re-judge → M33 effectiv
 
 Evidence: PR #139; final branch CI run #868 passed Static checks, Database/tests (464 passed) and Docker build. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
 
+## M36 — Retry Outcome Learning — COMPLETE
+Goal: learn from historical retry outcomes without making causal claims from bundled interventions.
+
+Deliverables:
+- isolated action-level retry outcome evidence model
+- minimum-sample protection for learned signals
+- recency-weighted success rate and quality-gain estimation
+- confidence-bounded learning multiplier for retry economics
+- historical effectiveness input accepted by the retry execution/economics path
+- conservative exclusion of bundled and non-targeted regeneration evidence
+- regression coverage for cold start, sparse evidence, recency weighting and learned ranking
+- M36 exit audit
+
+Exit: historical retry telemetry influences action ranking only when isolated evidence is sufficient; bundled observations remain bundle-level evidence; cold-start and sparse-data behavior falls back to deterministic M34/M35 economics.
+
+Evidence: PR pending merge; production MP4 smoke/visual inspection remains dependent on a workflow dispatch path that is not currently exposed.
+
 ## Dependency
-M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32 → M33. M26 and M27 can partly run in parallel.
+M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32 → M33 → M34 → M35 → M36. M26 and M27 can partly run in parallel.
 
 ## Priority
-Tier 1: M23, M24, M25, M29, M30.
-Tier 2: M26, M27.
-Tier 3: M28.
+Current execution focus: M36 → M37 → M38 → M39 → M40 → M41 → M42.
 
 ## Definition of Done
 Each milestone requires contract, implementation, unit tests, integration tests, failure tests, audit/observability, CI green, production smoke, actual MP4 inspection and documentation update.
