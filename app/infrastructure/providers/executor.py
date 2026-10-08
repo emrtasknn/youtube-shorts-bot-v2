@@ -42,6 +42,7 @@ class ReliabilityExecutor:
         request: ProviderRequest,
         candidates: list[str] | None = None,
         quota_key: str | None = None,
+        historical_performance: tuple[ProviderPerformanceObservation, ...] = (),
     ) -> ProviderResult:
         key = request.idempotency_key
         if key:
@@ -60,7 +61,7 @@ class ReliabilityExecutor:
         providers = candidates or [request.provider]
         attempted: set[str] = set()
         last_error: ProviderError | None = None
-        performance_history: list[ProviderPerformanceObservation] = []
+        performance_history: list[ProviderPerformanceObservation] = list(historical_performance)
 
         while len(attempted) < len(providers):
             provider_name = self.router.route(
