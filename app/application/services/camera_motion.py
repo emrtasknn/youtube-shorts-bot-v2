@@ -85,8 +85,7 @@ class CameraMotionEngine:
             ),
         )
         ordered = tuple(
-            options[(beat_index + offset) % len(options)]
-            for offset in range(len(options))
+            options[(beat_index + offset) % len(options)] for offset in range(len(options))
         )
         selected = next(
             (motion for motion in ordered if motion.value not in normalized_recent),
