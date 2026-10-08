@@ -89,3 +89,42 @@ def test_economics_preserves_untouched_targeted_actions() -> None:
 
     assert RetryAction.RESELECT_VISUALS in decision.preserved_actions
     assert RetryAction.RECONCILE_TIMELINE in decision.preserved_actions
+
+
+def test_economics_uses_historical_isolated_learning() -> None:
+    from app.application.services.adaptive_retry_policy import RetryEffectivenessObservation
+
+    policy = RetryEconomicsPolicy()
+    plan = RetryPlan(
+        attempt=1,
+        max_attempts=3,
+        actions=(RetryAction.REPAIR_AUDIO, RetryAction.RESELECT_VISUALS),
+        reasons=("audio_qc_failed",),
+        retryable=True,
+    )
+    history = tuple(
+        RetryEffectivenessObservation(
+            attempt=index,
+            actions=(RetryAction.REPAIR_AUDIO,),
+            before_score=60.0,
+            after_score=75.0,
+            score_delta=15.0,
+            improved=True,
+            dimension_deltas={"audio": 15.0},
+            duration_seconds=2.0,
+        )
+        for index in (1, 2)
+    )
+
+    decision = policy.rank(
+        plan,
+        report=_report(
+            score=65.0,
+            reasons=("audio_qc_failed",),
+            dimensions={"audio": 60.0, "visual": 95.0},
+        ),
+        historical_observations=history,
+    )
+
+    assert "historical_learning" in decision.reason
+    assert decision.rankings[0].expected_gain >= decision.rankings[1].expected_gain

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from app.application.services.adaptive_retry_policy import RetryEffectivenessObservation
 from app.application.services.retry_cost_calibration import RetryCostCalibration, RetryCostObservation
 from app.application.services.retry_orchestrator import RetryAction, RetryPlan
+from app.application.services.retry_outcome_learning import RetryOutcomeLearning, RetryOutcomeObservation
 from app.application.services.video_judge import VideoJudgeReport
 
 
@@ -42,6 +43,7 @@ class RetryEconomicsPolicy:
 
     def __init__(self, *, cost_calibration: RetryCostCalibration | None = None) -> None:
         self._cost_calibration = cost_calibration or RetryCostCalibration()
+        self._outcome_learning = RetryOutcomeLearning()
 
     def rank(
         self,
@@ -49,15 +51,18 @@ class RetryEconomicsPolicy:
         *,
         report: VideoJudgeReport,
         observations: tuple[RetryEffectivenessObservation, ...] = (),
+        historical_observations: tuple[RetryEffectivenessObservation, ...] = (),
     ) -> RetryEconomicsDecision:
         if not plan.actions:
             return RetryEconomicsDecision((), (), (), "no_retry_actions")
 
         costs = self._calibrated_costs(observations)
+        learned = self._learned_outcomes(historical_observations)
         scored: list[RetryActionEconomics] = []
         for action in plan.actions:
             cost = costs[action]
             gain = self._expected_gain(action, plan, report, observations)
+            gain *= self._outcome_learning.expected_gain_multiplier(action, learned=learned)
             efficiency = round(gain / cost, 4) if cost else gain
             scored.append(
                 RetryActionEconomics(
@@ -79,17 +84,45 @@ class RetryEconomicsPolicy:
             )
             if action not in actions
         )
-        reason = (
-            "ranked_by_measured_gain_per_cost"
-            if any(observation.duration_seconds > 0 for observation in observations)
-            else "ranked_by_expected_gain_per_cost"
-        )
+        measured = any(observation.duration_seconds > 0 for observation in observations)
+        learned_signal = any(evidence.usable for evidence in learned.values())
+        if learned_signal and measured:
+            reason = "ranked_by_measured_gain_per_cost_with_historical_learning"
+        elif learned_signal:
+            reason = "ranked_by_historical_learning_and_expected_gain_per_cost"
+        elif measured:
+            reason = "ranked_by_measured_gain_per_cost"
+        else:
+            reason = "ranked_by_expected_gain_per_cost"
         return RetryEconomicsDecision(
             actions=actions,
             rankings=ranked,
             preserved_actions=preserved,
             reason=reason,
         )
+
+    def _learned_outcomes(
+        self,
+        observations: tuple[RetryEffectivenessObservation, ...],
+    ) -> dict[RetryAction, object]:
+        isolated = tuple(
+            RetryOutcomeObservation(
+                sequence=index,
+                action=observation.actions[0],
+                score_delta=observation.score_delta,
+                duration_seconds=max(0.0, observation.duration_seconds),
+                improved=observation.improved,
+            )
+            for index, observation in enumerate(observations, start=1)
+            if len(observation.actions) == 1
+            and observation.actions[0]
+            in {
+                RetryAction.RESELECT_VISUALS,
+                RetryAction.REPAIR_AUDIO,
+                RetryAction.RECONCILE_TIMELINE,
+            }
+        )
+        return self._outcome_learning.learn(isolated)
 
     def _calibrated_costs(
         self,
