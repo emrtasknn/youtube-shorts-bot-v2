@@ -56,11 +56,27 @@ Deliverables: UnifiedTimeline; synchronized scene/beat start/end times; proporti
 Exit: major timing drift is detected automatically, minor drift is reconciled without gaps/overlaps, caption cues remain inside the visual timeline, and one authoritative timeline drives final render durations.
 Evidence: PR #134; final branch CI run #809 passed Static checks, Database/tests (443 passed) and Docker build. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
 
-## M30 — Automated Video Judge
+## M30 — Automated Video Judge — COMPLETE
 Goal: machine-check final video quality before Telegram approval.
 Dimensions: technical, narrative, visual, audio, captions, synchronization and product quality.
 Decisions: PASS, PASS_WITH_WARNINGS, RETRY, REJECT.
-Exit: generate → judge → accept/retry/reject works end-to-end.
+
+Deliverables:
+- deterministic AutomatedVideoJudge
+- seven-dimension quality scoring
+- blocking failure detection
+- PASS / PASS_WITH_WARNINGS / RETRY / REJECT decision policy
+- M29 synchronization evidence consumption
+- audio QC evidence consumption
+- visual fallback coverage signal
+- auditable QC stage metadata
+- explicit retryable/permanent run-state routing before Telegram approval
+- regression coverage for all decision classes
+- M30 exit audit
+
+Exit: generate → render/QC → judge → PASS/PASS_WITH_WARNINGS → Telegram approval, or RETRY → FAILED_RETRYABLE, or REJECT → FAILED_PERMANENT.
+
+Evidence: PR #135; final branch CI run #835 passed Static checks, Database/tests and Docker build. Database/tests result: 449 passed. Production MP4 smoke/visual inspection was not dispatched because the available workflow does not expose a production-smoke dispatch path; this remains an explicit validation caveat.
 
 ## Dependency
 M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30. M26 and M27 can partly run in parallel.
