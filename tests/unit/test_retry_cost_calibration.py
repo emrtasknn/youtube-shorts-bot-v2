@@ -21,7 +21,7 @@ def test_calibration_preserves_base_cost_without_enough_samples() -> None:
     assert result[RetryAction.REPAIR_AUDIO] == 1.5
 
 
-def test_calibration_uses_measured_duration_after_minimum_samples() -> None:
+def test_calibration_uses_relative_measured_duration() -> None:
     calibration = RetryCostCalibration(minimum_samples=2, smoothing=1.0)
     result = calibration.calibrate(
         (
@@ -32,11 +32,15 @@ def test_calibration_uses_measured_duration_after_minimum_samples() -> None:
             ),
             RetryCostObservation(
                 attempt=3,
-                actions=(RetryAction.REPAIR_AUDIO,),
+                actions=(RetryAction.REGENERATE_VIDEO,),
                 duration_seconds=3.0,
             ),
         ),
-        base_costs={RetryAction.REPAIR_AUDIO: 1.5},
+        base_costs={
+            RetryAction.REPAIR_AUDIO: 1.5,
+            RetryAction.REGENERATE_VIDEO: 2.5,
+        },
     )
 
-    assert result[RetryAction.REPAIR_AUDIO] == 1.5
+    assert result[RetryAction.REPAIR_AUDIO] == 0.75
+    assert result[RetryAction.REGENERATE_VIDEO] == 3.75
