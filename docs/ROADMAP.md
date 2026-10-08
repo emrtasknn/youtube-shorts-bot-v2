@@ -230,7 +230,7 @@ Deliverables:
 
 Exit: provider learning can consume persisted production evidence across process restarts without bypassing circuit breakers, health checks, retry budgets or bounded learning.
 
-Evidence: implementation added on branch `feat/m39-production-telemetry-learning`; final CI and merge evidence to be recorded after PR validation.
+Evidence: PR #144 merged to main as commit `43f9143a657cd1bc5177becadedaba0554c3fc07`. No completed green CI conclusion was exposed at final verification; green CI is not claimed. Production MP4 smoke remains dependent on the unavailable production-smoke dispatch path.
 
 ## Dependency
 M23 → M24 → M25; M25 branches to M26 and M27; M26/M27 converge at M28/M29; M29 → M30 → M31 → M32 → M33 → M34 → M35 → M36 → M37 → M38. M26 and M27 can partly run in parallel.
