@@ -41,7 +41,11 @@ from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.topic_selection_production_adapter import (
     TopicSelectionProductionAdapter,
 )
-from app.application.services.video_judge import AutomatedVideoJudge, VideoJudgeInput, VideoJudgeReport
+from app.application.services.video_judge import (
+    AutomatedVideoJudge,
+    VideoJudgeInput,
+    VideoJudgeReport,
+)
 from app.application.services.visual_beat import VisualBeatCompiler, VisualBeatTimeline
 from app.application.services.visual_beat_render import to_video_scene_inputs
 from app.application.services.visual_beat_retriever import VisualBeatRetriever
