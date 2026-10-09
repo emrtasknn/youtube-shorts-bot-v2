@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -17,7 +16,10 @@ from app.application.services.stock_media_selector import StockMediaSelector
 from app.application.services.visual_beat import VisualBeat
 from app.application.services.visual_beat_retrieval import to_visual_relevance_context
 from app.application.services.visual_candidate_pool import VisualCandidatePool
-from app.application.services.visual_query_expansion import VisualQueryExpander
+from app.application.services.visual_query_expansion import (
+    VisualQueryExpander,
+    looks_historical_era,
+)
 from app.application.services.visual_semantic_verifier import (
     DeterministicVisualSemanticVerifier,
     VisualSemanticVerifier,
@@ -55,15 +57,6 @@ class VisualBeatRetrievalResult:
     variety_score: float = 1.0
     variety_penalties: tuple[str, ...] = ()
     variety_signals: tuple[str, ...] = ()
-
-
-def _looks_historical(era: str) -> bool:
-    return bool(
-        re.search(
-            r"\b(?:\d{3,4}|ancient|medieval|roman|soviet|century|bc|ad)\b",
-            era.lower(),
-        )
-    )
 
 
 class VisualBeatRetriever:
@@ -133,7 +126,7 @@ class VisualBeatRetriever:
 
         query_plan = self._query_expander.expand(scene)
         variants = query_plan.bounded_variants[: self._max_queries]
-        historical = _looks_historical(beat.era)
+        historical = looks_historical_era(beat.era)
         provider_candidates = ("wikimedia_commons",) if historical else None
         strategies = [
             StockMediaStrategy(

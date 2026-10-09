@@ -75,7 +75,7 @@ def test_historical_query_expansion_prefers_subject_specific_archival_searches()
             "action": "exploding",
             "entities": ["Chernobyl Reactor 4"],
             "location": "Chernobyl",
-            "era": "1986",
+            "era": "1980s",
             "visual_intent": "nuclear disaster",
             "visual_style": "documentary",
             "must_show": ["reactor structure", "explosion plume"],

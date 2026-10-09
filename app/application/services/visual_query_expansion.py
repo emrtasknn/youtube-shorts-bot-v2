@@ -30,6 +30,17 @@ class VisualQueryPlan:
         return self.variants[: self.max_queries]
 
 
+def looks_historical_era(era: str) -> bool:
+    """Recognize years, decade labels (for example 1980s), and historical eras."""
+    normalized = era.lower()
+    return bool(
+        re.search(
+            r"\b(?:\d{3,4}s?|ancient|medieval|roman|soviet|century|bc|ad)\b",
+            normalized,
+        )
+    )
+
+
 class VisualQueryExpander:
     """Builds a bounded, deterministic query portfolio from one SceneContract."""
 
@@ -84,10 +95,7 @@ class VisualQueryExpander:
 
     @staticmethod
     def _looks_historical(era: str) -> bool:
-        normalized = era.lower()
-        return bool(
-            re.search(r"\b(?:\d{3,4}|ancient|medieval|roman|soviet|century|bc|ad)\b", normalized)
-        )
+        return looks_historical_era(era)
 
     @staticmethod
     def _normalize(value: str) -> str:
