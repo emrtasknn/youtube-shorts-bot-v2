@@ -168,4 +168,21 @@ class HookEngine:
         normalized = re.sub(r"\s+", " ", topic.strip())
         if not normalized:
             raise ValueError("Hook fallback topic must not be empty")
-        return f"What really happened with {normalized}?"
+
+        # Prefer the topic's title before its explanatory subtitle/sentence. This
+        # avoids turning a long workflow topic into an overlong fallback hook.
+        topic_head = re.split(r"[:.!?;\n]", normalized, maxsplit=1)[0].strip(" ,—-")
+        if not topic_head:
+            topic_head = normalized
+        topic_words = topic_head.split()
+
+        # Keep the fallback within the same word-count contract as generated hooks.
+        # The standard prefix is four words, leaving the remaining budget for topic.
+        topic_budget = max(1, self._max_words - 4)
+        compact_topic = " ".join(topic_words[:topic_budget]).strip(" ,—-")
+        hook = f"What really happened with {compact_topic}?"
+
+        if len(hook.split()) > self._max_words:
+            # Defensive path for non-default short limits.
+            hook = f"Why {compact_topic}?"
+        return hook
