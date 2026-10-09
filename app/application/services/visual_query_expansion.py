@@ -41,6 +41,7 @@ class VisualQueryExpander:
         location = scene.location.strip()
         era = scene.era.strip()
 
+        candidates: tuple[tuple[str, str, int], ...]
         if self._looks_historical(era):
             candidates = (
                 ("primary", scene.visual_query.strip(), 100),
