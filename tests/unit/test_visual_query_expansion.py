@@ -64,7 +64,6 @@ def test_query_expander_is_bounded_and_deduplicates_empty_variants() -> None:
     )
 
 
-
 def test_historical_query_expansion_prefers_subject_specific_archival_searches() -> None:
     scene = build_scene_contract(
         {
