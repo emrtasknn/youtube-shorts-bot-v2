@@ -638,6 +638,7 @@ class GenerateCustomShort:
                             "terminal_reason": retry_result.terminal_reason,
                             "final_decision": judge.decision,
                         },
+                        "visual_fallback_diagnostics": list(visual_fallback_diagnostics),
                         "m33_adaptive_retry": {
                             "effectiveness": [
                                 {
