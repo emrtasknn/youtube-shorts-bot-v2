@@ -61,8 +61,7 @@ class RetryCostCalibration:
             measured_ratio = median(action_durations) / baseline
             measured_cost = max(0.25, min(10.0, base_costs[action] * measured_ratio))
             calibrated[action] = round(
-                base_costs[action] * (1.0 - self._smoothing)
-                + measured_cost * self._smoothing,
+                base_costs[action] * (1.0 - self._smoothing) + measured_cost * self._smoothing,
                 4,
             )
         return calibrated
