@@ -39,3 +39,17 @@ def test_engine_fallback_creates_question_hook() -> None:
 
     assert hook == "What really happened with The Mary Celeste mystery?"
     assert HookEngine().ensure_acceptable(hook).hook_type == "unanswered_question"
+
+
+def test_engine_fallback_shortens_long_topic_to_title() -> None:
+    topic = (
+        "The 1986 Chernobyl disaster: how a failed safety test and reactor "
+        "design flaws led to the explosion of Reactor 4 and the evacuation of Pripyat."
+    )
+
+    hook = HookEngine().fallback(topic)
+    evaluation = HookEngine().ensure_acceptable(hook)
+
+    assert hook == "What really happened with The 1986 Chernobyl disaster?"
+    assert evaluation.word_count <= 18
+    assert evaluation.hook_type == "unanswered_question"
