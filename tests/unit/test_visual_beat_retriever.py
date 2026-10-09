@@ -127,7 +127,7 @@ def _build_beat(era: str = "ancient Rome"):
             "action": "expanding",
             "entities": ["Rome", "Roman Empire"],
             "location": "Mediterranean",
-            "era": "ancient Rome",
+            "era": era,
             "visual_intent": "territorial expansion",
             "visual_style": "documentary",
             "must_show": ["Roman territory"],
