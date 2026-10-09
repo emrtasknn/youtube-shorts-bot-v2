@@ -209,6 +209,7 @@ class GenerateCustomShort:
         self._session.flush()
         try:
             fallback_asset_count = 0
+            visual_fallback_diagnostics: list[dict[str, object]] = []
             run.status = RunStatus.QUEUED
             run.status = RunStatus.RUNNING
             run.status = RunStatus.RESEARCHING
@@ -237,16 +238,26 @@ class GenerateCustomShort:
             inputs: list[VideoSceneInput] = []
             for scene in scenes:
                 try:
-                    selection = await self._select_visual_beats(run, scene)
+                    selection = await self._select_visual_beats(run, scene, retrieval_attempt=1)
                     scene_inputs = to_video_scene_inputs(
                         selection.timeline,
                         selection.paths,
                         selection.motions,
                     )
                     assets = selection.assets
-                except Exception:
+                except Exception as exc:
                     fallback_asset_count += 1
-                    path, asset = await self._select_asset_scene_fallback(run, scene)
+                    visual_fallback_diagnostics.append(
+                        {
+                            "scene_index": scene.scene_index,
+                            "attempt": 1,
+                            "error_type": type(exc).__name__,
+                            "error": str(exc)[:1200],
+                        }
+                    )
+                    path, asset = await self._select_asset_scene_fallback(
+                        run, scene, retrieval_attempt=1
+                    )
                     fallback_duration = float(scene.duration or 5)
                     fallback_contract = build_scene_contract(
                         {
@@ -437,6 +448,7 @@ class GenerateCustomShort:
                         "retry_reasons": list(judge.retry_reasons),
                         "evaluated_path": judge.evaluated_path,
                         "fallback_asset_count": fallback_asset_count,
+                        "fallback_diagnostics": list(visual_fallback_diagnostics),
                     },
                     "audio_qc": {
                         "passed": audio_qc.passed,
@@ -473,13 +485,16 @@ class GenerateCustomShort:
                     attempt: int,
                 ) -> VideoJudgeReport:
                     nonlocal inputs, fallback_asset_count, background_volume, render
+                    nonlocal visual_fallback_diagnostics
 
                     if RetryAction.RESELECT_VISUALS in actions:
                         refreshed_inputs: list[VideoSceneInput] = []
                         refreshed_fallbacks = 0
                         for scene in scenes:
                             try:
-                                selection = await self._select_visual_beats(run, scene)
+                                selection = await self._select_visual_beats(
+                                    run, scene, retrieval_attempt=attempt
+                                )
                                 refreshed_inputs.extend(
                                     to_video_scene_inputs(
                                         selection.timeline,
@@ -489,11 +504,20 @@ class GenerateCustomShort:
                                 )
                                 for asset in selection.assets:
                                     self._session.add(asset)
-                            except Exception:
+                            except Exception as exc:
                                 refreshed_fallbacks += 1
+                                visual_fallback_diagnostics.append(
+                                    {
+                                        "scene_index": scene.scene_index,
+                                        "attempt": attempt,
+                                        "error_type": type(exc).__name__,
+                                        "error": str(exc)[:1200],
+                                    }
+                                )
                                 path, asset = await self._select_asset_scene_fallback(
                                     run,
                                     scene,
+                                    retrieval_attempt=attempt,
                                 )
                                 fallback_duration = float(scene.duration or 5)
                                 fallback_contract = build_scene_contract(
@@ -618,6 +642,7 @@ class GenerateCustomShort:
                             "terminal_reason": retry_result.terminal_reason,
                             "final_decision": judge.decision,
                         },
+                        "visual_fallback_diagnostics": list(visual_fallback_diagnostics),
                         "m33_adaptive_retry": {
                             "effectiveness": [
                                 {
@@ -999,6 +1024,8 @@ class GenerateCustomShort:
         self,
         run: RunModel,
         scene: SceneModel,
+        *,
+        retrieval_attempt: int = 1,
     ) -> VisualBeatAssetSelection:
         scene_contract = build_scene_contract(
             {
@@ -1028,7 +1055,10 @@ class GenerateCustomShort:
             results.append(
                 await retriever.retrieve(
                     run_id=str(run.id),
-                    request_id=f"{run.id}:scene:{scene.scene_index}:beat:{beat.beat_index}",
+                    request_id=(
+                        f"{run.id}:scene:{scene.scene_index}:attempt:{retrieval_attempt}:"
+                        f"beat:{beat.beat_index}"
+                    ),
                     beat=beat,
                 )
             )
@@ -1137,6 +1167,8 @@ class GenerateCustomShort:
         self,
         run: RunModel,
         scene: SceneModel,
+        *,
+        retrieval_attempt: int = 1,
     ) -> tuple[Path, AssetModel]:
         scene_contract = build_scene_contract(
             {
@@ -1175,7 +1207,7 @@ class GenerateCustomShort:
             self._stock_media
         ).execute_strategy_until_selected(
             run_id=str(run.id),
-            request_id=f"{run.id}:scene:{scene.scene_index}",
+            request_id=(f"{run.id}:scene:{scene.scene_index}:fallback:attempt:{retrieval_attempt}"),
             strategies=strategies,
             selector=StockMediaSelector(StockMediaScorer()),
             relevance_context=VisualRelevanceContext.from_scene(scene_contract),

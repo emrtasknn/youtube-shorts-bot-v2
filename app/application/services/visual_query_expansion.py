@@ -41,14 +41,24 @@ class VisualQueryExpander:
         location = scene.location.strip()
         era = scene.era.strip()
 
-        candidates = (
-            ("primary", scene.visual_query.strip(), 100),
-            ("entity_action", self._join(entity, action), 90),
-            ("entity_context", self._join(entity, location or era), 80),
-            ("goal_context", self._join(scene.visual_goal.strip(), location or era), 70),
-            ("contextual", self._join(location, era, "historical documentary"), 50),
-            ("goal", scene.visual_goal.strip(), 40),
-        )
+        candidates: tuple[tuple[str, str, int], ...]
+        if self._looks_historical(era):
+            candidates = (
+                ("primary", scene.visual_query.strip(), 100),
+                ("entity_action", self._join(entity, action), 90),
+                ("entity_context", self._join(entity, location or era), 80),
+                ("archive_subject", self._join(entity, location, era, "archival photograph"), 70),
+                ("archive_context", self._join(entity, location, "historical archive image"), 50),
+            )
+        else:
+            candidates = (
+                ("primary", scene.visual_query.strip(), 100),
+                ("entity_action", self._join(entity, action), 90),
+                ("entity_context", self._join(entity, location or era), 80),
+                ("goal_context", self._join(scene.visual_goal.strip(), location or era), 70),
+                ("contextual", self._join(location, era, "documentary photograph"), 50),
+                ("goal", scene.visual_goal.strip(), 40),
+            )
 
         variants: list[VisualQueryVariant] = []
         seen: set[str] = set()
@@ -71,6 +81,13 @@ class VisualQueryExpander:
     @staticmethod
     def _join(*parts: str) -> str:
         return " ".join(part for part in parts if part).strip()
+
+    @staticmethod
+    def _looks_historical(era: str) -> bool:
+        normalized = era.lower()
+        return bool(
+            re.search(r"\b(?:\d{3,4}|ancient|medieval|roman|soviet|century|bc|ad)\b", normalized)
+        )
 
     @staticmethod
     def _normalize(value: str) -> str:

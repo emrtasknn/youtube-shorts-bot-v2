@@ -24,8 +24,10 @@ def test_resolver_returns_stock_plan_without_calling_provider() -> None:
 
     assert plan.kind == "stock"
     assert plan.exact_query == "Roman Forum ancient Rome ruins"
-    assert "ancient Rome historical illustration" in plan.broader_queries
-    assert "historical illustration" in plan.broader_queries
+    assert any("archival photograph" in query for query in plan.broader_queries)
+    assert any("historical photograph" in query for query in plan.broader_queries)
+    assert all("Roman Forum" in query for query in plan.broader_queries)
+    assert "historical illustration" not in plan.broader_queries
     assert plan.reason == "stock_selected_with_explicit_must_show_constraints"
 
 
@@ -40,7 +42,10 @@ def test_resolver_deduplicates_broader_queries() -> None:
 
     plan = VisualSourceResolver().resolve(scene)
 
-    assert plan.broader_queries == ("historical illustration",)
+    assert plan.broader_queries == (
+        "historical illustration",
+        "Roman Forum ancient Rome ruins documentary photograph",
+    )
 
 
 def test_resolver_rejects_empty_visual_query() -> None:

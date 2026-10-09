@@ -22,7 +22,7 @@ class FakeRetriever:
         return SimpleNamespace(
             beat=beat,
             provider="fake",
-            query=f"query-{beat.beat_index}",
+            query=f"{request_id}:query-{beat.beat_index}",
             item={
                 "id": f"asset-{beat.beat_index}",
                 "download_url": f"https://example.com/{beat.beat_index}.jpg",
@@ -126,3 +126,20 @@ async def test_select_visual_beats_preserves_timed_render_contract(
         ["exact:asset-0:accepted"],
         ["exact:asset-1:accepted"],
     ]
+
+
+@pytest.mark.asyncio
+async def test_visual_retry_uses_fresh_request_ids(
+    service: GenerateCustomShort,
+) -> None:
+    run = SimpleNamespace(id="run-1")
+    scene = make_scene()
+
+    first = await service._select_visual_beats(run, scene, retrieval_attempt=1)
+    retry = await service._select_visual_beats(run, scene, retrieval_attempt=2)
+
+    first_query = first.assets[0].asset_metadata["query"]
+    retry_query = retry.assets[0].asset_metadata["query"]
+    assert "attempt:1" in first_query
+    assert "attempt:2" in retry_query
+    assert first_query != retry_query

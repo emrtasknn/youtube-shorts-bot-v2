@@ -29,8 +29,8 @@ def test_query_expander_creates_primary_entity_action_and_context_queries() -> N
         "primary",
         "entity_action",
         "entity_context",
-        "goal_context",
-        "contextual",
+        "archive_subject",
+        "archive_context",
     ]
     assert plan.bounded_variants[0].query == "Roman Empire Mediterranean expansion"
     assert "expanding" in plan.bounded_variants[1].query
@@ -62,3 +62,29 @@ def test_query_expander_is_bounded_and_deduplicates_empty_variants() -> None:
     assert len({variant.query.lower() for variant in plan.bounded_variants}) == len(
         plan.bounded_variants
     )
+
+
+def test_historical_query_expansion_prefers_subject_specific_archival_searches() -> None:
+    scene = build_scene_contract(
+        {
+            "narration": "The reactor exploded at Chernobyl in 1986.",
+            "visual_goal": "Show the Chernobyl Reactor 4 explosion",
+            "visual_query": "Chernobyl Reactor 4 explosion radiation plume 1986",
+            "purpose": "event",
+            "subject": "Chernobyl Reactor 4 explosion",
+            "action": "exploding",
+            "entities": ["Chernobyl Reactor 4"],
+            "location": "Chernobyl",
+            "era": "1986",
+            "visual_intent": "nuclear disaster",
+            "visual_style": "documentary",
+            "must_show": ["reactor structure", "explosion plume"],
+            "must_avoid": ["modern industrial equipment"],
+        }
+    )
+
+    queries = VisualQueryExpander().expand(scene).bounded_variants
+
+    assert any("archival photograph" in item.query for item in queries)
+    assert all("Chernobyl" in item.query for item in queries)
+    assert not any(item.query == "historical illustration" for item in queries)
