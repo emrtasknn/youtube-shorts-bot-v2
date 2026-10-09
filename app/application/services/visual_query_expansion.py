@@ -42,7 +42,7 @@ def looks_historical_era(era: str) -> bool:
 
 
 class VisualQueryExpander:
-    """Builds a bounded, deterministic query portfolio from one SceneContract."""
+    """Build a bounded, scene-specific query portfolio for asset retrieval."""
 
     def expand(self, scene: SceneContract) -> VisualQueryPlan:
         entity = next(
@@ -51,15 +51,20 @@ class VisualQueryExpander:
         action = scene.action.strip()
         location = scene.location.strip()
         era = scene.era.strip()
+        must_show = self._join(*scene.must_show)
 
         candidates: tuple[tuple[str, str, int], ...]
         if self._looks_historical(era):
+            # Historic archives often index images by the visible object, not by
+            # the narration's abstract event. Give must_show its own search slot.
+            # Keep one archival query, but spend the remaining budget on the
+            # concrete subject/action/context rather than near-duplicate archive terms.
             candidates = (
                 ("primary", scene.visual_query.strip(), 100),
-                ("entity_action", self._join(entity, action), 90),
+                ("must_show", self._join(must_show, entity, location, era), 95),
+                ("entity_action", self._join(entity, action, location, era), 90),
                 ("entity_context", self._join(entity, location or era), 80),
                 ("archive_subject", self._join(entity, location, era, "archival photograph"), 70),
-                ("archive_context", self._join(entity, location, "historical archive image"), 50),
             )
         else:
             candidates = (
@@ -83,7 +88,7 @@ class VisualQueryExpander:
                     name=name,
                     query=query,
                     priority=priority,
-                    min_relevance=0.10 if name != "contextual" else 0.08,
+                    min_relevance=0.08 if name in {"contextual", "must_show"} else 0.10,
                 )
             )
 
