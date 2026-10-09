@@ -800,7 +800,7 @@ class GenerateCustomShort:
             repair_instruction = ""
             if repair_failures:
                 repair_instruction = (
-                    "\\n\\nCORRECTION REQUIRED — the previous draft failed deterministic checks. "
+                    "\n\nCORRECTION REQUIRED — the previous draft failed deterministic checks. "
                     "Regenerate the complete JSON from scratch and fix every listed failure. "
                     "Do not merely explain the failures. Preserve factual accuracy and visual specificity. "
                     "For scene coverage, map the complete body across the scene narrations in chronological order; "
