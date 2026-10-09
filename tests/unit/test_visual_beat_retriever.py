@@ -419,6 +419,7 @@ async def test_visual_beat_retriever_falls_back_after_semantic_verifier_error() 
     assert result.item["id"] == "accepted"
     assert retriever._semantic_verifier.verify.call_count == 2
 
+
 @pytest.mark.asyncio
 async def test_historical_scene_routes_to_wikimedia_commons_without_portrait_filter() -> None:
     search = Mock()
