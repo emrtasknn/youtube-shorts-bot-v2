@@ -115,9 +115,7 @@ class WikimediaCommonsProvider:
                 code=f"HTTP_{response.status_code}",
                 category=ErrorCategory.INVALID_REQUEST,
                 provider=self.name,
-                message=(
-                    f"Wikimedia Commons API returned HTTP {response.status_code}{detail}"
-                ),
+                message=(f"Wikimedia Commons API returned HTTP {response.status_code}{detail}"),
                 status_code=response.status_code,
             )
 
