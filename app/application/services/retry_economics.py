@@ -9,6 +9,7 @@ from app.application.services.retry_cost_calibration import (
 )
 from app.application.services.retry_orchestrator import RetryAction, RetryPlan
 from app.application.services.retry_outcome_learning import (
+    RetryActionLearning,
     RetryOutcomeLearning,
     RetryOutcomeObservation,
 )
@@ -110,7 +111,7 @@ class RetryEconomicsPolicy:
     def _learned_outcomes(
         self,
         observations: tuple[RetryEffectivenessObservation, ...],
-    ) -> dict[RetryAction, object]:
+    ) -> dict[RetryAction, RetryActionLearning]:
         isolated = tuple(
             RetryOutcomeObservation(
                 sequence=index,
