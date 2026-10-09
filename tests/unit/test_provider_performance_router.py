@@ -18,12 +18,15 @@ def test_router_uses_learned_provider_performance_without_breaking_order() -> No
         ProviderPerformanceObservation(2, "fast", "TTS", "synthesize", True, 500),
     )
 
-    assert router.route(
-        ["slow", "fast"],
-        observations=observations,
-        capability="TTS",
-        operation="synthesize",
-    ) == "fast"
+    assert (
+        router.route(
+            ["slow", "fast"],
+            observations=observations,
+            capability="TTS",
+            operation="synthesize",
+        )
+        == "fast"
+    )
 
 
 def test_router_falls_back_to_declared_order_without_learning() -> None:
