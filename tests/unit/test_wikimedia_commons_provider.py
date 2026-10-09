@@ -47,7 +47,9 @@ async def test_search_photos_normalizes_commons_metadata_and_license() -> None:
                                         "ImageDescription": {"value": "Reactor 4 at Chernobyl"},
                                         "Artist": {"value": "Example photographer"},
                                         "LicenseShortName": {"value": "CC BY-SA 4.0"},
-                                        "LicenseUrl": {"value": "https://creativecommons.org/licenses/by-sa/4.0/"},
+                                        "LicenseUrl": {
+                                            "value": "https://creativecommons.org/licenses/by-sa/4.0/"
+                                        },
                                     },
                                 }
                             ],
