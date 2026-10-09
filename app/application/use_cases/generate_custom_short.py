@@ -807,16 +807,13 @@ class GenerateCustomShort:
                     "ensure the total narration word count is at least the body word count. "
                     "Set the first scene purpose to exactly 'hook' and the final scene purpose to exactly 'payoff'. "
                     "If duration is too long, shorten hook/body/CTA to fit the target while keeping the scene narrations "
-                    "aligned with the shortened body. Failures: "
-                    + "; ".join(repair_failures)
+                    "aligned with the shortened body. Failures: " + "; ".join(repair_failures)
                 )
             result = await self._text.generate(
                 TextGenerationRequest(
                     run_id=str(run.id),
                     request_id=(
-                        f"{run.id}:script"
-                        if attempt == 0
-                        else f"{run.id}:script:repair:{attempt}"
+                        f"{run.id}:script" if attempt == 0 else f"{run.id}:script:repair:{attempt}"
                     ),
                     prompt=base_prompt + repair_instruction,
                     system_instruction="Return valid JSON only, with no markdown fences.",
