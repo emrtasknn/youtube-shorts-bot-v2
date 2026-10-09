@@ -22,18 +22,19 @@ def _scene():
     )
 
 
-def test_query_expander_creates_primary_entity_action_and_context_queries() -> None:
+def test_query_expander_creates_primary_must_show_action_and_context_queries() -> None:
     plan = VisualQueryExpander().expand(_scene())
 
     assert [variant.name for variant in plan.bounded_variants] == [
         "primary",
+        "must_show",
         "entity_action",
         "entity_context",
         "archive_subject",
-        "archive_context",
     ]
     assert plan.bounded_variants[0].query == "Roman Empire Mediterranean expansion"
-    assert "expanding" in plan.bounded_variants[1].query
+    assert "Roman territory" in plan.bounded_variants[1].query
+    assert "expanding" in plan.bounded_variants[2].query
     assert all(variant.query.strip() for variant in plan.bounded_variants)
     assert len({variant.query.lower() for variant in plan.bounded_variants}) == 5
 
@@ -64,7 +65,7 @@ def test_query_expander_is_bounded_and_deduplicates_empty_variants() -> None:
     )
 
 
-def test_historical_query_expansion_prefers_subject_specific_archival_searches() -> None:
+def test_historical_query_expansion_prioritizes_concrete_must_show_and_archive_searches() -> None:
     scene = build_scene_contract(
         {
             "narration": "The reactor exploded at Chernobyl in 1986.",
@@ -85,6 +86,9 @@ def test_historical_query_expansion_prefers_subject_specific_archival_searches()
 
     queries = VisualQueryExpander().expand(scene).bounded_variants
 
+    assert queries[1].name == "must_show"
+    assert "reactor structure" in queries[1].query
+    assert "explosion plume" in queries[1].query
     assert any("archival photograph" in item.query for item in queries)
     assert all("Chernobyl" in item.query for item in queries)
     assert not any(item.query == "historical illustration" for item in queries)
