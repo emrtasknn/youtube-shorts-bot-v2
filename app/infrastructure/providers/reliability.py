@@ -321,10 +321,11 @@ class StrategyRouter:
         if not eligible:
             raise FallbackExhausted("No eligible provider remains")
 
-        if self.performance_learning is None or not observations:
+        performance_learning = self.performance_learning
+        if performance_learning is None or not observations:
             return eligible[0]
 
-        learned = self.performance_learning.learn(
+        learned = performance_learning.learn(
             observations,
             capability=capability,
             operation=operation,
@@ -332,7 +333,7 @@ class StrategyRouter:
         ranked = sorted(
             enumerate(eligible),
             key=lambda item: (
-                -self.performance_learning.ranking_score(item[1], learned=learned),
+                -performance_learning.ranking_score(item[1], learned=learned),
                 item[0],
             ),
         )
