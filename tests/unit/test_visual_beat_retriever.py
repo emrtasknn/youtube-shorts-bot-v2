@@ -56,7 +56,7 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
             "action": "expanding",
             "entities": ["Rome", "Roman Empire"],
             "location": "Mediterranean",
-            "era": "ancient Rome",
+            "era": era,
             "visual_intent": "territorial expansion",
             "visual_style": "documentary",
             "must_show": ["Roman territory"],
@@ -116,7 +116,7 @@ def _verification(decision: VisualVerificationDecision) -> VisualVerificationRes
     )
 
 
-def _build_beat():
+def _build_beat(era: str = "ancient Rome"):
     scene = build_scene_contract(
         {
             "narration": "Rome expanded across the Mediterranean.",
@@ -433,7 +433,7 @@ async def test_historical_scene_routes_to_wikimedia_commons_without_portrait_fil
         await retriever.retrieve(
             run_id="run-historical",
             request_id="request-historical",
-            beat=_build_beat(),
+            beat=_build_beat(era="1980s"),
         )
 
     calls = search.execute_strategy.await_args_list
