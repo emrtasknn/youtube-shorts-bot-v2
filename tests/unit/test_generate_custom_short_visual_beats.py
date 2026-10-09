@@ -128,7 +128,6 @@ async def test_select_visual_beats_preserves_timed_render_contract(
     ]
 
 
-
 @pytest.mark.asyncio
 async def test_visual_retry_uses_fresh_request_ids(
     service: GenerateCustomShort,
