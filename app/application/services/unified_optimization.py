@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from statistics import median
 
+from app.application.services.adaptive_retry_policy import RetryEffectivenessObservation
 from app.application.services.provider_performance_learning import (
     ProviderPerformance,
     ProviderPerformanceLearning,
@@ -76,8 +77,8 @@ class UnifiedOptimization:
         providers: tuple[str, ...] = (),
         provider_observations: tuple[ProviderPerformanceObservation, ...] = (),
         provider_cost_observations: tuple[ProviderCostObservation, ...] = (),
-        retry_observations=(),
-        historical_retry_observations=(),
+        retry_observations: tuple[RetryEffectivenessObservation, ...] = (),
+        historical_retry_observations: tuple[RetryEffectivenessObservation, ...] = (),
         capability: str | None = None,
         operation: str | None = None,
     ) -> tuple[UnifiedDecision, ...]:
