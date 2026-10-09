@@ -1,14 +1,20 @@
 from app.config.settings import Settings
+from app.infrastructure.providers.contracts import (
+    ProviderCapability,
+    ProviderDescriptor,
+)
 from app.infrastructure.providers.fish_audio import FishAudioTTSProvider
 from app.infrastructure.providers.gemini import GeminiTextProvider
 from app.infrastructure.providers.groq import GroqTextProvider
 from app.infrastructure.providers.pexels import PexelsStockMediaProvider
 from app.infrastructure.providers.registry import ProviderRegistry
+from app.infrastructure.providers.wikimedia_commons import WikimediaCommonsProvider
 
 
 def build_provider_registry(settings: Settings) -> ProviderRegistry:
     registry = ProviderRegistry()
 
+    # Pexels remains the primary general-purpose stock source when configured.
     if settings.pexels_enabled and settings.pexels_api_key:
         registry.register(
             PexelsStockMediaProvider(
@@ -17,6 +23,16 @@ def build_provider_registry(settings: Settings) -> ProviderRegistry:
                 timeout_seconds=settings.pexels_timeout_seconds,
             )
         )
+
+    # Commons is public and keyless; retrieval selects it explicitly for archives.
+    registry.register(
+        WikimediaCommonsProvider(timeout_seconds=settings.wikimedia_commons_timeout_seconds),
+        descriptor=ProviderDescriptor(
+            "wikimedia_commons",
+            frozenset({ProviderCapability.STOCK_MEDIA}),
+            priority=10,
+        ),
+    )
 
     if settings.gemini_enabled and settings.gemini_api_key:
         registry.register(
