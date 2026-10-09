@@ -85,7 +85,7 @@ class VisualQueryExpander:
     def _looks_historical(era: str) -> bool:
         normalized = era.lower()
         return bool(
-            re.search(r"\\b(?:\\d{3,4}|ancient|medieval|roman|soviet|century|bc|ad)\\b", normalized)
+            re.search(r"\b(?:\d{3,4}|ancient|medieval|roman|soviet|century|bc|ad)\b", normalized)
         )
 
     @staticmethod
