@@ -65,8 +65,14 @@ def test_store_reconstructs_performance_and_cost_evidence():
 
 def test_store_filters_provider_and_ignores_incomplete_events():
     events = [
-        _Event("provider.success", "fast", {"capability": "TTS", "operation": "synthesize", "cost": 1}),
-        _Event("provider.success", "slow", {"capability": "IMAGE_SEARCH", "operation": "search", "cost": 1}),
+        _Event(
+            "provider.success", "fast", {"capability": "TTS", "operation": "synthesize", "cost": 1}
+        ),
+        _Event(
+            "provider.success",
+            "slow",
+            {"capability": "IMAGE_SEARCH", "operation": "search", "cost": 1},
+        ),
     ]
     telemetry = ProductionProviderTelemetryStore(_Session(events)).load(
         capability="IMAGE_SEARCH",
