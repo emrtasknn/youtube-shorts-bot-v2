@@ -53,7 +53,7 @@ class WikimediaCommonsProvider:
 
         per_page = min(50, max(1, int(request.payload.get("per_page", 15))))
         page = max(1, int(request.payload.get("page", 1)))
-        params = {
+        params: dict[str, str | int] = {
             "action": "query",
             "generator": "search",
             "gsrsearch": f"filetype:bitmap {query}",
