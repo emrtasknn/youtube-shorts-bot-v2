@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -54,6 +55,15 @@ class VisualBeatRetrievalResult:
     variety_score: float = 1.0
     variety_penalties: tuple[str, ...] = ()
     variety_signals: tuple[str, ...] = ()
+
+
+def _looks_historical(era: str) -> bool:
+    return bool(
+        re.search(
+            r"\b(?:\d{3,4}|ancient|medieval|roman|soviet|century|bc|ad)\b",
+            era.lower(),
+        )
+    )
 
 
 class VisualBeatRetriever:
@@ -123,12 +133,15 @@ class VisualBeatRetriever:
 
         query_plan = self._query_expander.expand(scene)
         variants = query_plan.bounded_variants[: self._max_queries]
+        historical = _looks_historical(beat.era)
+        provider_candidates = ("wikimedia_commons",) if historical else None
         strategies = [
             StockMediaStrategy(
                 name=variant.name,
                 query=variant.query,
                 operation="search_photos",
-                orientation="portrait",
+                orientation=None if historical else "portrait",
+                provider_candidates=provider_candidates,
                 min_relevance=variant.min_relevance,
             )
             for variant in variants
