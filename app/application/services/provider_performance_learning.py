@@ -76,14 +76,14 @@ class ProviderPerformanceLearning:
             )
             latencies = [item.latency_ms for item in items if item.latency_ms > 0]
             quality_items = [
-                (item, weight)
-                for item, weight in weighted
-                if item.quality_score is not None
+                (item, weight) for item, weight in weighted if item.quality_score is not None
             ]
             quality_weight_sum = sum(weight for _, weight in quality_items)
             quality = (
-                sum(weight * max(0.0, min(100.0, item.quality_score or 0.0))
-                    for item, weight in quality_items)
+                sum(
+                    weight * max(0.0, min(100.0, item.quality_score or 0.0))
+                    for item, weight in quality_items
+                )
                 / quality_weight_sum
                 if quality_weight_sum
                 else None
@@ -116,7 +116,9 @@ class ProviderPerformanceLearning:
             else 0.5
         )
         reliability = evidence.success_rate
-        effectiveness = (1.0 - self._quality_weight) * reliability + self._quality_weight * quality_signal
+        effectiveness = (
+            1.0 - self._quality_weight
+        ) * reliability + self._quality_weight * quality_signal
         latency_penalty = 1.0 / (1.0 + max(0.0, evidence.median_latency_ms) / 5000.0)
         raw = 0.5 + effectiveness * latency_penalty
         multiplier = 1.0 + (min(1.5, max(0.5, raw)) - 1.0) * evidence.confidence
