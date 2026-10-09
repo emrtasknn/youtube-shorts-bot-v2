@@ -888,11 +888,14 @@ class GenerateCustomShort:
             return candidate_data, event_candidate, report
 
         data, event_candidate, completeness_report = await generate_candidate(attempt=0)
+        initial_completeness_failures = completeness_report.failures
+        script_generation_attempts = 1
         if not completeness_report.passed:
             # One bounded correction attempt prevents endless generation loops and repeated cost.
+            script_generation_attempts = 2
             data, event_candidate, completeness_report = await generate_candidate(
                 attempt=1,
-                repair_failures=completeness_report.failures,
+                repair_failures=initial_completeness_failures,
             )
         completeness_report.raise_if_failed()
         narrative_report = NarrativeRedundancyGate().evaluate(data)
@@ -912,6 +915,16 @@ class GenerateCustomShort:
                     "failures": list(narrative_report.failures),
                     "max_similarity": narrative_report.max_similarity,
                     "compared_pairs": narrative_report.compared_pairs,
+                    "script_completeness": {
+                        "passed": completeness_report.passed,
+                        "generation_attempts": script_generation_attempts,
+                        "initial_failures": list(initial_completeness_failures),
+                        "final_failures": list(completeness_report.failures),
+                        "body_word_count": completeness_report.body_word_count,
+                        "scene_narration_word_count": completeness_report.narration_word_count,
+                        "estimated_speech_seconds": completeness_report.estimated_speech_seconds,
+                        "scene_duration_seconds": completeness_report.scene_duration_seconds,
+                    },
                 },
             )
         )
