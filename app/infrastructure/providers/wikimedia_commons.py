@@ -26,7 +26,7 @@ class WikimediaCommonsProvider:
         *,
         base_url: str = "https://commons.wikimedia.org/w/api.php",
         timeout_seconds: float = 30.0,
-        user_agent: str = "YouTubeShortsBotV2/1.0 (historical visual retrieval)",
+        user_agent: str = "YouTubeShortsBotV2/1.0 (https://github.com/emrtasknn/youtube-shorts-bot-v2; contact: emretkn48@gmail.com)",
         client: httpx.AsyncClient | None = None,
     ) -> None:
         self._base_url = base_url
@@ -107,11 +107,17 @@ class WikimediaCommonsProvider:
                 status_code=response.status_code,
             )
         if not 200 <= response.status_code < 300:
+            # Preserve a short response excerpt: Wikimedia and edge proxies often
+            # explain 403 blocks in the body, while the status alone is ambiguous.
+            body_excerpt = " ".join(response.text.split())[:240]
+            detail = f": {body_excerpt}" if body_excerpt else ""
             raise ProviderError(
                 code=f"HTTP_{response.status_code}",
                 category=ErrorCategory.INVALID_REQUEST,
                 provider=self.name,
-                message=f"Wikimedia Commons API returned HTTP {response.status_code}",
+                message=(
+                    f"Wikimedia Commons API returned HTTP {response.status_code}{detail}"
+                ),
                 status_code=response.status_code,
             )
 
