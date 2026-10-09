@@ -56,7 +56,7 @@ async def test_visual_beat_retriever_routes_through_existing_m17_search() -> Non
             "action": "expanding",
             "entities": ["Rome", "Roman Empire"],
             "location": "Mediterranean",
-            "era": era,
+            "era": "ancient Rome",
             "visual_intent": "territorial expansion",
             "visual_style": "documentary",
             "must_show": ["Roman territory"],
