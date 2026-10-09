@@ -42,7 +42,6 @@ class WikimediaCommonsProvider:
                 provider=self.name,
                 message=f"Unsupported Wikimedia Commons operation: {request.operation}",
             )
-
         query = str(request.payload.get("query", "")).strip()
         if not query:
             raise ProviderError(
@@ -99,11 +98,9 @@ class WikimediaCommonsProvider:
         if response.status_code == 429 or response.status_code >= 500:
             raise ProviderError(
                 code=f"HTTP_{response.status_code}",
-                category=(
-                    ErrorCategory.RATE_LIMITED
-                    if response.status_code == 429
-                    else ErrorCategory.TRANSIENT
-                ),
+                category=ErrorCategory.RATE_LIMITED
+                if response.status_code == 429
+                else ErrorCategory.TRANSIENT,
                 provider=self.name,
                 message=f"Wikimedia Commons API returned HTTP {response.status_code}",
                 retryable=True,
