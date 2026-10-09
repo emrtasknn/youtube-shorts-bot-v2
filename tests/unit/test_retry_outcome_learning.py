@@ -20,10 +20,13 @@ def test_learning_requires_minimum_isolated_samples() -> None:
     )
 
     assert learned[RetryAction.REPAIR_AUDIO].usable is False
-    assert learner.expected_gain_multiplier(
-        RetryAction.REPAIR_AUDIO,
-        learned=learned,
-    ) == 1.0
+    assert (
+        learner.expected_gain_multiplier(
+            RetryAction.REPAIR_AUDIO,
+            learned=learned,
+        )
+        == 1.0
+    )
 
 
 def test_learning_uses_recency_weighted_success_and_gain() -> None:
@@ -111,7 +114,10 @@ def test_learning_neutralizes_sparse_or_weak_evidence() -> None:
     evidence = learned[RetryAction.RESELECT_VISUALS]
     assert evidence.usable
     assert evidence.success_rate == 0.0
-    assert learner.expected_gain_multiplier(
-        RetryAction.RESELECT_VISUALS,
-        learned=learned,
-    ) == 0.5
+    assert (
+        learner.expected_gain_multiplier(
+            RetryAction.RESELECT_VISUALS,
+            learned=learned,
+        )
+        == 0.5
+    )

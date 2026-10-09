@@ -185,3 +185,59 @@ def test_gate_uses_scene_narration_for_scene_timing():
     report = ScriptCompletenessGate().evaluate(payload)
     assert report.passed is True
     assert not any("scene duration" in failure for failure in report.failures)
+
+
+def test_gate_rejects_storyboard_when_first_scene_is_not_hook():
+    payload = _payload(
+        scenes=[
+            {
+                "narration": "In 1927 audiences heard synchronized dialogue.",
+                "purpose": "context",
+                "duration": 5,
+            },
+            {
+                "narration": (
+                    "The breakthrough changed how studios made movies and pushed silent films aside. "
+                    "Studios rushed to adapt and audiences discovered a new kind of cinema."
+                ),
+                "purpose": "event",
+                "duration": 10,
+            },
+            {
+                "narration": "The change transformed movie history forever.",
+                "purpose": "payoff",
+                "duration": 5,
+            },
+        ]
+    )
+    report = ScriptCompletenessGate().evaluate(payload)
+    assert report.passed is False
+    assert "first scene must be the hook beat" in report.failures
+
+
+def test_gate_rejects_storyboard_without_payoff_final_scene():
+    payload = _payload(
+        scenes=[
+            {
+                "narration": "A shocking fact happened.",
+                "purpose": "hook",
+                "duration": 4,
+            },
+            {
+                "narration": (
+                    "In 1927 Hollywood audiences heard synchronized dialogue for the first time. "
+                    "The breakthrough changed how studios made movies and quickly pushed silent films aside."
+                ),
+                "purpose": "event",
+                "duration": 10,
+            },
+            {
+                "narration": "Studios rushed to adapt and audiences discovered a new kind of cinema.",
+                "purpose": "consequence",
+                "duration": 6,
+            },
+        ]
+    )
+    report = ScriptCompletenessGate().evaluate(payload)
+    assert report.passed is False
+    assert "last scene must be the payoff beat" in report.failures

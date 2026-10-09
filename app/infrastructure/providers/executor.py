@@ -4,9 +4,10 @@ import sys
 from dataclasses import dataclass, field
 from time import perf_counter
 
-from app.domain.enums import EventSeverity
 from app.application.services.provider_performance_learning import ProviderPerformanceObservation
+from app.domain.enums import EventSeverity
 from app.infrastructure.providers.contracts import ProviderError, ProviderRequest, ProviderResult
+from app.infrastructure.providers.production_telemetry import ProductionProviderTelemetryStore
 from app.infrastructure.providers.registry import ProviderRegistry
 from app.infrastructure.providers.reliability import (
     ConcurrencyLimiter,
@@ -22,7 +23,6 @@ from app.infrastructure.providers.reliability import (
     StrategyRouter,
 )
 from app.infrastructure.providers.telemetry import ReliabilityTelemetry
-from app.infrastructure.providers.production_telemetry import ProductionProviderTelemetryStore
 
 
 @dataclass(slots=True)

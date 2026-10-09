@@ -756,101 +756,144 @@ class GenerateCustomShort:
                     f"{constraints} Optimization duration target: "
                     f"{optimization_override.duration_target_seconds:g} seconds."
                 )
-        result = await self._text.generate(
-            TextGenerationRequest(
-                run_id=str(run.id),
-                request_id=f"{run.id}:script",
-                prompt=(
-                    f"Create a {language} YouTube Short about: {topic}. "
-                    f"{constraints} Return JSON with hook, body, cta, "
-                    "duration_target, event_memory, scenes. For historical topics, "
-                    "event_memory must contain canonical_title, aliases, date, location, "
-                    "entities, event_summary, core_facts, claims, sources, and status. "
-                    "Use status NEW_EVENT when the event is believed to be new, KNOWN_EVENT "
-                    "when it is known, and UNCERTAIN when identity is unclear. "
-                    "For non-historical topics event_memory may be null. "
-                    "Each scene must contain duration, narration, "
-                    "visual_goal, visual_query, purpose, subject, action, entities, "
-                    "location, era, visual_intent, visual_style, must_show, and must_avoid. "
-                    "entities, must_show, and must_avoid must be JSON arrays of strings. "
-                    "must describe the exact subject shown on screen. For historical "
-                    "topics include concrete entities, location, event and era in "
-                    "visual_query when relevant; never use generic queries such as "
-                    "crowd or people when the narration names a specific place/event. "
-                    "Use concrete stock-photo or historical-illustration queries. "
-                    "The story must be complete, not a teaser or partial excerpt: body must be at least 35 words, "
-                    "end with a complete sentence, and reach a clear payoff. Scene narration must collectively "
-                    "cover the full body rather than summarize only its beginning. Use narrative purposes from "
-                    "hook, context, event, consequence, payoff; first scene must be hook and final scene must be payoff. "
-                    "Include at least three distinct narrative purposes. Never end a body or scene narration mid-sentence. "
-                    "The hook must be 4-18 words and strongly favor one of these types: shocking fact, unanswered question, impossible event, curiosity gap, contradiction.\n"
-                    "Narrative progression is mandatory: each sentence must add a new fact, consequence, mechanism, contrast, or payoff. "
-                    "Do not restate the hook in the first body sentence. Do not repeat an adjacent claim with superficial wording changes. "
-                    "If two sentences express the same claim, rewrite one so the story advances.\n"
-                    "Do not invent uncertain historical facts."
-                ),
-                system_instruction="Return valid JSON only, with no markdown fences.",
-                generation_config={
-                    "responseMimeType": "application/json",
-                    "maxOutputTokens": 6000,
-                    "thinkingConfig": {"thinkingLevel": "low"},
-                },
-            )
+        base_prompt = (
+            f"Create a {language} YouTube Short about: {topic}. "
+            f"{constraints} Return JSON with hook, body, cta, "
+            "duration_target, event_memory, scenes. For historical topics, "
+            "event_memory must contain canonical_title, aliases, date, location, "
+            "entities, event_summary, core_facts, claims, sources, and status. "
+            "Use status NEW_EVENT when the event is believed to be new, KNOWN_EVENT "
+            "when it is known, and UNCERTAIN when identity is unclear. "
+            "For non-historical topics event_memory may be null. "
+            "Each scene must contain duration, narration, "
+            "visual_goal, visual_query, purpose, subject, action, entities, "
+            "location, era, visual_intent, visual_style, must_show, and must_avoid. "
+            "entities, must_show, and must_avoid must be JSON arrays of strings. "
+            "must describe the exact subject shown on screen. For historical "
+            "topics include concrete entities, location, event and era in "
+            "visual_query when relevant; never use generic queries such as "
+            "crowd or people when the narration names a specific place/event. "
+            "Use concrete stock-photo or historical-illustration queries. "
+            "The story must be complete, not a teaser or partial excerpt: body must be at least 35 words, "
+            "end with a complete sentence, and reach a clear payoff. "
+            "Keep total spoken words in hook + body + cta appropriate for duration_target at about "
+            "2.5 words per second; do not exceed 1.3 times the target duration. "
+            "Scene narration must collectively cover the full body in the same story order, not just summarize "
+            "its beginning. Every important body fact and consequence must appear in at least one scene narration. "
+            "Paraphrasing is allowed, but do not omit body beats. The first scene purpose must be exactly hook "
+            "and its narration must deliver the hook beat; the final scene purpose must be exactly payoff and "
+            "its narration must deliver the ending. Use at least three distinct purposes from hook, context, "
+            "event, consequence, payoff. Never end a body or scene narration mid-sentence. "
+            "The hook must be 4-18 words and strongly favor one of these types: shocking fact, unanswered question, "
+            "impossible event, curiosity gap, contradiction.\n"
+            "Narrative progression is mandatory: each sentence must add a new fact, consequence, mechanism, contrast, or payoff. "
+            "Do not restate the hook in the first body sentence. Do not repeat an adjacent claim with superficial wording changes. "
+            "If two sentences express the same claim, rewrite one so the story advances.\n"
+            "Do not invent uncertain historical facts."
         )
-        data = parse_script(result.text)
-        event_candidate = None
-        event_memory_payload = data.get("event_memory")
-        if event_memory_payload is not None and not isinstance(event_memory_payload, dict):
-            raise ValueError("event_memory must be an object or null")
-        if isinstance(event_memory_payload, dict):
-            normalized_event_memory = dict(event_memory_payload)
-            normalized_event_memory.pop("event_id", None)
-            event_candidate = EventMemoryCandidate.from_payload(
-                normalized_event_memory,
-                fallback_title=topic,
-            )
-        hook_engine = HookEngine()
-        hook_evaluation = hook_engine.evaluate(str(data["hook"]))
-        if not hook_evaluation.is_acceptable:
-            data["hook"] = hook_engine.fallback(topic)
-            hook_engine.ensure_acceptable(str(data["hook"]))
 
-        effective_duration_target = (
-            experiment_override.duration_target_seconds
-            if experiment_override is not None
-            and experiment_override.duration_target_seconds is not None
-            else (
-                optimization_override.duration_target_seconds
-                if optimization_override is not None
-                and optimization_override.duration_target_seconds is not None
-                else decision_adapter.duration_target_seconds or data["duration_target"]
-            )
-        )
-        data["duration_target"] = float(effective_duration_target)
-
-        if isinstance(data.get("scenes"), list):
-            scenes = data["scenes"]
-            planned_durations = tuple(
-                float(scene.get("duration") or 6) for scene in scenes if isinstance(scene, dict)
-            )
-            narration_word_counts = tuple(
-                len(str(scene.get("narration") or "").split())
-                for scene in scenes
-                if isinstance(scene, dict)
-            )
-            if len(planned_durations) == len(scenes):
-                normalized_durations = SceneTimingAllocator().normalize_for_narration(
-                    planned_durations,
-                    narration_word_counts,
+        async def generate_candidate(
+            *,
+            attempt: int,
+            repair_failures: tuple[str, ...] = (),
+        ) -> tuple[dict[str, Any], EventMemoryCandidate | None, Any]:
+            repair_instruction = ""
+            if repair_failures:
+                repair_instruction = (
+                    "\n\nCORRECTION REQUIRED — the previous draft failed deterministic checks. "
+                    "Regenerate the complete JSON from scratch and fix every listed failure. "
+                    "Do not merely explain the failures. Preserve factual accuracy and visual specificity. "
+                    "For scene coverage, map the complete body across the scene narrations in chronological order; "
+                    "ensure the total narration word count is at least the body word count. "
+                    "Set the first scene purpose to exactly 'hook' and the final scene purpose to exactly 'payoff'. "
+                    "If duration is too long, shorten hook/body/CTA to fit the target while keeping the scene narrations "
+                    "aligned with the shortened body. Failures: " + "; ".join(repair_failures)
                 )
-                for scene, duration in zip(
-                    scenes,
-                    normalized_durations,
-                    strict=True,
-                ):
-                    scene["duration"] = duration
+            result = await self._text.generate(
+                TextGenerationRequest(
+                    run_id=str(run.id),
+                    request_id=(
+                        f"{run.id}:script" if attempt == 0 else f"{run.id}:script:repair:{attempt}"
+                    ),
+                    prompt=base_prompt + repair_instruction,
+                    system_instruction="Return valid JSON only, with no markdown fences.",
+                    generation_config={
+                        "responseMimeType": "application/json",
+                        "maxOutputTokens": 6000,
+                        "thinkingConfig": {"thinkingLevel": "low"},
+                    },
+                )
+            )
+            candidate_data = parse_script(result.text)
+            event_candidate = None
+            event_memory_payload = candidate_data.get("event_memory")
+            if event_memory_payload is not None and not isinstance(event_memory_payload, dict):
+                raise ValueError("event_memory must be an object or null")
+            if isinstance(event_memory_payload, dict):
+                normalized_event_memory = dict(event_memory_payload)
+                normalized_event_memory.pop("event_id", None)
+                event_candidate = EventMemoryCandidate.from_payload(
+                    normalized_event_memory,
+                    fallback_title=topic,
+                )
 
-        completeness_report = ScriptCompletenessGate().evaluate(data)
+            hook_engine = HookEngine()
+            hook_evaluation = hook_engine.evaluate(str(candidate_data["hook"]))
+            if not hook_evaluation.is_acceptable:
+                candidate_data["hook"] = hook_engine.fallback(topic)
+                hook_engine.ensure_acceptable(str(candidate_data["hook"]))
+
+            effective_duration_target = (
+                experiment_override.duration_target_seconds
+                if experiment_override is not None
+                and experiment_override.duration_target_seconds is not None
+                else (
+                    optimization_override.duration_target_seconds
+                    if optimization_override is not None
+                    and optimization_override.duration_target_seconds is not None
+                    else decision_adapter.duration_target_seconds
+                    or candidate_data["duration_target"]
+                )
+            )
+            candidate_data["duration_target"] = float(effective_duration_target)
+
+            if isinstance(candidate_data.get("scenes"), list):
+                candidate_scenes = candidate_data["scenes"]
+                planned_durations = tuple(
+                    float(scene.get("duration") or 6)
+                    for scene in candidate_scenes
+                    if isinstance(scene, dict)
+                )
+                narration_word_counts = tuple(
+                    len(str(scene.get("narration") or "").split())
+                    for scene in candidate_scenes
+                    if isinstance(scene, dict)
+                )
+                if len(planned_durations) == len(candidate_scenes):
+                    normalized_durations = SceneTimingAllocator().normalize_for_narration(
+                        planned_durations,
+                        narration_word_counts,
+                    )
+                    for scene, duration in zip(
+                        candidate_scenes,
+                        normalized_durations,
+                        strict=True,
+                    ):
+                        scene["duration"] = duration
+
+            report = ScriptCompletenessGate().evaluate(candidate_data)
+            return candidate_data, event_candidate, report
+
+        data, event_candidate, completeness_report = await generate_candidate(attempt=0)
+        initial_completeness_failures = completeness_report.failures
+        script_generation_attempts = 1
+        if not completeness_report.passed:
+            # One bounded correction attempt prevents endless generation loops and repeated cost.
+            script_generation_attempts = 2
+            data, event_candidate, completeness_report = await generate_candidate(
+                attempt=1,
+                repair_failures=initial_completeness_failures,
+            )
         completeness_report.raise_if_failed()
         narrative_report = NarrativeRedundancyGate().evaluate(data)
         self._session.add(
@@ -869,6 +912,16 @@ class GenerateCustomShort:
                     "failures": list(narrative_report.failures),
                     "max_similarity": narrative_report.max_similarity,
                     "compared_pairs": narrative_report.compared_pairs,
+                    "script_completeness": {
+                        "passed": completeness_report.passed,
+                        "generation_attempts": script_generation_attempts,
+                        "initial_failures": list(initial_completeness_failures),
+                        "final_failures": list(completeness_report.failures),
+                        "body_word_count": completeness_report.body_word_count,
+                        "scene_narration_word_count": completeness_report.narration_word_count,
+                        "estimated_speech_seconds": completeness_report.estimated_speech_seconds,
+                        "scene_duration_seconds": completeness_report.scene_duration_seconds,
+                    },
                 },
             )
         )

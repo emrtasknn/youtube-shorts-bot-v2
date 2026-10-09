@@ -77,10 +77,7 @@ class RetryOutcomeLearning:
             if not items:
                 continue
 
-            weighted = [
-                (item, self._weight(latest - item.sequence))
-                for item in items
-            ]
+            weighted = [(item, self._weight(latest - item.sequence)) for item in items]
             weight_sum = sum(weight for _, weight in weighted)
             success_rate = (
                 sum(
@@ -93,8 +90,7 @@ class RetryOutcomeLearning:
                 else 0.0
             )
             average_gain = (
-                sum(weight * max(0.0, item.score_delta) for item, weight in weighted)
-                / weight_sum
+                sum(weight * max(0.0, item.score_delta) for item, weight in weighted) / weight_sum
                 if weight_sum
                 else 0.0
             )
@@ -124,7 +120,9 @@ class RetryOutcomeLearning:
         if evidence is None or not evidence.usable:
             return 1.0
 
-        effectiveness = min(1.5, max(0.5, evidence.success_rate * 1.0 + evidence.average_gain / 40.0))
+        effectiveness = min(
+            1.5, max(0.5, evidence.success_rate * 1.0 + evidence.average_gain / 40.0)
+        )
         multiplier = 1.0 + (effectiveness - 1.0) * evidence.confidence
         return round(min(1.5, max(0.5, multiplier)), 4)
 

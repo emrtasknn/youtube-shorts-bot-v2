@@ -3,9 +3,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.application.services.adaptive_retry_policy import RetryEffectivenessObservation
-from app.application.services.retry_cost_calibration import RetryCostCalibration, RetryCostObservation
+from app.application.services.retry_cost_calibration import (
+    RetryCostCalibration,
+    RetryCostObservation,
+)
 from app.application.services.retry_orchestrator import RetryAction, RetryPlan
-from app.application.services.retry_outcome_learning import RetryOutcomeLearning, RetryOutcomeObservation
+from app.application.services.retry_outcome_learning import (
+    RetryActionLearning,
+    RetryOutcomeLearning,
+    RetryOutcomeObservation,
+)
 from app.application.services.video_judge import VideoJudgeReport
 
 
@@ -104,7 +111,7 @@ class RetryEconomicsPolicy:
     def _learned_outcomes(
         self,
         observations: tuple[RetryEffectivenessObservation, ...],
-    ) -> dict[RetryAction, object]:
+    ) -> dict[RetryAction, RetryActionLearning]:
         isolated = tuple(
             RetryOutcomeObservation(
                 sequence=index,
