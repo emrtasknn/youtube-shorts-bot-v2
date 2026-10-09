@@ -442,3 +442,25 @@ async def test_historical_scene_routes_to_wikimedia_commons_without_portrait_fil
         assert strategy.provider_candidates == ("wikimedia_commons",)
         assert strategy.orientation is None
 
+@pytest.mark.asyncio
+async def test_historical_scene_routes_to_wikimedia_commons_without_portrait_filter() -> None:
+    search = Mock()
+    search.execute_strategy = AsyncMock(
+        return_value=Mock(provider="wikimedia_commons", query="Chernobyl", items=[])
+    )
+    retriever = VisualBeatRetriever(Mock())
+    retriever._search = search
+
+    with pytest.raises(RuntimeError, match="verification gates"):
+        await retriever.retrieve(
+            run_id="run-historical",
+            request_id="request-historical",
+            beat=_build_beat(),
+        )
+
+    calls = search.execute_strategy.await_args_list
+    assert calls
+    for call in calls:
+        strategy = call.kwargs["strategies"][0]
+        assert strategy.provider_candidates == ("wikimedia_commons",)
+        assert strategy.orientation is None
