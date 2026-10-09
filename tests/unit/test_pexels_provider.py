@@ -103,6 +103,9 @@ async def test_auth_failure_is_not_retryable() -> None:
     assert exc_info.value.retryable is False
 
 
-def test_factory_does_not_register_without_credentials() -> None:
+def test_factory_keeps_commons_when_pexels_credentials_are_missing() -> None:
     registry = build_provider_registry(Settings(pexels_api_key=""))
-    assert registry.candidates(ProviderCapability.STOCK_MEDIA) == []
+    stock_providers = registry.candidates(ProviderCapability.STOCK_MEDIA)
+    provider_names = [provider.name for provider in stock_providers]
+    assert "pexels" not in provider_names
+    assert "wikimedia_commons" in provider_names

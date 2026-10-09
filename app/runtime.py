@@ -83,6 +83,7 @@ def build_runtime(settings: Settings, session: Session | None = None) -> Runtime
     rate_limiter.configure("gemini", rate_per_second=1 / 2, capacity=2)
     rate_limiter.configure("groq", rate_per_second=1 / 2, capacity=2)
     rate_limiter.configure("pexels", rate_per_second=1 / 5, capacity=5)
+    rate_limiter.configure("wikimedia_commons", rate_per_second=1 / 2, capacity=2)
     rate_limiter.configure("fish_audio", rate_per_second=1 / 2, capacity=2)
 
     executor = ReliabilityExecutor(

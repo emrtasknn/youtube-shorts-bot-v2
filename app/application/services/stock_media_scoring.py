@@ -55,7 +55,9 @@ class StockMediaScorer:
 
         width = self._as_number(item.get("width"))
         height = self._as_number(item.get("height"))
-        orientation = 1.0 if height > width else 0.0
+        portrait = height > width
+        crop_allowed = item.get("portrait_crop_allowed") is True
+        orientation = 1.0 if portrait else (0.65 if crop_allowed else 0.0)
         resolution = min(
             width / self._min_width if self._min_width else 1.0,
             height / self._min_height if self._min_height else 1.0,
@@ -81,8 +83,10 @@ class StockMediaScorer:
 
         if relevance < min_relevance:
             reasons.append("low_relevance")
-        if orientation < 1.0:
+        if orientation == 0.0:
             reasons.append("not_portrait")
+        elif not portrait:
+            reasons.append("portrait_crop_required")
         if resolution < 0.50:
             reasons.append("low_resolution")
 
@@ -96,7 +100,7 @@ class StockMediaScorer:
         eligible = (
             score >= self._min_score
             and relevance >= min_relevance
-            and orientation == 1.0
+            and orientation > 0.0
             and resolution >= 0.50
             and duplicate_penalty == 0.0
             and duration_score > 0.0

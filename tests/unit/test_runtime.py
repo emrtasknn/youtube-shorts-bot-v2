@@ -26,6 +26,9 @@ def test_build_runtime_registers_enabled_providers() -> None:
     assert runtime.executor.registry.get("pexels").capabilities == frozenset(
         {ProviderCapability.STOCK_MEDIA}
     )
+    assert runtime.executor.registry.get("wikimedia_commons").capabilities == frozenset(
+        {ProviderCapability.STOCK_MEDIA}
+    )
     assert runtime.executor.registry.get("fish_audio").capabilities == frozenset(
         {ProviderCapability.TTS}
     )
