@@ -16,7 +16,10 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from app.application.services.provider_performance_learning import ProviderPerformanceLearning, ProviderPerformanceObservation
+from app.application.services.provider_performance_learning import (
+    ProviderPerformanceLearning,
+    ProviderPerformanceObservation,
+)
 from app.infrastructure.providers.contracts import (
     ErrorCategory,
     ProviderError,
