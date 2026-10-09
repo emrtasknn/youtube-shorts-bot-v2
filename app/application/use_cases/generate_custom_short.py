@@ -1207,9 +1207,7 @@ class GenerateCustomShort:
             self._stock_media
         ).execute_strategy_until_selected(
             run_id=str(run.id),
-            request_id=(
-                f"{run.id}:scene:{scene.scene_index}:fallback:attempt:{retrieval_attempt}"
-            ),
+            request_id=(f"{run.id}:scene:{scene.scene_index}:fallback:attempt:{retrieval_attempt}"),
             strategies=strategies,
             selector=StockMediaSelector(StockMediaScorer()),
             relevance_context=VisualRelevanceContext.from_scene(scene_contract),
