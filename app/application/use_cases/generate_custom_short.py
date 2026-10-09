@@ -247,12 +247,14 @@ class GenerateCustomShort:
                     assets = selection.assets
                 except Exception as exc:
                     fallback_asset_count += 1
-                    visual_fallback_diagnostics.append({
-                        "scene_index": scene.scene_index,
-                        "attempt": 1,
-                        "error_type": type(exc).__name__,
-                        "error": str(exc)[:1200],
-                    })
+                    visual_fallback_diagnostics.append(
+                        {
+                            "scene_index": scene.scene_index,
+                            "attempt": 1,
+                            "error_type": type(exc).__name__,
+                            "error": str(exc)[:1200],
+                        }
+                    )
                     path, asset = await self._select_asset_scene_fallback(
                         run, scene, retrieval_attempt=1
                     )
@@ -504,12 +506,14 @@ class GenerateCustomShort:
                                     self._session.add(asset)
                             except Exception as exc:
                                 refreshed_fallbacks += 1
-                                visual_fallback_diagnostics.append({
-                                    "scene_index": scene.scene_index,
-                                    "attempt": attempt,
-                                    "error_type": type(exc).__name__,
-                                    "error": str(exc)[:1200],
-                                })
+                                visual_fallback_diagnostics.append(
+                                    {
+                                        "scene_index": scene.scene_index,
+                                        "attempt": attempt,
+                                        "error_type": type(exc).__name__,
+                                        "error": str(exc)[:1200],
+                                    }
+                                )
                                 path, asset = await self._select_asset_scene_fallback(
                                     run,
                                     scene,
