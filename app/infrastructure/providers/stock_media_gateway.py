@@ -26,11 +26,7 @@ class ReliableStockMediaGateway(StockMediaGateway):
 
         if request.provider_candidates:
             by_name = {descriptor.name: descriptor for descriptor in registered}
-            descriptors = [
-                by_name[name]
-                for name in request.provider_candidates
-                if name in by_name
-            ]
+            descriptors = [by_name[name] for name in request.provider_candidates if name in by_name]
             if not descriptors:
                 raise RuntimeError(
                     "None of the requested stock media providers are enabled: "
