@@ -93,3 +93,20 @@ def test_historical_query_expansion_prioritizes_concrete_must_show_and_archive_s
     assert any("Chernobyl Reactor 4 explosion" in item.query for item in queries)
     assert all("Chernobyl" in item.query for item in queries)
     assert not any(item.query == "historical illustration" for item in queries)
+
+
+def test_historical_retries_rotate_discovery_queries_without_changing_core_intent() -> None:
+    expander = VisualQueryExpander()
+    scene = _scene()
+
+    first = expander.expand(scene, retry_attempt=1).bounded_variants
+    second = expander.expand(scene, retry_attempt=2).bounded_variants
+    third = expander.expand(scene, retry_attempt=3).bounded_variants
+
+    assert first[0].query == second[0].query == third[0].query
+    assert first[1].query == second[1].query == third[1].query
+    assert first[2].query != second[2].query != third[2].query
+    assert first[3].query != second[3].query != third[3].query
+    assert first[4].query != second[4].query != third[4].query
+    assert "archaeological site photograph" in second[3].query
+    assert "historical engraving museum collection" in third[4].query
