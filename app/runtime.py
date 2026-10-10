@@ -17,7 +17,6 @@ from app.infrastructure.providers.gateways import (
     ProviderTextGenerationGateway,
     ProviderTTSGateway,
 )
-from app.infrastructure.providers.stock_media_gateway import ReliableStockMediaGateway
 from app.infrastructure.providers.reliability import (
     ConcurrencyLimiter,
     CostTracker,
@@ -30,6 +29,7 @@ from app.infrastructure.providers.reliability import (
     RetryPolicy,
     StrategyRouter,
 )
+from app.infrastructure.providers.stock_media_gateway import ReliableStockMediaGateway
 from app.infrastructure.providers.telemetry import ReliabilityTelemetry
 from app.infrastructure.storage.http_downloader import HttpAssetDownloader
 from app.infrastructure.video.ffmpeg import FFmpegVideoEngine
