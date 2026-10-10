@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from typing import Any
+
 from app.application.ports.stock_media import (
     StockMediaGateway,
     StockMediaSearchRequest,
     StockMediaSearchResult,
 )
-from app.infrastructure.providers.contracts import ProviderCapability, ProviderRequest
+from app.infrastructure.providers.contracts import ProviderCapability, ProviderRequest, ProviderResult
 from app.infrastructure.providers.executor import ReliabilityExecutor
 from app.infrastructure.providers.registry import ProviderRegistry
 
@@ -34,7 +36,7 @@ class ReliableStockMediaGateway(StockMediaGateway):
                 )
 
             attempts: list[dict[str, object]] = []
-            last_result = None
+            last_result: ProviderResult | None = None
             for descriptor in descriptors:
                 provider_request = self._build_request(
                     request,
@@ -126,8 +128,8 @@ class ReliableStockMediaGateway(StockMediaGateway):
     @staticmethod
     def _to_search_result(
         request: StockMediaSearchRequest,
-        result,
-        items: list[dict],
+        result: ProviderResult,
+        items: list[dict[str, Any]],
         extra_metadata: dict[str, object],
     ) -> StockMediaSearchResult:
         output = result.output
