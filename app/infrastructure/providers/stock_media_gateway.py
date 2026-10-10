@@ -7,7 +7,11 @@ from app.application.ports.stock_media import (
     StockMediaSearchRequest,
     StockMediaSearchResult,
 )
-from app.infrastructure.providers.contracts import ProviderCapability, ProviderRequest, ProviderResult
+from app.infrastructure.providers.contracts import (
+    ProviderCapability,
+    ProviderRequest,
+    ProviderResult,
+)
 from app.infrastructure.providers.executor import ReliabilityExecutor
 from app.infrastructure.providers.registry import ProviderRegistry
 
