@@ -51,9 +51,9 @@ from app.application.services.visual_beat_render import to_video_scene_inputs
 from app.application.services.visual_beat_retriever import VisualBeatRetriever
 from app.application.services.visual_beautifier import VisualBeautifier
 from app.application.services.visual_quality import VisualQualityDecision
+from app.application.services.visual_query_expansion import looks_historical_era
 from app.application.services.visual_relevance import VisualRelevanceContext
 from app.application.services.visual_source_resolver import VisualSourceResolver
-from app.application.services.visual_query_expansion import looks_historical_era
 from app.application.use_cases.search_stock_media import SearchStockMedia
 from app.domain.decision import ProductionDecision
 from app.domain.enums import (
