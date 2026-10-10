@@ -68,7 +68,6 @@ async def test_stock_media_gateway_uses_registry_and_reliability() -> None:
     assert provider.calls == 1
 
 
-
 @pytest.mark.asyncio
 async def test_requested_provider_candidates_fall_back_when_first_returns_no_items() -> None:
     registry = ProviderRegistry()
