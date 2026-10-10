@@ -1194,7 +1194,7 @@ class GenerateCustomShort:
         if source_plan.kind != "stock":
             raise RuntimeError(f"Unsupported visual source: {source_plan.kind}")
         provider_candidates = (
-            ("wikimedia_commons", "pexels") if looks_historical_era(scene.era) else None
+            ("wikimedia_commons", "pexels") if looks_historical_era(scene.era or "") else None
         )
         strategies = [
             StockMediaStrategy(
