@@ -127,7 +127,7 @@ class VisualBeatRetriever:
         query_plan = self._query_expander.expand(scene)
         variants = query_plan.bounded_variants[: self._max_queries]
         historical = looks_historical_era(beat.era)
-        provider_candidates = ("wikimedia_commons",) if historical else None
+        # Keep archival search first, but allow Pexels to contribute candidates when\n        # Commons has no usable results. Quality and semantic verification below\n        # remain mandatory, so this broadens retrieval without weakening acceptance.\n        provider_candidates = ("wikimedia_commons", "pexels") if historical else None
         strategies = [
             StockMediaStrategy(
                 name=variant.name,
