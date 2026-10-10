@@ -53,6 +53,7 @@ from app.application.services.visual_beautifier import VisualBeautifier
 from app.application.services.visual_quality import VisualQualityDecision
 from app.application.services.visual_relevance import VisualRelevanceContext
 from app.application.services.visual_source_resolver import VisualSourceResolver
+from app.application.services.visual_query_expansion import looks_historical_era
 from app.application.use_cases.search_stock_media import SearchStockMedia
 from app.domain.decision import ProductionDecision
 from app.domain.enums import (
@@ -1185,19 +1186,24 @@ class GenerateCustomShort:
         source_plan = VisualSourceResolver().resolve(scene_contract)
         if source_plan.kind != "stock":
             raise RuntimeError(f"Unsupported visual source: {source_plan.kind}")
+        provider_candidates = (
+            ("wikimedia_commons", "pexels") if looks_historical_era(scene.era) else None
+        )
         strategies = [
             StockMediaStrategy(
                 name="exact",
                 query=source_plan.exact_query,
                 operation="search_photos",
-                orientation="portrait",
+                orientation=None if provider_candidates else "portrait",
+                provider_candidates=provider_candidates,
             ),
             *[
                 StockMediaStrategy(
                     name=f"broader_{index}",
                     query=query,
                     operation="search_photos",
-                    orientation="portrait",
+                    orientation=None if provider_candidates else "portrait",
+                    provider_candidates=provider_candidates,
                     min_relevance=0.10,
                 )
                 for index, query in enumerate(source_plan.broader_queries, start=1)
