@@ -44,7 +44,11 @@ def looks_historical_era(era: str) -> bool:
 class VisualQueryExpander:
     """Build a bounded, scene-specific query portfolio for asset retrieval."""
 
-    def expand(self, scene: SceneContract) -> VisualQueryPlan:
+    def expand(
+        self, scene: SceneContract, *, retry_attempt: int = 1
+    ) -> VisualQueryPlan:
+        if retry_attempt < 1:
+            raise ValueError("retry_attempt must be positive")
         entity = next(
             (value.strip() for value in scene.entities if value.strip()), scene.subject.strip()
         )
@@ -57,17 +61,41 @@ class VisualQueryExpander:
         if self._looks_historical(era):
             # Historic archives often index images by the visible object, not by
             # the narration's abstract event. Give must_show its own search slot.
-            # Keep one archival query, but spend the remaining budget on the
-            # concrete subject/action/context rather than near-duplicate archive terms.
+            # Retries keep the exact and must-show queries stable, but rotate the
+            # lower-priority discovery queries so a retry can retrieve new assets.
+            retry_profiles = {
+                1: ("", "", "historical illustration"),
+                2: (
+                    "historical illustration",
+                    "archaeological site photograph",
+                    "archaeological excavation photograph",
+                ),
+                3: (
+                    "museum artwork",
+                    "archaeological landscape",
+                    "historical engraving museum collection",
+                ),
+            }
+            action_suffix, context_suffix, archive_suffix = retry_profiles[
+                min(retry_attempt, 3)
+            ]
             candidates = (
                 ("primary", scene.visual_query.strip(), 100),
                 ("must_show", self._join(must_show, entity, location, era), 95),
-                ("entity_action", self._join(entity, action, location, era), 90),
-                ("entity_context", self._join(entity, location or era), 80),
+                (
+                    "entity_action",
+                    self._join(entity, action, location, era, action_suffix),
+                    90,
+                ),
+                (
+                    "entity_context",
+                    self._join(entity, location or era, context_suffix),
+                    80,
+                ),
                 (
                     "archive_subject",
                     self._join(
-                        scene.subject.strip() or entity, location, era, "historical illustration"
+                        scene.subject.strip() or entity, location, era, archive_suffix
                     ),
                     70,
                 ),
