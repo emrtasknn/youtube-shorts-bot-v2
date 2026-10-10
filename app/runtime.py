@@ -14,10 +14,10 @@ from app.infrastructure.providers.contracts import ProviderCapability
 from app.infrastructure.providers.executor import ReliabilityExecutor
 from app.infrastructure.providers.factory import build_provider_registry
 from app.infrastructure.providers.gateways import (
-    ProviderStockMediaGateway,
     ProviderTextGenerationGateway,
     ProviderTTSGateway,
 )
+from app.infrastructure.providers.stock_media_gateway import ReliableStockMediaGateway
 from app.infrastructure.providers.reliability import (
     ConcurrencyLimiter,
     CostTracker,
@@ -103,7 +103,7 @@ def build_runtime(settings: Settings, session: Session | None = None) -> Runtime
         settings=settings,
         executor=executor,
         text=ProviderTextGenerationGateway(executor, text_providers),
-        stock_media=ProviderStockMediaGateway(executor, stock_providers),
+        stock_media=ReliableStockMediaGateway(registry, executor),
         tts=ProviderTTSGateway(executor, tts_providers),
         video_engine=FFmpegVideoEngine(),
         downloader=HttpAssetDownloader(),
