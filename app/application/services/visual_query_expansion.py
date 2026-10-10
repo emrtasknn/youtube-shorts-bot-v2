@@ -45,7 +45,10 @@ class VisualQueryExpander:
     """Build a bounded, scene-specific query portfolio for asset retrieval."""
 
     def expand(
-        self, scene: SceneContract, *, retry_attempt: int = 1
+        self,
+        scene: SceneContract,
+        *,
+        retry_attempt: int = 1,
     ) -> VisualQueryPlan:
         if retry_attempt < 1:
             raise ValueError("retry_attempt must be positive")
