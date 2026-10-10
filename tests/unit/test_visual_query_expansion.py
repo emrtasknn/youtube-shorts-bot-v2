@@ -89,6 +89,7 @@ def test_historical_query_expansion_prioritizes_concrete_must_show_and_archive_s
     assert queries[1].name == "must_show"
     assert "reactor structure" in queries[1].query
     assert "explosion plume" in queries[1].query
-    assert any("archival photograph" in item.query for item in queries)
+    assert any("historical illustration" in item.query for item in queries)
+    assert any("Chernobyl Reactor 4 explosion" in item.query for item in queries)
     assert all("Chernobyl" in item.query for item in queries)
     assert not any(item.query == "historical illustration" for item in queries)
