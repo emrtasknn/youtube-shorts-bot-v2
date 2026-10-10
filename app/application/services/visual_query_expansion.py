@@ -79,9 +79,7 @@ class VisualQueryExpander:
                     "historical engraving museum collection",
                 ),
             }
-            action_suffix, context_suffix, archive_suffix = retry_profiles[
-                min(retry_attempt, 3)
-            ]
+            action_suffix, context_suffix, archive_suffix = retry_profiles[min(retry_attempt, 3)]
             candidates = (
                 ("primary", scene.visual_query.strip(), 100),
                 ("must_show", self._join(must_show, entity, location, era), 95),
@@ -97,9 +95,7 @@ class VisualQueryExpander:
                 ),
                 (
                     "archive_subject",
-                    self._join(
-                        scene.subject.strip() or entity, location, era, archive_suffix
-                    ),
+                    self._join(scene.subject.strip() or entity, location, era, archive_suffix),
                     70,
                 ),
             )
