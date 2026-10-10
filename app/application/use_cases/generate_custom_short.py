@@ -279,14 +279,21 @@ class GenerateCustomShort:
                         scene_index=scene.scene_index,
                         scene_duration_seconds=fallback_duration,
                     )
-                    fallback_motion = CameraMotionEngine().plan(
-                        purpose="support_narration",
-                        duration_seconds=fallback_timeline.beats[0].duration_seconds,
+                    fallback_motion_engine = CameraMotionEngine()
+                    fallback_motions = tuple(
+                        fallback_motion_engine.plan(
+                            purpose="support_narration",
+                            duration_seconds=beat.duration_seconds,
+                            beat_index=beat.beat_index,
+                        )
+                        for beat in fallback_timeline.beats
                     )
+                    # One relevant fallback image may cover multiple timed beats.
+                    # Repeat the path for rendering while persisting the asset once.
                     scene_inputs = to_video_scene_inputs(
                         fallback_timeline,
-                        (path,),
-                        (fallback_motion,),
+                        tuple(path for _ in fallback_timeline.beats),
+                        fallback_motions,
                     )
                     assets = (asset,)
                 scene.status = SceneStatus.READY
