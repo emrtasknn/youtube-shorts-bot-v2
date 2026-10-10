@@ -64,7 +64,13 @@ class VisualQueryExpander:
                 ("must_show", self._join(must_show, entity, location, era), 95),
                 ("entity_action", self._join(entity, action, location, era), 90),
                 ("entity_context", self._join(entity, location or era), 80),
-                ("archive_subject", self._join(scene.subject.strip() or entity, location, era, "historical illustration"), 70),
+                (
+                    "archive_subject",
+                    self._join(
+                        scene.subject.strip() or entity, location, era, "historical illustration"
+                    ),
+                    70,
+                ),
             )
         else:
             candidates = (
