@@ -419,7 +419,7 @@ async def test_visual_beat_retriever_falls_back_after_semantic_verifier_error() 
 
 
 @pytest.mark.asyncio
-async def test_historical_scene_routes_to_wikimedia_commons_without_portrait_filter() -> None:
+async def test_historical_scene_checks_archives_then_pexels_without_portrait_filter() -> None:
     search = Mock()
     search.execute_strategy = AsyncMock(
         return_value=Mock(provider="wikimedia_commons", query="Chernobyl", items=[])
@@ -438,5 +438,5 @@ async def test_historical_scene_routes_to_wikimedia_commons_without_portrait_fil
     assert calls
     for call in calls:
         strategy = call.kwargs["strategies"][0]
-        assert strategy.provider_candidates == ("wikimedia_commons",)
+        assert strategy.provider_candidates == ("wikimedia_commons", "pexels")
         assert strategy.orientation is None
