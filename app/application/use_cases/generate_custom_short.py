@@ -51,6 +51,7 @@ from app.application.services.visual_beat_render import to_video_scene_inputs
 from app.application.services.visual_beat_retriever import VisualBeatRetriever
 from app.application.services.visual_beautifier import VisualBeautifier
 from app.application.services.visual_quality import VisualQualityDecision
+from app.application.services.visual_query_expansion import looks_historical_era
 from app.application.services.visual_relevance import VisualRelevanceContext
 from app.application.services.visual_source_resolver import VisualSourceResolver
 from app.application.use_cases.search_stock_media import SearchStockMedia
@@ -278,14 +279,21 @@ class GenerateCustomShort:
                         scene_index=scene.scene_index,
                         scene_duration_seconds=fallback_duration,
                     )
-                    fallback_motion = CameraMotionEngine().plan(
-                        purpose="support_narration",
-                        duration_seconds=fallback_timeline.beats[0].duration_seconds,
+                    fallback_motion_engine = CameraMotionEngine()
+                    fallback_motions = tuple(
+                        fallback_motion_engine.plan(
+                            purpose="support_narration",
+                            duration_seconds=beat.duration_seconds,
+                            beat_index=beat.beat_index,
+                        )
+                        for beat in fallback_timeline.beats
                     )
+                    # One relevant fallback image may cover multiple timed beats.
+                    # Repeat the path for rendering while persisting the asset once.
                     scene_inputs = to_video_scene_inputs(
                         fallback_timeline,
-                        (path,),
-                        (fallback_motion,),
+                        tuple(path for _ in fallback_timeline.beats),
+                        fallback_motions,
                     )
                     assets = (asset,)
                 scene.status = SceneStatus.READY
@@ -1185,19 +1193,24 @@ class GenerateCustomShort:
         source_plan = VisualSourceResolver().resolve(scene_contract)
         if source_plan.kind != "stock":
             raise RuntimeError(f"Unsupported visual source: {source_plan.kind}")
+        provider_candidates = (
+            ("wikimedia_commons", "pexels") if looks_historical_era(scene.era or "") else None
+        )
         strategies = [
             StockMediaStrategy(
                 name="exact",
                 query=source_plan.exact_query,
                 operation="search_photos",
-                orientation="portrait",
+                orientation=None if provider_candidates else "portrait",
+                provider_candidates=provider_candidates,
             ),
             *[
                 StockMediaStrategy(
                     name=f"broader_{index}",
                     query=query,
                     operation="search_photos",
-                    orientation="portrait",
+                    orientation=None if provider_candidates else "portrait",
+                    provider_candidates=provider_candidates,
                     min_relevance=0.10,
                 )
                 for index, query in enumerate(source_plan.broader_queries, start=1)

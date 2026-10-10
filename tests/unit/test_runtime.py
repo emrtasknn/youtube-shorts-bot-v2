@@ -1,5 +1,6 @@
 from app.config.settings import Settings
 from app.infrastructure.providers.contracts import ProviderCapability
+from app.infrastructure.providers.stock_media_gateway import ReliableStockMediaGateway
 from app.runtime import build_runtime
 
 
@@ -23,6 +24,7 @@ def test_build_runtime_registers_enabled_providers() -> None:
     assert runtime.executor.registry.get("groq").capabilities == frozenset(
         {ProviderCapability.TEXT_GENERATION}
     )
+    assert isinstance(runtime.stock_media, ReliableStockMediaGateway)
     assert runtime.executor.registry.get("pexels").capabilities == frozenset(
         {ProviderCapability.STOCK_MEDIA}
     )
