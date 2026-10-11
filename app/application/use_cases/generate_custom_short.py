@@ -1200,7 +1200,7 @@ class GenerateCustomShort:
         if source_plan.kind != "stock":
             raise RuntimeError(f"Unsupported visual source: {source_plan.kind}")
         provider_candidates = (
-            ("wikimedia_commons", "pexels") if looks_historical_era(scene.era or "") else None
+            ("pexels", "wikimedia_commons") if looks_historical_era(scene.era or "") else None
         )
         # Historical providers can return loosely related archival results.
         # Keep the fallback relevance bar aligned with the primary semantic gate;
