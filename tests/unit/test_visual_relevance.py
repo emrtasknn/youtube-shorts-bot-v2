@@ -68,8 +68,7 @@ def test_relevance_without_context_remains_query_based() -> None:
     assert result.score == 1.0
     assert result.reasons == ()
 
-def test_historical_metadata_keeps_entity_relevance_when_exact_context_is_not_indexed(
-) -> None:
+def test_historical_metadata_allows_partial_context_match() -> None:
     context = VisualRelevanceContext(
         entities=("Roman emperor",),
         location="Palatine Hill Rome",
