@@ -178,9 +178,12 @@ class WikimediaCommonsProvider:
             license_name = cls._metadata_text(extmetadata.get("LicenseShortName"))
             license_url = cls._metadata_text(extmetadata.get("LicenseUrl"))
             source_url = str(info.get("descriptionurl") or "")
-            download_url = str(info.get("thumburl") or info.get("url") or "")
-            width = info.get("thumbwidth") or info.get("width") or 0
-            height = info.get("thumbheight") or info.get("height") or 0
+            # The thumbnail host is intermittently blocked by CI runners (403).
+            # Prefer the canonical upload URL, which is also the source of truth
+            # for the original image dimensions.
+            download_url = str(info.get("url") or info.get("thumburl") or "")
+            width = info.get("width") or info.get("thumbwidth") or 0
+            height = info.get("height") or info.get("thumbheight") or 0
             if not download_url or not source_url:
                 continue
             normalized.append(
