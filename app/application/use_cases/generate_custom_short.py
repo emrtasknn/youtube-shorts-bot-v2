@@ -1202,6 +1202,10 @@ class GenerateCustomShort:
         provider_candidates = (
             ("wikimedia_commons", "pexels") if looks_historical_era(scene.era or "") else None
         )
+        # Historical providers can return loosely related archival results.
+        # Keep the fallback relevance bar aligned with the primary semantic gate;
+        # never accept a weak match merely to keep rendering moving.
+        fallback_min_relevance = 0.35 if provider_candidates else 0.20
         strategies = [
             StockMediaStrategy(
                 name="exact",
@@ -1209,6 +1213,7 @@ class GenerateCustomShort:
                 operation="search_photos",
                 orientation=None if provider_candidates else "portrait",
                 provider_candidates=provider_candidates,
+                min_relevance=fallback_min_relevance,
             ),
             *[
                 StockMediaStrategy(
@@ -1217,7 +1222,7 @@ class GenerateCustomShort:
                     operation="search_photos",
                     orientation=None if provider_candidates else "portrait",
                     provider_candidates=provider_candidates,
-                    min_relevance=0.10,
+                    min_relevance=fallback_min_relevance,
                 )
                 for index, query in enumerate(source_plan.broader_queries, start=1)
             ],
