@@ -69,7 +69,7 @@ async def test_search_photos_normalizes_commons_metadata_and_license() -> None:
     item = result.output["items"][0]
     assert result.provider == "wikimedia_commons"
     assert item["id"] == "commons:42"
-    assert item["download_url"].endswith("thumb.jpg")
+    assert item["download_url"].endswith("full.jpg")
     assert item["source_url"].startswith("https://commons.wikimedia.org/")
     assert item["license"] == "CC BY-SA 4.0"
     assert item["license_url"].startswith("https://creativecommons.org/")
