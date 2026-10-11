@@ -104,6 +104,7 @@ class VisualBeatRetriever:
         run_id: str,
         request_id: str,
         beat: VisualBeat,
+        retrieval_attempt: int = 1,
     ) -> VisualBeatRetrievalResult:
         scene = SceneContract(
             narration=beat.narration,
@@ -124,7 +125,7 @@ class VisualBeatRetriever:
         if source_plan.kind != "stock":
             raise RuntimeError(f"Unsupported visual source: {source_plan.kind}")
 
-        query_plan = self._query_expander.expand(scene)
+        query_plan = self._query_expander.expand(scene, retry_attempt=retrieval_attempt)
         variants = query_plan.bounded_variants[: self._max_queries]
         historical = looks_historical_era(beat.era)
         # Keep archival search first, but allow Pexels to contribute candidates when
@@ -209,7 +210,13 @@ class VisualBeatRetriever:
                 continue
 
             if verification.decision.value in {"uncertain", "reject"}:
-                attempts.append(f"pool:{candidate_id}:semantic_{verification.decision.value}")
+                missing = ",".join(verification.missing_signals[:3]) or "none"
+                violated = ",".join(verification.violated_constraints[:3]) or "none"
+                attempts.append(
+                    f"pool:{candidate_id}:semantic_{verification.decision.value}:"
+                    f"score={verification.score.overall:.2f}:"
+                    f"verifier={verification.verifier}:missing={missing}:violations={violated}"
+                )
                 continue
 
             self._variety.remember(

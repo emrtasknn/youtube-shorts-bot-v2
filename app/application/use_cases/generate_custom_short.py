@@ -1073,6 +1073,7 @@ class GenerateCustomShort:
                         f"beat:{beat.beat_index}"
                     ),
                     beat=beat,
+                    retrieval_attempt=retrieval_attempt,
                 )
             )
 

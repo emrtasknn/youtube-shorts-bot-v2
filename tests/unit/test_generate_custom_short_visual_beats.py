@@ -18,7 +18,14 @@ class FakeRetriever:
     def __init__(self, stock_media: object) -> None:
         self.stock_media = stock_media
 
-    async def retrieve(self, *, run_id: str, request_id: str, beat: object) -> object:
+    async def retrieve(
+        self,
+        *,
+        run_id: str,
+        request_id: str,
+        beat: object,
+        retrieval_attempt: int = 1,
+    ) -> object:
         return SimpleNamespace(
             beat=beat,
             provider="fake",
