@@ -68,13 +68,18 @@ class VisualRelevanceScorer:
         context_weight = 0.0
         reasons: list[str] = []
 
+        # Search-provider metadata is incomplete by nature: it may identify a
+        # Roman statue without naming the exact hill, century, or pose requested.
+        # Treat must_show as a useful ranking hint rather than letting absent
+        # metadata erase stronger entity/visual-goal evidence. Pixel-level checks
+        # remain responsible for enforcing visible must-show constraints.
         signals = (
-            (context.entities, 0.30, "entity"),
-            ((context.location,), 0.15, "location"),
-            ((context.era,), 0.10, "era"),
-            ((context.must_show), 0.30, "must_show"),
-            ((context.action,), 0.05, "action"),
-            ((context.visual_goal,), 0.10, "visual_goal"),
+            (context.entities, 0.35, "entity"),
+            ((context.location,), 0.12, "location"),
+            ((context.era,), 0.08, "era"),
+            ((context.must_show), 0.15, "must_show"),
+            ((context.action,), 0.08, "action"),
+            ((context.visual_goal,), 0.22, "visual_goal"),
         )
         for values, weight, label in signals:
             terms = self._tokens(" ".join(value for value in values if value))
