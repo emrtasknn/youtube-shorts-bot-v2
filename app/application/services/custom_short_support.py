@@ -39,14 +39,50 @@ def _coerce_seconds(value: Any, *, default: float, minimum: float, maximum: floa
     return seconds
 
 
-def parse_script(raw: str) -> dict[str, Any]:
+def _extract_json_object(raw: str) -> str:
+    """Extract one complete JSON object, tolerating fences and provider preambles."""
     text = raw.strip()
     if text.startswith("```"):
         lines = text.splitlines()
-        if len(lines) < 3 or not lines[-1].strip().startswith("```"):
-            raise ValueError("Invalid markdown-fenced JSON response")
-        text = "\n".join(lines[1:-1]).strip()
-    data = json.loads(text)
+        if len(lines) >= 3 and lines[-1].strip().startswith("```"):
+            text = "\n".join(lines[1:-1]).strip()
+
+    start = text.find("{")
+    if start < 0:
+        raise ValueError("Script response does not contain a JSON object")
+
+    depth = 0
+    in_string = False
+    escaped = False
+    for index in range(start, len(text)):
+        char = text[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:index + 1]
+    raise ValueError("Script response contains an incomplete JSON object")
+
+
+def parse_script(raw: str) -> dict[str, Any]:
+    text = _extract_json_object(raw)
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f"Script response is not valid JSON (line {exc.lineno}, column {exc.colno})"
+        ) from exc
     if not isinstance(data, dict):
         raise ValueError("Script response must be a JSON object")
     if not {"hook", "body", "duration_target", "scenes"}.issubset(data):
