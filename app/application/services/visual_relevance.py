@@ -88,14 +88,11 @@ class VisualRelevanceScorer:
                 if not phrases:
                     continue
                 phrase_coverages = tuple(
-                    self._coverage(phrase, self._matched(phrase, searchable))
-                    for phrase in phrases
+                    self._coverage(phrase, self._matched(phrase, searchable)) for phrase in phrases
                 )
                 coverage = sum(phrase_coverages) / len(phrase_coverages)
                 matched = tuple(
-                    token
-                    for phrase in phrases
-                    for token in self._matched(phrase, searchable)
+                    token for phrase in phrases for token in self._matched(phrase, searchable)
                 )
             else:
                 terms = self._tokens(" ".join(value for value in values if value))
