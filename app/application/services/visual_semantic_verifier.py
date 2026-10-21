@@ -108,7 +108,20 @@ class DeterministicVisualSemanticVerifier:
             must_avoid_compliance=must_avoid_compliance,
             overall=overall,
         )
-        decision = self._policy.decide(score)
+        decision = (
+            self._policy.decide(score)
+            if not avoided
+            else self._policy.decide(
+                VisualSemanticScore(
+                    entity_match=entity_match,
+                    action_match=action_match,
+                    context_match=context_match,
+                    must_show_match=must_show_match,
+                    must_avoid_compliance=0.0,
+                    overall=0.0,
+                )
+            )
+        )
 
         matched = tuple(
             dict.fromkeys(
