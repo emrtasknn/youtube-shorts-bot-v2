@@ -6,6 +6,7 @@ from typing import Any, Protocol
 
 from app.application.services.visual_semantic_verification import (
     VisualSemanticScore,
+    VisualVerificationDecision,
     VisualVerificationPolicy,
     VisualVerificationResult,
 )
@@ -90,11 +91,14 @@ class DeterministicVisualSemanticVerifier:
         )
         must_avoid_compliance = 0.0 if avoided else 1.0
 
+        # Metadata providers often omit exact era labels, actions, and visual
+        # details. Treat those as partial evidence, not exact-string requirements.
+        # The upstream relevance and image-quality gates still run independently.
         overall = (
-            entity_match * 0.30
-            + action_match * 0.15
-            + context_match * 0.20
-            + must_show_match * 0.25
+            entity_match * 0.45
+            + context_match * 0.30
+            + action_match * 0.10
+            + must_show_match * 0.05
             + must_avoid_compliance * 0.10
         )
         score = VisualSemanticScore(
@@ -105,7 +109,7 @@ class DeterministicVisualSemanticVerifier:
             must_avoid_compliance=must_avoid_compliance,
             overall=overall,
         )
-        decision = self._policy.decide(score)
+        decision = VisualVerificationDecision.REJECT if avoided else self._policy.decide(score)
 
         matched = tuple(
             dict.fromkeys(
@@ -126,7 +130,8 @@ class DeterministicVisualSemanticVerifier:
                 context.era,
                 *context.must_show,
             )
-            if value.strip() and self._normalize(value) not in searchable
+            if value.strip()
+            and not set(self._normalize(value).split()).intersection(searchable.split())
         )
         violated = tuple(f"must_avoid:{value}" for value in avoided)
 
@@ -155,12 +160,25 @@ class DeterministicVisualSemanticVerifier:
         values: tuple[str, ...],
         searchable: str,
     ) -> tuple[float, tuple[str, ...]]:
-        normalized = tuple(cls._normalize(value) for value in values if value.strip())
+        normalized = tuple(
+            tuple(cls._normalize(value).split())
+            for value in values
+            if value.strip() and cls._normalize(value)
+        )
         if not normalized:
             return 0.0, ()
 
-        matched = tuple(value for value in normalized if value in searchable)
-        return len(matched) / len(normalized), matched
+        searchable_tokens = set(searchable.split())
+        coverage = tuple(
+            sum(token in searchable_tokens for token in tokens) / len(tokens)
+            for tokens in normalized
+        )
+        matched = tuple(
+            " ".join(tokens)
+            for tokens, ratio in zip(normalized, coverage, strict=True)
+            if ratio > 0.0
+        )
+        return sum(coverage) / len(coverage), matched
 
     @staticmethod
     def _flatten(value: Any) -> str:

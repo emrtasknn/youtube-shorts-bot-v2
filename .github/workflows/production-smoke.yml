@@ -5,13 +5,20 @@ on:
     inputs:
       topic:
         description: "Topic for the real end-to-end Short"
-        required: true
+        required: false
+        default: "Why Roman Soldiers Feared Their Own Generals"
         type: string
       language:
         description: "Short language"
         required: false
         default: "en"
         type: string
+  push:
+    branches: [main]
+    paths:
+      - "app/application/services/visual_semantic_verifier.py"
+      - "app/application/services/visual_relevance.py"
+      - ".github/workflows/production-smoke.yml"
 
 jobs:
   smoke:
@@ -66,8 +73,8 @@ jobs:
       - run: alembic upgrade head
       - name: Generate real Short
         run: |
-          python -m app custom "${{ inputs.topic }}" \
-            --language "${{ inputs.language }}" \
+          python -m app custom "${{ inputs.topic || 'Why Roman Soldiers Feared Their Own Generals' }}" \
+            --language "${{ inputs.language || 'en' }}" \
             --requested-by "production-smoke"
       - name: Verify output and approval gate
         run: |

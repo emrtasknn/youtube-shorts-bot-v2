@@ -74,19 +74,33 @@ class VisualRelevanceScorer:
         # metadata erase stronger entity/visual-goal evidence. Pixel-level checks
         # remain responsible for enforcing visible must-show constraints.
         signals = (
-            (context.entities, 0.35, "entity"),
-            ((context.location,), 0.12, "location"),
-            ((context.era,), 0.08, "era"),
-            ((context.must_show), 0.15, "must_show"),
-            ((context.action,), 0.08, "action"),
-            ((context.visual_goal,), 0.22, "visual_goal"),
+            (context.entities, 0.42, "entity"),
+            ((context.location,), 0.10, "location"),
+            ((context.era,), 0.06, "era"),
+            ((context.must_show), 0.05, "must_show"),
+            ((context.action,), 0.07, "action"),
+            ((context.visual_goal,), 0.30, "visual_goal"),
         )
         for values, weight, label in signals:
-            terms = self._tokens(" ".join(value for value in values if value))
-            if not terms:
-                continue
-            matched = self._matched(terms, searchable)
-            coverage = self._coverage(terms, matched)
+            if label == "must_show":
+                phrases = tuple(self._tokens(value) for value in values if value.strip())
+                phrases = tuple(phrase for phrase in phrases if phrase)
+                if not phrases:
+                    continue
+                phrase_coverages = tuple(
+                    self._coverage(phrase, self._matched(phrase, searchable)) for phrase in phrases
+                )
+                coverage = sum(phrase_coverages) / len(phrase_coverages)
+                matched = tuple(
+                    token for phrase in phrases for token in self._matched(phrase, searchable)
+                )
+            else:
+                terms = self._tokens(" ".join(value for value in values if value))
+                if not terms:
+                    continue
+                matched = self._matched(terms, searchable)
+                coverage = self._coverage(terms, matched)
+
             context_score += coverage * weight
             context_weight += weight
             matched_context.extend(f"{label}:{term}" for term in matched)
