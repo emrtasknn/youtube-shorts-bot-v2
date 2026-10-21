@@ -186,7 +186,7 @@ def test_metadata_fallback_accepts_partial_historical_context_without_false_iden
             "tags": ["Rome", "ancient", "relief"],
         },
         context=VisualVerificationContext(
-            entities=("Rome",),
+            entities=("Roman",),
             location="Roman Forum",
             era="Roman Republic era",
             must_show=("display of ancient stone carving", "fasces with axe"),
