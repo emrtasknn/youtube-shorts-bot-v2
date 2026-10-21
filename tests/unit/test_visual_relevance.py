@@ -104,7 +104,7 @@ def test_long_must_show_phrases_do_not_drown_out_historical_subject_evidence() -
         },
         query="Roman stone relief",
         context=VisualRelevanceContext(
-            entities=("Rome",),
+            entities=("Roman",),
             location="Roman Forum",
             era="Roman Republic era",
             visual_goal="Ancient Roman historical artifact",
@@ -113,4 +113,4 @@ def test_long_must_show_phrases_do_not_drown_out_historical_subject_evidence() -
     )
 
     assert result.score >= 0.35
-    assert "entity:rome" in result.matched_terms
+    assert "entity:roman" in result.matched_terms
