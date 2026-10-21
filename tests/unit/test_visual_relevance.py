@@ -67,3 +67,28 @@ def test_relevance_without_context_remains_query_based() -> None:
 
     assert result.score == 1.0
     assert result.reasons == ()
+
+
+def test_historical_metadata_allows_partial_context_match() -> None:
+    context = VisualRelevanceContext(
+        entities=("Roman emperor",),
+        location="Palatine Hill Rome",
+        era="3rd century",
+        visual_goal="Roman emperor statue",
+        action="standing",
+        must_show=("standing", "Palatine Hill", "3rd century"),
+        must_avoid=("modern statue",),
+    )
+
+    result = VisualRelevanceScorer().score(
+        {"id": "roman-statue", "alt": "Ancient Roman emperor statue in Rome"},
+        query="Roman emperor standing Rome Palatine Hill 3rd century",
+        context=context,
+    )
+
+    # Stock metadata rarely records exact pose, archaeological sub-location,
+    # and century together; those details must not drown out relevant subject
+    # evidence. Pixel-level semantic verification still checks the actual image.
+    assert result.score >= 0.35
+    assert "entity:roman" in result.matched_terms
+    assert "must_avoid_match" not in result.reasons
