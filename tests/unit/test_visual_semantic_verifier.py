@@ -175,8 +175,6 @@ def test_failover_verifier_does_not_override_primary_rejection() -> None:
     assert result.verifier == "vision-provider"
     assert result.decision == VisualVerificationDecision.REJECT
 
-
-
 def test_metadata_fallback_accepts_partial_historical_context_without_false_identity() -> None:
     verifier = DeterministicVisualSemanticVerifier()
     result = verifier.verify(
