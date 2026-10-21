@@ -109,9 +109,7 @@ class DeterministicVisualSemanticVerifier:
             must_avoid_compliance=must_avoid_compliance,
             overall=overall,
         )
-        decision = (
-            VisualVerificationDecision.REJECT if avoided else self._policy.decide(score)
-        )
+        decision = VisualVerificationDecision.REJECT if avoided else self._policy.decide(score)
 
         matched = tuple(
             dict.fromkeys(
