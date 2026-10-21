@@ -92,7 +92,7 @@ def test_list_metadata_is_searchable() -> None:
         context=VisualVerificationContext(entities=("Roman army",)),
     )
 
-    assert result.score.entity_match == pytest.approx(0.0)
+    assert result.score.entity_match == pytest.approx(1.0)
     assert result.score.must_avoid_compliance == pytest.approx(1.0)
 
 
@@ -171,3 +171,27 @@ def test_failover_verifier_does_not_override_primary_rejection() -> None:
 
     assert result.verifier == "vision-provider"
     assert result.decision == VisualVerificationDecision.REJECT
+
+
+
+def test_metadata_fallback_accepts_partial_historical_context_without_false_identity() -> None:
+    verifier = DeterministicVisualSemanticVerifier()
+    result = verifier.verify(
+        {
+            "title": "Ancient Roman stone relief",
+            "description": "Roman carving from an archaeological collection",
+            "tags": ["Rome", "ancient", "relief"],
+        },
+        context=VisualVerificationContext(
+            entities=("Rome",),
+            location="Roman Forum",
+            era="Roman Republic era",
+            must_show=("display of ancient stone carving", "fasces with axe"),
+            must_avoid=("modern military",),
+        ),
+    )
+
+    assert result.decision == VisualVerificationDecision.ACCEPT_DEGRADED
+    assert result.score.entity_match == pytest.approx(1.0)
+    assert result.score.context_match > 0.0
+    assert result.violated_constraints == ()
