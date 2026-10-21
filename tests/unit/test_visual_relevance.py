@@ -93,8 +93,6 @@ def test_historical_metadata_allows_partial_context_match() -> None:
     assert "entity:roman" in result.matched_terms
     assert "must_avoid_match" not in result.reasons
 
-
-
 def test_long_must_show_phrases_do_not_drown_out_historical_subject_evidence() -> None:
     result = VisualRelevanceScorer().score(
         {
