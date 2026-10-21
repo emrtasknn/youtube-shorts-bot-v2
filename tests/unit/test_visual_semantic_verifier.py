@@ -199,9 +199,6 @@ def test_metadata_fallback_accepts_partial_historical_context_without_false_iden
     assert result.score.context_match > 0.0
     assert result.violated_constraints == ()
 
-
-
-
 def test_failover_allows_degraded_match_when_metadata_is_partial() -> None:
     class FailingVerifier:
         name = "vision-provider"
