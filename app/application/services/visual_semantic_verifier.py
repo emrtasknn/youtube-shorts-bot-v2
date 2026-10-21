@@ -227,7 +227,8 @@ class FailoverVisualSemanticVerifier:
                 not result.violated_constraints
                 and result.matched_signals
                 and result.score.overall >= 0.30
-                and decision in {
+                and decision
+                in {
                     VisualVerificationDecision.UNCERTAIN,
                     VisualVerificationDecision.REJECT,
                 }
