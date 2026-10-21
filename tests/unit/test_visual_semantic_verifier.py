@@ -1,6 +1,7 @@
 import pytest
 
 from app.application.services.visual_semantic_verification import (
+    VisualSemanticScore,
     VisualVerificationDecision,
     VisualVerificationResult,
 )
@@ -197,3 +198,103 @@ def test_metadata_fallback_accepts_partial_historical_context_without_false_iden
     assert result.score.entity_match == pytest.approx(1.0)
     assert result.score.context_match > 0.0
     assert result.violated_constraints == ()
+
+
+def test_failover_allows_degraded_match_when_metadata_is_partial() -> None:
+    class FailingVerifier:
+        name = "vision-provider"
+
+        def verify(
+            self,
+            item: dict[str, object],
+            *,
+            context: VisualVerificationContext,
+        ) -> VisualVerificationResult:
+            raise RuntimeError("vision provider unavailable")
+
+    class PartialMetadataVerifier:
+        name = "deterministic-metadata-v1"
+
+        def verify(
+            self,
+            item: dict[str, object],
+            *,
+            context: VisualVerificationContext,
+        ) -> VisualVerificationResult:
+            return VisualVerificationResult(
+                decision=VisualVerificationDecision.REJECT,
+                score=VisualSemanticScore(
+                    entity_match=0.3,
+                    action_match=0.0,
+                    context_match=0.4,
+                    must_show_match=0.0,
+                    must_avoid_compliance=1.0,
+                    overall=0.32,
+                ),
+                verifier=self.name,
+                matched_signals=("entity:roman",),
+                missing_signals=("fasces with axe",),
+            )
+
+    result = FailoverVisualSemanticVerifier(
+        FailingVerifier(),
+        PartialMetadataVerifier(),
+    ).verify(
+        {"title": "Roman historical artifact"},
+        context=VisualVerificationContext(entities=("Roman",)),
+    )
+
+    assert result.decision == VisualVerificationDecision.ACCEPT_DEGRADED
+    assert result.score.overall == pytest.approx(0.32)
+    assert result.violated_constraints == ()
+
+
+def test_failover_never_bypasses_must_avoid_violations() -> None:
+    class FailingVerifier:
+        name = "vision-provider"
+
+        def verify(
+            self,
+            item: dict[str, object],
+            *,
+            context: VisualVerificationContext,
+        ) -> VisualVerificationResult:
+            raise RuntimeError("vision provider unavailable")
+
+    class UnsafeMetadataVerifier:
+        name = "deterministic-metadata-v1"
+
+        def verify(
+            self,
+            item: dict[str, object],
+            *,
+            context: VisualVerificationContext,
+        ) -> VisualVerificationResult:
+            return VisualVerificationResult(
+                decision=VisualVerificationDecision.REJECT,
+                score=VisualSemanticScore(
+                    entity_match=0.3,
+                    action_match=0.0,
+                    context_match=0.4,
+                    must_show_match=0.0,
+                    must_avoid_compliance=0.0,
+                    overall=0.22,
+                ),
+                verifier=self.name,
+                matched_signals=("entity:roman",),
+                violated_constraints=("must_avoid:modern military",),
+            )
+
+    result = FailoverVisualSemanticVerifier(
+        FailingVerifier(),
+        UnsafeMetadataVerifier(),
+    ).verify(
+        {"title": "Roman historical artifact"},
+        context=VisualVerificationContext(
+            entities=("Roman",),
+            must_avoid=("modern military",),
+        ),
+    )
+
+    assert result.decision == VisualVerificationDecision.REJECT
+    assert result.violated_constraints == ("must_avoid:modern military",)
