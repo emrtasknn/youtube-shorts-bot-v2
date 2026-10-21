@@ -218,8 +218,23 @@ class FailoverVisualSemanticVerifier:
             return self._primary.verify(item, context=context)
         except Exception:
             result = self._fallback.verify(item, context=context)
+            # A metadata-only fallback cannot reliably verify every visual detail.
+            # Candidates reach this point only after independent relevance and
+            # visual-quality gates. Preserve hard exclusions, but allow a
+            # degraded pass when there is concrete metadata overlap.
+            decision = result.decision
+            if (
+                not result.violated_constraints
+                and result.matched_signals
+                and result.score.overall >= 0.30
+                and decision in {
+                    VisualVerificationDecision.UNCERTAIN,
+                    VisualVerificationDecision.REJECT,
+                }
+            ):
+                decision = VisualVerificationDecision.ACCEPT_DEGRADED
             return VisualVerificationResult(
-                decision=result.decision,
+                decision=decision,
                 score=result.score,
                 verifier=f"failover:{result.verifier}",
                 matched_signals=result.matched_signals,
