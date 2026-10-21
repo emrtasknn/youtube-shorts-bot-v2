@@ -92,3 +92,25 @@ def test_historical_metadata_allows_partial_context_match() -> None:
     assert result.score >= 0.35
     assert "entity:roman" in result.matched_terms
     assert "must_avoid_match" not in result.reasons
+
+
+
+def test_long_must_show_phrases_do_not_drown_out_historical_subject_evidence() -> None:
+    result = VisualRelevanceScorer().score(
+        {
+            "id": "roman-relief",
+            "title": "Ancient Roman stone relief",
+            "alt": "Roman carving from an archaeological collection",
+        },
+        query="Roman stone relief",
+        context=VisualRelevanceContext(
+            entities=("Rome",),
+            location="Roman Forum",
+            era="Roman Republic era",
+            visual_goal="Ancient Roman historical artifact",
+            must_show=("display of ancient stone carving", "fasces with axe"),
+        ),
+    )
+
+    assert result.score >= 0.35
+    assert "entity:rome" in result.matched_terms
