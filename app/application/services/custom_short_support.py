@@ -71,7 +71,7 @@ def _extract_json_object(raw: str) -> str:
         elif char == "}":
             depth -= 1
             if depth == 0:
-                return text[start:index + 1]
+                return text[start : index + 1]
     raise ValueError("Script response contains an incomplete JSON object")
 
 
