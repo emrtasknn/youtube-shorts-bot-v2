@@ -6,6 +6,7 @@ from typing import Any, Protocol
 
 from app.application.services.visual_semantic_verification import (
     VisualSemanticScore,
+    VisualVerificationDecision,
     VisualVerificationPolicy,
     VisualVerificationResult,
 )
@@ -109,18 +110,7 @@ class DeterministicVisualSemanticVerifier:
             overall=overall,
         )
         decision = (
-            self._policy.decide(score)
-            if not avoided
-            else self._policy.decide(
-                VisualSemanticScore(
-                    entity_match=entity_match,
-                    action_match=action_match,
-                    context_match=context_match,
-                    must_show_match=must_show_match,
-                    must_avoid_compliance=0.0,
-                    overall=0.0,
-                )
-            )
+            VisualVerificationDecision.REJECT if avoided else self._policy.decide(score)
         )
 
         matched = tuple(
