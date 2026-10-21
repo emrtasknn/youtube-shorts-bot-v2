@@ -166,3 +166,40 @@ def test_parse_script_rejects_invalid_scene_list_field_type() -> None:
     }
     with pytest.raises(ValueError, match="must_show must be a list or string"):
         parse_script(json.dumps(payload))
+
+
+def test_parse_script_extracts_json_from_provider_preamble_and_trailing_text() -> None:
+    payload = {
+        "hook": "A hook",
+        "body": "A body",
+        "duration_target": 28,
+        "scenes": [
+            {
+                "visual_query": "Roman forum ruins",
+                "visual_goal": "Roman forum",
+                "narration": "A historical scene.",
+            }
+        ]
+        * 3,
+    }
+    raw = "Here is the JSON you requested:\\n" + json.dumps(payload) + "\\nEnd of response."
+    result = parse_script(raw)
+    assert result["hook"] == "A hook"
+
+
+def test_parse_script_extracts_json_from_markdown_fence() -> None:
+    payload = {
+        "hook": "A hook",
+        "body": "A body",
+        "duration_target": 28,
+        "scenes": [
+            {
+                "visual_query": "Roman forum ruins",
+                "visual_goal": "Roman forum",
+                "narration": "A historical scene.",
+            }
+        ]
+        * 3,
+    }
+    result = parse_script("\x60\x60\x60json\\n" + json.dumps(payload) + "\\n\x60\x60\x60")
+    assert result["hook"] == "A hook"
