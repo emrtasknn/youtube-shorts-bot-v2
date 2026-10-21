@@ -92,4 +92,3 @@ def test_historical_metadata_allows_partial_context_match() -> None:
     assert result.score >= 0.35
     assert "entity:roman" in result.matched_terms
     assert "must_avoid_match" not in result.reasons
-
