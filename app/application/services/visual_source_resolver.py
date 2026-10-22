@@ -50,7 +50,7 @@ class VisualSourceResolver:
     def _broader_queries(scene: SceneContract, exact_query: str) -> tuple[str, ...]:
         subject = scene.subject.strip() or scene.visual_query.strip()
         if scene.location.strip() or scene.era.strip():
-            candidates = (
+            candidates: tuple[str, ...] = (
                 scene.visual_goal.strip(),
                 f"{subject} {scene.location.strip()} {scene.era.strip()} archival photograph".strip(),
                 f"{subject} {scene.location.strip()} historical photograph".strip(),
@@ -61,6 +61,18 @@ class VisualSourceResolver:
                 f"{subject} documentary photograph".strip(),
                 "historical illustration",
             )
+
+        # Stock metadata rarely describes the exact action in a narrated scene.
+        # Add entity-first queries as late fallbacks so providers can return assets
+        # whose titles/tags identify the subject even when they omit action details.
+        entity_query = " ".join(entity.strip() for entity in scene.entities if entity.strip())
+        if entity_query:
+            candidates = (
+                *candidates,
+                f"{entity_query} historical photograph",
+                f"{entity_query} historical reenactment",
+            )
+
         unique: list[str] = []
         for candidate in candidates:
             if candidate and candidate != exact_query and candidate not in unique:

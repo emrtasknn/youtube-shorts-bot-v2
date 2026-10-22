@@ -51,3 +51,12 @@ def test_resolver_deduplicates_broader_queries() -> None:
 def test_resolver_rejects_empty_visual_query() -> None:
     with pytest.raises(ValueError, match="visual_query"):
         VisualSourceResolver().resolve(_scene(visual_query=""))
+
+
+def test_resolver_adds_entity_first_queries_as_late_fallbacks() -> None:
+    plan = VisualSourceResolver().resolve(_scene(entities=["Roman soldiers", "Roman generals"]))
+
+    assert plan.broader_queries[-2:] == (
+        "Roman soldiers Roman generals historical photograph",
+        "Roman soldiers Roman generals historical reenactment",
+    )
