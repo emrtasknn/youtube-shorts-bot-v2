@@ -60,3 +60,21 @@ def test_resolver_adds_entity_first_queries_as_late_fallbacks() -> None:
         "Roman soldiers Roman generals historical photograph",
         "Roman soldiers Roman generals historical reenactment",
     )
+
+
+def test_resolver_prioritizes_action_specific_reenactment_fallbacks() -> None:
+    plan = VisualSourceResolver().resolve(
+        _scene(
+            subject="Roman soldiers",
+            entities=["Roman soldiers"],
+            action="marching",
+            location="Rome",
+            era="1st Century AD",
+        )
+    )
+
+    assert plan.broader_queries[:3] == (
+        "Show the Roman Forum as a historical location.",
+        "Roman soldiers marching historical reenactment",
+        "Roman soldiers marching reenactment",
+    )
