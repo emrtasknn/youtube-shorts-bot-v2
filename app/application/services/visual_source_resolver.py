@@ -50,7 +50,7 @@ class VisualSourceResolver:
     def _broader_queries(scene: SceneContract, exact_query: str) -> tuple[str, ...]:
         subject = scene.subject.strip() or scene.visual_query.strip()
         if scene.location.strip() or scene.era.strip():
-            candidates = (
+            candidates: tuple[str, ...] = (
                 scene.visual_goal.strip(),
                 f"{subject} {scene.location.strip()} {scene.era.strip()} archival photograph".strip(),
                 f"{subject} {scene.location.strip()} historical photograph".strip(),
