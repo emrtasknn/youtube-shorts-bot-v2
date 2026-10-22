@@ -59,7 +59,7 @@ class FFmpegCommandBuilder:
 
         for index, (scene, duration) in enumerate(zip(request.scenes, durations, strict=True)):
             if scene.is_image:
-                command.extend(["-loop", "1", "-t", str(duration)])
+                command.extend(["-stream_loop", "-1", "-t", str(duration)])
             command.extend(["-i", str(scene.path)])
             motion_filter = ""
             if scene.is_image and scene.motion is not None:
