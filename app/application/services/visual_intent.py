@@ -73,14 +73,10 @@ class VisualIntentCompiler:
         # as hard retrieval signals; action remains a separately scored hint.
         normalized_action = " ".join(scene.action.lower().split())
         explicit_must_show = tuple(
-            item
-            for item in scene.must_show
-            if " ".join(item.lower().split()) != normalized_action
+            item for item in scene.must_show if " ".join(item.lower().split()) != normalized_action
         )
         must_show = tuple(
-            dict.fromkeys(
-                (*explicit_must_show, *(item for item in (primary,) if item.strip()))
-            )
+            dict.fromkeys((*explicit_must_show, *(item for item in (primary,) if item.strip())))
         )
         source_priority = self._source_priority(
             has_entity=bool(primary),
