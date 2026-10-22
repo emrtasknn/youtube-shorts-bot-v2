@@ -153,7 +153,7 @@ class FFmpegCommandBuilder:
                 "-c:v",
                 "libx264",
                 "-preset",
-                "medium",
+                "veryfast",
                 "-crf",
                 "18",
                 "-movflags",
@@ -195,7 +195,7 @@ class FFmpegVideoEngine:
         executable: str = "ffmpeg",
         *,
         ffprobe_executable: str = "ffprobe",
-        timeout_seconds: float = 300.0,
+        timeout_seconds: float = 600.0,
     ) -> None:
         if timeout_seconds <= 0:
             raise ValueError("FFmpeg timeout must be positive")
