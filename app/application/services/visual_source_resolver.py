@@ -61,6 +61,18 @@ class VisualSourceResolver:
                 f"{subject} documentary photograph".strip(),
                 "historical illustration",
             )
+
+        # Stock metadata rarely describes the exact action in a narrated scene.
+        # Add entity-first queries as late fallbacks so providers can return assets
+        # whose titles/tags identify the subject even when they omit action details.
+        entity_query = " ".join(entity.strip() for entity in scene.entities if entity.strip())
+        if entity_query:
+            candidates = (
+                *candidates,
+                f"{entity_query} historical photograph",
+                f"{entity_query} historical reenactment",
+            )
+
         unique: list[str] = []
         for candidate in candidates:
             if candidate and candidate != exact_query and candidate not in unique:
