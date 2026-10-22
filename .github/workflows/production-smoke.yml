@@ -18,6 +18,7 @@ on:
     paths:
       - "app/application/services/visual_semantic_verifier.py"
       - "app/application/services/visual_relevance.py"
+      - "app/application/services/visual_intent.py"
       - ".github/workflows/production-smoke.yml"
 
 jobs:
