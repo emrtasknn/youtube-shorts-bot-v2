@@ -65,9 +65,11 @@ class VideoQualityGate:
             target_duration is not None
             and abs(duration_seconds - target_duration) > expectation.duration_tolerance_seconds
         ):
+            delta = duration_seconds - target_duration
             failures.append(
-                f"output duration differs from expected by more than "
-                f"{expectation.duration_tolerance_seconds:g}s"
+                "output duration mismatch: "
+                f"actual={duration_seconds:.3f}s expected={target_duration:.3f}s "
+                f"delta={delta:+.3f}s tolerance={expectation.duration_tolerance_seconds:g}s"
             )
 
         if subtitles_expected and not subtitle_path_exists:
