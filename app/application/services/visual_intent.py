@@ -65,13 +65,18 @@ class VisualIntentCompiler:
         primary = entities[0] if entities else scene.subject.strip()
         secondary = tuple(item for item in entities[1:] if item != primary)
 
+        # A scene action is an intent to communicate, not a literal asset
+        # metadata requirement. Stock providers rarely label actions such as
+        # "issuing orders" or "soldiers lined up", so promoting actions to
+        # must_show makes otherwise relevant historical footage impossible to
+        # select. Keep explicit visible entities/objects and the primary entity
+        # as hard retrieval signals; action remains a separately scored hint.
+        normalized_action = " ".join(scene.action.lower().split())
+        explicit_must_show = tuple(
+            item for item in scene.must_show if " ".join(item.lower().split()) != normalized_action
+        )
         must_show = tuple(
-            dict.fromkeys(
-                (
-                    *scene.must_show,
-                    *(item for item in (primary, scene.action) if item.strip()),
-                )
-            )
+            dict.fromkeys((*explicit_must_show, *(item for item in (primary,) if item.strip())))
         )
         source_priority = self._source_priority(
             has_entity=bool(primary),
