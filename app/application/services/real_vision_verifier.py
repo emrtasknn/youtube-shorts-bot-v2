@@ -22,7 +22,6 @@ from app.infrastructure.providers.contracts import (
     ProviderError,
 )
 
-
 logger = __import__("logging").getLogger(__name__)
 
 
