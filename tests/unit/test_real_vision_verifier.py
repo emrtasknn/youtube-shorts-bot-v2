@@ -123,3 +123,26 @@ def test_cost_aware_vision_verifier_falls_back_when_real_vision_fails() -> None:
         VisualVerificationDecision.UNCERTAIN,
         VisualVerificationDecision.REJECT,
     }
+
+
+
+def test_cost_aware_vision_verifier_logs_primary_failure_before_fallback(caplog) -> None:
+    class BrokenVision:
+        name = "gemini-vision-v1"
+
+        def verify(self, item, *, context):
+            raise RuntimeError("vision unavailable")
+
+    with caplog.at_level(30):
+        result = CostAwareVisionVerifier(
+            BrokenVision(),
+            fallback=DeterministicVisualSemanticVerifier(),
+        ).verify(
+            {"title": "Roman emperor standing in Rome"},
+            context=_context(),
+        )
+
+    assert result.verifier.startswith("failover:")
+    assert "Primary visual verification failed" in caplog.text
+    assert "gemini-vision-v1" in caplog.text
+    assert "RuntimeError" in caplog.text
