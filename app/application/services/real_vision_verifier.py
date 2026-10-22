@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 from dataclasses import dataclass
 from typing import Any
 
@@ -21,6 +22,9 @@ from app.infrastructure.providers.contracts import (
     ErrorCategory,
     ProviderError,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -292,7 +296,21 @@ class CostAwareVisionVerifier:
     ) -> VisualVerificationResult:
         try:
             return self.primary.verify(item, context=context)
-        except Exception:
+        except Exception as exc:
+            # Do not silently hide outages: production smoke failures must identify
+            # whether image download, API access, timeout, or model output caused failover.
+            error_code = getattr(exc, "code", None)
+            status_code = getattr(exc, "status_code", None)
+            logger.warning(
+                "Primary visual verification failed; using metadata fallback "
+                "provider=%s error_type=%s error_code=%s status_code=%s detail=%s",
+                getattr(self.primary, "name", type(self.primary).__name__),
+                type(exc).__name__,
+                error_code or "none",
+                status_code or "none",
+                str(exc)[:240],
+                exc_info=True,
+            )
             result = self.fallback.verify(item, context=context)
             return VisualVerificationResult(
                 decision=result.decision,
