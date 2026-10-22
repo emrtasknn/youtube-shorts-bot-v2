@@ -126,7 +126,9 @@ def test_cost_aware_vision_verifier_falls_back_when_real_vision_fails() -> None:
 
 
 
-def test_cost_aware_vision_verifier_logs_primary_failure_before_fallback(caplog) -> None:
+def test_cost_aware_vision_verifier_logs_primary_failure_before_fallback(
+    caplog,
+) -> None:
     class BrokenVision:
         name = "gemini-vision-v1"
 
