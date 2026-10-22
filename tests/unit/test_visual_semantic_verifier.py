@@ -300,7 +300,6 @@ def test_failover_never_bypasses_must_avoid_violations() -> None:
     assert result.violated_constraints == ("must_avoid:modern military",)
 
 
-
 def test_failover_accepts_strong_historical_context_when_entity_metadata_is_missing() -> None:
     class FailingVerifier:
         name = "vision-provider"
@@ -400,6 +399,7 @@ def test_failover_rejects_historical_context_below_grounding_threshold() -> None
     )
 
     assert result.decision == VisualVerificationDecision.REJECT
+
 
 def test_failover_accepts_grounded_partial_match_below_old_threshold() -> None:
     class FailingVerifier:
