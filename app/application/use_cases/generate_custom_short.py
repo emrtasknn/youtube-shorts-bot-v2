@@ -1199,13 +1199,18 @@ class GenerateCustomShort:
         source_plan = VisualSourceResolver().resolve(scene_contract)
         if source_plan.kind != "stock":
             raise RuntimeError(f"Unsupported visual source: {source_plan.kind}")
+        # Historical scenes should query the archive-first source before general
+        # stock. Commons is keyless and better suited to period-specific material;
+        # Pexels remains a fallback when Commons has no usable results.
         provider_candidates = (
-            ("pexels", "wikimedia_commons") if looks_historical_era(scene.era or "") else None
+            ("wikimedia_commons", "pexels") if looks_historical_era(scene.era or "") else None
         )
-        # Historical providers can return loosely related archival results.
-        # Keep the fallback relevance bar aligned with the primary semantic gate;
-        # never accept a weak match merely to keep rendering moving.
-        fallback_min_relevance = 0.35 if provider_candidates else 0.20
+        # This path runs only after the semantic retriever has exhausted its
+        # candidates. Keep a relevance floor, but do not require exact era/action
+        # wording in stock metadata: those labels are often absent even when the
+        # title identifies the historical subject. The downstream must-avoid and
+        # image-quality gates still apply before the asset can be rendered.
+        fallback_min_relevance = 0.22 if provider_candidates else 0.20
         strategies = [
             StockMediaStrategy(
                 name="exact",
