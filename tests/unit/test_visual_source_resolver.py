@@ -54,9 +54,7 @@ def test_resolver_rejects_empty_visual_query() -> None:
 
 
 def test_resolver_adds_entity_first_queries_as_late_fallbacks() -> None:
-    plan = VisualSourceResolver().resolve(
-        _scene(entities=["Roman soldiers", "Roman generals"])
-    )
+    plan = VisualSourceResolver().resolve(_scene(entities=["Roman soldiers", "Roman generals"]))
 
     assert plan.broader_queries[-2:] == (
         "Roman soldiers Roman generals historical photograph",
