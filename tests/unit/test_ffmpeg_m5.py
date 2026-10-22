@@ -45,5 +45,5 @@ def test_ffmpeg_builder_uses_generic_stream_loop_for_still_images(tmp_path: Path
     command = FFmpegCommandBuilder().build(request)
 
     image_input = command.index(str(scene))
-    assert command[image_input - 3 : image_input] == ["-stream_loop", "-1", "-t"]
+    assert command[image_input - 5 : image_input] == ["-stream_loop", "-1", "-t", "3", "-i"]
     assert "-loop" not in command
