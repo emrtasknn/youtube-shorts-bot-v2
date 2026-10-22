@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import base64
 import json
-import logging
 from dataclasses import dataclass
+from logging import getLogger
 from typing import Any
 
 import httpx
@@ -24,7 +24,7 @@ from app.infrastructure.providers.contracts import (
 )
 
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
