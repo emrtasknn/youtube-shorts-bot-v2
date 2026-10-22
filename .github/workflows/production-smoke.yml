@@ -26,6 +26,7 @@ on:
       - "app/application/services/visual_relevance.py"
       - "app/application/services/visual_intent.py"
       - "app/application/services/video_quality.py"
+      - "app/infrastructure/video/ffmpeg.py"
       - "app/application/use_cases/generate_custom_short.py"
       - "app/application/use_cases/search_stock_media.py"
       - ".github/workflows/production-smoke.yml"
