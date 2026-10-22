@@ -32,3 +32,18 @@ def test_ffmpeg_builder_maps_voiceover_and_subtitles(tmp_path: Path) -> None:
     assert "subtitles=" in command_text
     assert "trim=duration=8.5" in " ".join(command)
     assert "-shortest" in command
+
+
+def test_ffmpeg_builder_uses_generic_stream_loop_for_still_images(tmp_path: Path) -> None:
+    scene = tmp_path / "scene.jpg"
+    scene.write_bytes(b"image-data")
+    request = VideoRenderRequest(
+        scenes=(VideoSceneInput(path=scene, duration_seconds=3, is_image=True),),
+        output_path=tmp_path / "out.mp4",
+    )
+
+    command = FFmpegCommandBuilder().build(request)
+
+    image_input = command.index(str(scene))
+    assert command[image_input - 5 : image_input] == ["-stream_loop", "-1", "-t", "3", "-i"]
+    assert "-loop" not in command
