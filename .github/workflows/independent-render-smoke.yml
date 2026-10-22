@@ -1,0 +1,86 @@
+name: Independent Render Smoke Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "app/infrastructure/video/**"
+      - "app/application/ports/video_engine.py"
+      - ".github/workflows/independent-render-smoke.yml"
+
+jobs:
+  render:
+    name: Render a local fixture into a validated MP4
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version
+          ffprobe -version
+      - name: Install application
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+      - name: Create local image and voiceover fixtures
+        run: |
+          mkdir -p /tmp/short-render-smoke
+          ffmpeg -y -hide_banner -loglevel error \
+            -f lavfi -i "color=c=navy:s=1080x1920:d=3" \
+            -frames:v 1 /tmp/short-render-smoke/scene.png
+          ffmpeg -y -hide_banner -loglevel error \
+            -f lavfi -i "sine=frequency=440:duration=3" \
+            -ac 1 -codec:a libmp3lame -q:a 7 \
+            /tmp/short-render-smoke/voice.mp3
+      - name: Render with the application FFmpeg engine
+        run: |
+          python - <<'PY'
+          import asyncio
+          import json
+          from pathlib import Path
+
+          from app.application.ports.video_engine import VideoRenderRequest, VideoSceneInput
+          from app.infrastructure.video.ffmpeg import FFmpegVideoEngine
+
+          root = Path("/tmp/short-render-smoke")
+          output = root / "render-smoke.mp4"
+          request = VideoRenderRequest(
+              scenes=(VideoSceneInput(root / "scene.png", 3.0, is_image=True),),
+              output_path=output,
+              voiceover_path=root / "voice.mp3",
+              subtitle_text="Independent render smoke test",
+          )
+          result = asyncio.run(FFmpegVideoEngine().render(request))
+          if not output.is_file() or output.stat().st_size < 10_000:
+              raise SystemExit("Render engine did not produce a non-empty MP4")
+          if result.width != 1080 or result.height != 1920:
+              raise SystemExit(f"Unexpected dimensions: {result.width}x{result.height}")
+          if not result.has_audio:
+              raise SystemExit("Rendered MP4 has no audio stream")
+          if not 2.0 <= result.duration_seconds <= 4.5:
+              raise SystemExit(f"Unexpected duration: {result.duration_seconds}")
+          print(json.dumps({
+              "path": str(output),
+              "bytes": output.stat().st_size,
+              "duration_seconds": result.duration_seconds,
+              "width": result.width,
+              "height": result.height,
+              "has_audio": result.has_audio,
+          }, indent=2))
+          PY
+      - name: Validate MP4 streams with ffprobe
+        run: |
+          ffprobe -v error -show_entries stream=codec_type,width,height -show_entries format=duration,size -of json /tmp/short-render-smoke/render-smoke.mp4
+      - name: Upload render smoke artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: independent-render-smoke
+          path: /tmp/short-render-smoke/render-smoke.mp4
+          if-no-files-found: error
