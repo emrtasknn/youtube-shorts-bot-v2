@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import replace
-from pathlib import Path
 from uuid import uuid4
 
 from app.application.ports.video_engine import VideoEngine, VideoRenderRequest, VideoRenderResult
