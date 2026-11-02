@@ -109,5 +109,7 @@ def build_runtime(settings: Settings, session: Session | None = None) -> Runtime
         stock_media=ReliableStockMediaGateway(registry, executor),
         tts=ProviderTTSGateway(executor, tts_providers),
         video_engine=AtomicVideoEngine(FFmpegVideoEngine()),
-        downloader=CachedAssetDownloader(HttpAssetDownloader(), cache_dir=Path("storage/cache/assets")),
+        downloader=CachedAssetDownloader(
+            HttpAssetDownloader(), cache_dir=Path("storage/cache/assets")
+        ),
     )
