@@ -270,7 +270,7 @@ class GeminiVisionSemanticVerifier:
 
 
 class CostAwareVisionVerifier:
-    """Runs real vision on a bounded shortlist and fails over safely."""
+    """Runs real vision on a bounded shortlist and opens a circuit after outages."""
 
     def __init__(
         self,
@@ -284,6 +284,8 @@ class CostAwareVisionVerifier:
         self.primary = primary
         self.fallback = fallback or DeterministicVisualSemanticVerifier()
         self.max_verified_candidates = max_verified_candidates
+        self._verified_candidates = 0
+        self._primary_unavailable = False
         self.name = f"{getattr(primary, 'name', 'vision')}+cost-aware"
 
     def verify(
@@ -292,15 +294,20 @@ class CostAwareVisionVerifier:
         *,
         context: VisualVerificationContext,
     ) -> VisualVerificationResult:
+        if self._primary_unavailable or self._verified_candidates >= self.max_verified_candidates:
+            return self._fallback_result(item, context)
+
+        self._verified_candidates += 1
         try:
             return self.primary.verify(item, context=context)
         except Exception as exc:
-            # Do not silently hide outages: production smoke failures must identify
-            # whether image download, API access, timeout, or model output caused failover.
+            # A provider outage or rate limit should not trigger one failing request
+            # for every remaining beat/candidate in the same scene.
+            self._primary_unavailable = True
             error_code = getattr(exc, "code", None)
             status_code = getattr(exc, "status_code", None)
             logger.warning(
-                "Primary visual verification failed; using metadata fallback "
+                "Primary visual verification failed; opening circuit and using metadata fallback "
                 "provider=%s error_type=%s error_code=%s status_code=%s detail=%s",
                 getattr(self.primary, "name", type(self.primary).__name__),
                 type(exc).__name__,
@@ -309,12 +316,19 @@ class CostAwareVisionVerifier:
                 str(exc)[:240],
                 exc_info=True,
             )
-            result = self.fallback.verify(item, context=context)
-            return VisualVerificationResult(
-                decision=result.decision,
-                score=result.score,
-                verifier=f"failover:{result.verifier}",
-                matched_signals=result.matched_signals,
-                missing_signals=result.missing_signals,
-                violated_constraints=result.violated_constraints,
-            )
+            return self._fallback_result(item, context)
+
+    def _fallback_result(
+        self,
+        item: dict[str, Any],
+        context: VisualVerificationContext,
+    ) -> VisualVerificationResult:
+        result = self.fallback.verify(item, context=context)
+        return VisualVerificationResult(
+            decision=result.decision,
+            score=result.score,
+            verifier=f"failover:{result.verifier}",
+            matched_signals=result.matched_signals,
+            missing_signals=result.missing_signals,
+            violated_constraints=result.violated_constraints,
+        )
