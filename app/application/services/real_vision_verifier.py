@@ -4,6 +4,7 @@ import base64
 import json
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import httpx
 
@@ -67,7 +68,7 @@ class GeminiVisionSemanticVerifier:
                 message="Vision verification requires an image URL",
             )
 
-        image_bytes, mime_type = self._download_image(image_url)
+        image_bytes, mime_type = self._download_image(item)
         response = self._analyze(image_bytes, mime_type, context)
         score = self._score_response(response, context)
         decision = self._policy.decide(score)
@@ -83,40 +84,98 @@ class GeminiVisionSemanticVerifier:
             violated_constraints=violated,
         )
 
-    def _download_image(self, url: str) -> tuple[bytes, str]:
+    def _download_image(self, item: dict[str, Any]) -> tuple[bytes, str]:
+        urls = []
+        for candidate in (
+            item.get("download_url") or item.get("url"),
+            item.get("thumbnail_url") or item.get("thumburl"),
+        ):
+            url = str(candidate or "").strip()
+            if not url:
+                continue
+            parsed = urlsplit(url)
+            query = urlencode(
+                [
+                    (key, value)
+                    for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+                    if not key.lower().startswith("utm_")
+                ]
+            )
+            clean = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, query, ""))
+            if clean not in urls:
+                urls.append(clean)
+        if not urls:
+            raise ProviderError(
+                code="MISSING_IMAGE_URL",
+                category=ErrorCategory.INVALID_REQUEST,
+                provider=self.name,
+                message="Vision verification requires an image URL",
+            )
         owns_client = self._client is None
         client = self._client or httpx.Client(timeout=self._config.timeout_seconds)
+        headers = {
+            "User-Agent": "YouTubeShortsBotV2/1.0 (+https://github.com/emrtasknn/youtube-shorts-bot-v2)",
+            "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+            "Referer": "https://commons.wikimedia.org/",
+        }
+        last_error: Exception | None = None
         try:
-            response = client.get(url)
-            response.raise_for_status()
-            content = response.content
-            if len(content) > self._config.max_image_bytes:
+            for url in urls:
+                try:
+                    response = client.get(url, headers=headers)
+                    response.raise_for_status()
+                    content = response.content
+                    if not content:
+                        raise ProviderError(
+                            code="EMPTY_IMAGE",
+                            category=ErrorCategory.QUALITY,
+                            provider=self.name,
+                            message="Image download returned an empty response",
+                        )
+                    if len(content) > self._config.max_image_bytes:
+                        raise ProviderError(
+                            code="IMAGE_TOO_LARGE",
+                            category=ErrorCategory.QUALITY,
+                            provider=self.name,
+                            message="Image exceeds vision verification size budget",
+                        )
+                    mime_type = response.headers.get("content-type", "image/jpeg").split(";")[0]
+                    if not mime_type.startswith("image/"):
+                        mime_type = "image/jpeg"
+                    return content, mime_type
+                except (httpx.HTTPError, ProviderError) as exc:
+                    last_error = exc
+            if isinstance(last_error, ProviderError):
+                raise last_error
+            if isinstance(last_error, httpx.HTTPStatusError):
+                status = last_error.response.status_code
                 raise ProviderError(
-                    code="IMAGE_TOO_LARGE",
-                    category=ErrorCategory.QUALITY,
+                    code=f"IMAGE_HTTP_{status}",
+                    category=(
+                        ErrorCategory.AUTHENTICATION
+                        if status in {401, 403}
+                        else ErrorCategory.TRANSIENT
+                    ),
                     provider=self.name,
-                    message="Image exceeds vision verification size budget",
-                )
-            content_type = response.headers.get("content-type", "image/jpeg").split(";")[0]
-            if not content_type.startswith("image/"):
-                content_type = "image/jpeg"
-            return content, content_type
-        except httpx.TimeoutException as exc:
-            raise ProviderError(
-                code="IMAGE_TIMEOUT",
-                category=ErrorCategory.TIMEOUT,
-                provider=self.name,
-                message="Image download timed out",
-                retryable=True,
-            ) from exc
-        except httpx.RequestError as exc:
+                    message=f"Image host returned HTTP {status}",
+                    retryable=status == 429 or status >= 500,
+                    status_code=status,
+                ) from last_error
+            if isinstance(last_error, httpx.TimeoutException):
+                raise ProviderError(
+                    code="IMAGE_TIMEOUT",
+                    category=ErrorCategory.TIMEOUT,
+                    provider=self.name,
+                    message="Image download timed out",
+                    retryable=True,
+                ) from last_error
             raise ProviderError(
                 code="IMAGE_DOWNLOAD_ERROR",
                 category=ErrorCategory.TRANSIENT,
                 provider=self.name,
                 message="Image download failed",
                 retryable=True,
-            ) from exc
+            ) from last_error
         finally:
             if owns_client:
                 client.close()
@@ -270,7 +329,7 @@ class GeminiVisionSemanticVerifier:
 
 
 class CostAwareVisionVerifier:
-    """Runs real vision on a bounded shortlist and fails over safely."""
+    """Runs real vision on a bounded shortlist and opens a circuit after outages."""
 
     def __init__(
         self,
@@ -284,6 +343,8 @@ class CostAwareVisionVerifier:
         self.primary = primary
         self.fallback = fallback or DeterministicVisualSemanticVerifier()
         self.max_verified_candidates = max_verified_candidates
+        self._verified_candidates = 0
+        self._primary_unavailable = False
         self.name = f"{getattr(primary, 'name', 'vision')}+cost-aware"
 
     def verify(
@@ -292,15 +353,20 @@ class CostAwareVisionVerifier:
         *,
         context: VisualVerificationContext,
     ) -> VisualVerificationResult:
+        if self._primary_unavailable or self._verified_candidates >= self.max_verified_candidates:
+            return self._fallback_result(item, context)
+
+        self._verified_candidates += 1
         try:
             return self.primary.verify(item, context=context)
         except Exception as exc:
-            # Do not silently hide outages: production smoke failures must identify
-            # whether image download, API access, timeout, or model output caused failover.
+            # A provider outage or rate limit should not trigger one failing request
+            # for every remaining beat/candidate in the same scene.
+            self._primary_unavailable = True
             error_code = getattr(exc, "code", None)
             status_code = getattr(exc, "status_code", None)
             logger.warning(
-                "Primary visual verification failed; using metadata fallback "
+                "Primary visual verification failed; opening circuit and using metadata fallback "
                 "provider=%s error_type=%s error_code=%s status_code=%s detail=%s",
                 getattr(self.primary, "name", type(self.primary).__name__),
                 type(exc).__name__,
@@ -309,12 +375,19 @@ class CostAwareVisionVerifier:
                 str(exc)[:240],
                 exc_info=True,
             )
-            result = self.fallback.verify(item, context=context)
-            return VisualVerificationResult(
-                decision=result.decision,
-                score=result.score,
-                verifier=f"failover:{result.verifier}",
-                matched_signals=result.matched_signals,
-                missing_signals=result.missing_signals,
-                violated_constraints=result.violated_constraints,
-            )
+            return self._fallback_result(item, context)
+
+    def _fallback_result(
+        self,
+        item: dict[str, Any],
+        context: VisualVerificationContext,
+    ) -> VisualVerificationResult:
+        result = self.fallback.verify(item, context=context)
+        return VisualVerificationResult(
+            decision=result.decision,
+            score=result.score,
+            verifier=f"failover:{result.verifier}",
+            matched_signals=result.matched_signals,
+            missing_signals=result.missing_signals,
+            violated_constraints=result.violated_constraints,
+        )
