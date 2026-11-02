@@ -28,7 +28,7 @@ class CachedAssetDownloader:
         if len(suffix) > 12 or not suffix.replace(".", "").isalnum():
             suffix = ".asset"
         cache_key = f"{key}{suffix}"
-        cache_path = self._cache_dir / f"{cache_key}"
+        cache_path = self._cache_dir / cache_key
         manifest_path = self._cache_dir / f"{cache_key}.json"
 
         lock = self._locks.setdefault(cache_key, asyncio.Lock())
@@ -51,12 +51,18 @@ class CachedAssetDownloader:
     def _is_valid_entry(self, cache_path: Path, manifest_path: Path, url: str) -> bool:
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            if manifest.get("url") != url or not cache_path.is_file():
+            if not isinstance(manifest, dict):
                 return False
-            if cache_path.stat().st_size != manifest.get("size_bytes"):
+            if manifest.get("schema_version") != 1 or manifest.get("url") != url:
+                return False
+            expected_size = manifest.get("size_bytes")
+            expected_digest = manifest.get("sha256")
+            if not isinstance(expected_size, int) or not isinstance(expected_digest, str):
+                return False
+            if not cache_path.is_file() or cache_path.stat().st_size != expected_size:
                 return False
             digest = hashlib.sha256(cache_path.read_bytes()).hexdigest()
-            return digest == manifest.get("sha256")
+            return digest == expected_digest
         except (OSError, ValueError, TypeError):
             return False
 
