@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass\nfrom pathlib import Path
 
 from sqlalchemy.orm import Session
 
@@ -107,5 +107,5 @@ def build_runtime(settings: Settings, session: Session | None = None) -> Runtime
         stock_media=ReliableStockMediaGateway(registry, executor),
         tts=ProviderTTSGateway(executor, tts_providers),
         video_engine=AtomicVideoEngine(FFmpegVideoEngine()),
-        downloader=CachedAssetDownloader(HttpAssetDownloader(), cache_dir=__import__("pathlib").Path("storage/cache/assets")),
+        downloader=CachedAssetDownloader(HttpAssetDownloader(), cache_dir=Path("storage/cache/assets")),
     )
