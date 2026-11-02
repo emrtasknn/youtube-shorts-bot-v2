@@ -195,6 +195,7 @@ class WikimediaCommonsProvider:
                     "duration": None,
                     "source_url": source_url,
                     "download_url": download_url,
+                    "thumbnail_url": str(info.get("thumburl") or ""),
                     "photographer": artist,
                     "photographer_url": source_url,
                     "alt": f"{title.removeprefix('File:')}. {description}",
