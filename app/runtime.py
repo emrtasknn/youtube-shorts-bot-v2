@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass\nfrom pathlib import Path
+from dataclasses import dataclass
+from pathlib import Path
 
 from sqlalchemy.orm import Session
 
@@ -31,7 +32,8 @@ from app.infrastructure.providers.reliability import (
 )
 from app.infrastructure.providers.stock_media_gateway import ReliableStockMediaGateway
 from app.infrastructure.providers.telemetry import ReliabilityTelemetry
-from app.infrastructure.storage.cached_downloader import CachedAssetDownloader\nfrom app.infrastructure.storage.http_downloader import HttpAssetDownloader
+from app.infrastructure.storage.cached_downloader import CachedAssetDownloader
+from app.infrastructure.storage.http_downloader import HttpAssetDownloader
 from app.infrastructure.video.atomic import AtomicVideoEngine
 from app.infrastructure.video.ffmpeg import FFmpegVideoEngine
 
