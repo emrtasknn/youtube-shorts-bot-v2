@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from sqlalchemy.orm import Session
 
@@ -31,6 +32,7 @@ from app.infrastructure.providers.reliability import (
 )
 from app.infrastructure.providers.stock_media_gateway import ReliableStockMediaGateway
 from app.infrastructure.providers.telemetry import ReliabilityTelemetry
+from app.infrastructure.storage.cached_downloader import CachedAssetDownloader
 from app.infrastructure.storage.http_downloader import HttpAssetDownloader
 from app.infrastructure.video.atomic import AtomicVideoEngine
 from app.infrastructure.video.ffmpeg import FFmpegVideoEngine
@@ -107,5 +109,7 @@ def build_runtime(settings: Settings, session: Session | None = None) -> Runtime
         stock_media=ReliableStockMediaGateway(registry, executor),
         tts=ProviderTTSGateway(executor, tts_providers),
         video_engine=AtomicVideoEngine(FFmpegVideoEngine()),
-        downloader=HttpAssetDownloader(),
+        downloader=CachedAssetDownloader(
+            HttpAssetDownloader(), cache_dir=Path("storage/cache/assets")
+        ),
     )
