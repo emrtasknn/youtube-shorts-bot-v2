@@ -2,7 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from app.application.ports.video_engine import (\n    VideoRenderRequest,\n    VideoRenderResult,\n    VideoSceneInput,\n)
+from app.application.ports.video_engine import (
+    VideoRenderRequest,
+    VideoRenderResult,
+    VideoSceneInput,
+)
 from app.infrastructure.video.atomic import AtomicVideoEngine
 
 
