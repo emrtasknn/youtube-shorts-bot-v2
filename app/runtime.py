@@ -32,6 +32,7 @@ from app.infrastructure.providers.reliability import (
 from app.infrastructure.providers.stock_media_gateway import ReliableStockMediaGateway
 from app.infrastructure.providers.telemetry import ReliabilityTelemetry
 from app.infrastructure.storage.http_downloader import HttpAssetDownloader
+from app.infrastructure.video.atomic import AtomicVideoEngine
 from app.infrastructure.video.ffmpeg import FFmpegVideoEngine
 
 
@@ -105,6 +106,6 @@ def build_runtime(settings: Settings, session: Session | None = None) -> Runtime
         text=ProviderTextGenerationGateway(executor, text_providers),
         stock_media=ReliableStockMediaGateway(registry, executor),
         tts=ProviderTTSGateway(executor, tts_providers),
-        video_engine=FFmpegVideoEngine(),
+        video_engine=AtomicVideoEngine(FFmpegVideoEngine()),
         downloader=HttpAssetDownloader(),
     )
