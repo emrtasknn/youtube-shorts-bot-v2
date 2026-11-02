@@ -3,8 +3,8 @@ from __future__ import annotations
 import base64
 import json
 from dataclasses import dataclass
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import httpx
 
@@ -95,8 +95,11 @@ class GeminiVisionSemanticVerifier:
                 continue
             parsed = urlsplit(url)
             query = urlencode(
-                [(key, value) for key, value in parse_qsl(parsed.query, keep_blank_values=True)
-                 if not key.lower().startswith("utm_")]
+                [
+                    (key, value)
+                    for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+                    if not key.lower().startswith("utm_")
+                ]
             )
             clean = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, query, ""))
             if clean not in urls:
