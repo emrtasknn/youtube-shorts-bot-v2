@@ -151,7 +151,11 @@ class GeminiVisionSemanticVerifier:
                 status = last_error.response.status_code
                 raise ProviderError(
                     code=f"IMAGE_HTTP_{status}",
-                    category=ErrorCategory.AUTHENTICATION if status in {401, 403} else ErrorCategory.TRANSIENT,
+                    category=(
+                        ErrorCategory.AUTHENTICATION
+                        if status in {401, 403}
+                        else ErrorCategory.TRANSIENT
+                    ),
                     provider=self.name,
                     message=f"Image host returned HTTP {status}",
                     retryable=status == 429 or status >= 500,
