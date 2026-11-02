@@ -27,13 +27,14 @@ class CachedAssetDownloader:
         suffix = destination.suffix.lower()
         if len(suffix) > 12 or not suffix.replace(".", "").isalnum():
             suffix = ".asset"
-        cache_path = self._cache_dir / f"{key}{suffix}"
-        manifest_path = self._cache_dir / f"{key}.json"
+        cache_key = f"{key}{suffix}"
+        cache_path = self._cache_dir / f"{cache_key}"
+        manifest_path = self._cache_dir / f"{cache_key}.json"
 
-        lock = self._locks.setdefault(key, asyncio.Lock())
+        lock = self._locks.setdefault(cache_key, asyncio.Lock())
         async with lock:
             if not self._is_valid_entry(cache_path, manifest_path, url):
-                await self._populate_cache(url, cache_path, manifest_path, key)
+                await self._populate_cache(url, cache_path, manifest_path, cache_key)
 
             destination.parent.mkdir(parents=True, exist_ok=True)
             staged_destination = destination.with_name(
@@ -64,11 +65,11 @@ class CachedAssetDownloader:
         url: str,
         cache_path: Path,
         manifest_path: Path,
-        key: str,
+        cache_key: str,
     ) -> None:
         self._cache_dir.mkdir(parents=True, exist_ok=True)
-        staged_asset = self._cache_dir / f".{key}.{uuid4().hex}.part"
-        staged_manifest = self._cache_dir / f".{key}.{uuid4().hex}.json"
+        staged_asset = self._cache_dir / f".{cache_key}.{uuid4().hex}.part"
+        staged_manifest = self._cache_dir / f".{cache_key}.{uuid4().hex}.json"
         try:
             await self._delegate.download(url, staged_asset)
             if not staged_asset.is_file() or staged_asset.stat().st_size <= 0:
@@ -81,7 +82,7 @@ class CachedAssetDownloader:
                 "sha256": hashlib.sha256(payload).hexdigest(),
             }
             staged_manifest.write_text(
-                json.dumps(manifest, sort_keys=True) + "\\n",
+                json.dumps(manifest, sort_keys=True) + "\n",
                 encoding="utf-8",
             )
             os.replace(staged_asset, cache_path)
