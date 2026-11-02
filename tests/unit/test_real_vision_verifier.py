@@ -147,3 +147,61 @@ def test_cost_aware_vision_verifier_logs_primary_failure_before_fallback(
     assert "Primary visual verification failed" in caplog.text
     assert "gemini-vision-v1" in caplog.text
     assert "RuntimeError" in caplog.text
+
+
+def test_cost_aware_vision_opens_circuit_after_first_primary_failure() -> None:
+    class BrokenVision:
+        name = "gemini-vision-v1"
+
+        def __init__(self):
+            self.calls = 0
+
+        def verify(self, item, *, context):
+            self.calls += 1
+            raise RuntimeError("vision unavailable")
+
+    primary = BrokenVision()
+    verifier = CostAwareVisionVerifier(
+        primary,
+        fallback=DeterministicVisualSemanticVerifier(),
+        max_verified_candidates=6,
+    )
+
+    first = verifier.verify(
+        {"title": "Roman emperor standing in Rome"},
+        context=_context(),
+    )
+    second = verifier.verify(
+        {"title": "Roman emperor standing in Rome"},
+        context=_context(),
+    )
+
+    assert first.verifier.startswith("failover:")
+    assert second.verifier.startswith("failover:")
+    assert primary.calls == 1
+
+
+def test_cost_aware_vision_respects_verified_candidate_budget() -> None:
+    class CountingVision:
+        name = "gemini-vision-v1"
+
+        def __init__(self):
+            self.calls = 0
+
+        def verify(self, item, *, context):
+            self.calls += 1
+            return DeterministicVisualSemanticVerifier().verify(item, context=context)
+
+    primary = CountingVision()
+    verifier = CostAwareVisionVerifier(
+        primary,
+        fallback=DeterministicVisualSemanticVerifier(),
+        max_verified_candidates=2,
+    )
+    for _ in range(4):
+        verifier.verify(
+            {"title": "Roman emperor standing in Rome"},
+            context=_context(),
+        )
+
+    assert primary.calls == 2
