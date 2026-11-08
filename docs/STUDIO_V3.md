@@ -47,7 +47,7 @@ Telegram'a önizleme + başlık/açıklama/etiket/yorum
 | `STUDIO_RENDER_MODE` | `local` | `github`: render'ı GitHub Actions'ta yap (Render.com free/starter için önerilir) |
 | `STUDIO_GITHUB_REPO` | | `emrtasknn/youtube-shorts-bot-v2` |
 | `STUDIO_GITHUB_TOKEN` | | Fine-grained PAT, bu repoda **Actions: Read and write** |
-| `STUDIO_GITHUB_REF` | `studio-v3` | Workflow'un çalışacağı branch (merge sonrası `main`) |
+| `STUDIO_GITHUB_REF` | `main` | Workflow'un çalışacağı branch |
 | `STUDIO_TTS` | `ema,fish` | Sırayla denenecek TTS'ler: `ema`, `fish`, `piper` |
 | `STUDIO_PIPER_MODEL_DIR` | | Piper (sherpa-onnx) model klasörü — son çare |
 | `STUDIO_LLM` | `groq,gemini` | Metin yazarı sırası |
@@ -79,7 +79,7 @@ pip install -e ".[studio,ema,align]" # + faster-whisper kelime hizalama
 python -m app studio-bot
 ```
 
-Render.com: `render.yaml` bu branch'te `python -m app studio-bot` çalıştırır ve
+Render.com: `render.yaml` `python -m app studio-bot` çalıştırır ve
 `STUDIO_RENDER_MODE=github` kullanır. Proje dosyaları worker diskinde tutulur; yeniden
 deploy olursa açık projeler kaybolur (yayınlanmış videolar etkilenmez).
 

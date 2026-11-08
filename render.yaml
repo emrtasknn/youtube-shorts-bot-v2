@@ -73,7 +73,7 @@ services:
       - key: STUDIO_GITHUB_REPO
         value: emrtasknn/youtube-shorts-bot-v2
       - key: STUDIO_GITHUB_REF
-        value: studio-v3
+        value: main
       - key: STUDIO_GITHUB_TOKEN
         sync: false
       - key: STUDIO_LLM

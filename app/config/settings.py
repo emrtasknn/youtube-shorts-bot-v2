@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     studio_github_repo: str = ""  # owner/repo for workflow_dispatch
     studio_github_token: str = ""  # fine-grained PAT with actions:write
     studio_github_workflow: str = "studio-render.yml"
-    studio_github_ref: str = "studio-v3"
+    studio_github_ref: str = "main"
     studio_render_workers: int = 0  # 0 = auto
     studio_align_model: str = "base"  # faster-whisper size for word timing; "" disables
 
