@@ -219,3 +219,58 @@ async def test_bot_with_database_store_keeps_state_across_restarts(tmp_path: Pat
     q = restarted.current(99)
     assert q is not None and q.id == p.id and q.status == ProjectStatus.COLLECTING
     assert "Proje bulunamadı" not in tg.last
+
+
+@pytest.mark.asyncio
+async def test_help_is_turkish_and_lists_every_command(tmp_path: Path) -> None:
+    b, tg = _bot(tmp_path)
+    for cmd in ("/yardim", "/start", "/help"):
+        await b.handle(_msg(cmd))
+        assert "KOMUTLAR" in tg.last
+    for needed in ("/yeni", "/metin", "/gorseller", "/render", "/durum", "/iptal", "/havuz"):
+        assert needed in tg.last
+    assert "Commands" not in tg.last and "->" in tg.last
+    assert len(tg.last) < 3800  # one Telegram message
+
+
+@pytest.mark.asyncio
+async def test_senaryo_builds_project_without_llm(tmp_path: Path) -> None:
+    b, tg = _bot(tmp_path)
+
+    class NoLLM:
+        async def complete_json(self, system: str, user: str) -> dict[str, Any]:
+            raise AssertionError("LLM must not be called")
+
+    b._writer = ScriptWriter(NoLLM())
+    await b.handle(_photo("f1", "Emu askerleri"))
+    await b.handle(_msg("/senaryo"))
+    assert "Kullanım" in tg.last
+    await b.handle(
+        _msg("/senaryo Emu Savaşı\n1932'de ordu emulara savaş açtı. Emular kazandı.\nSon.")
+    )
+    assert any("3 sahne" in m[1] and "1 fotoğrafın" in m[1] for m in tg.sent)
+    assert "METİN" in tg.last
+    p = b.current(99)
+    assert p is not None and p.title == "Emu Savaşı" and len(p.lines) == 3
+    assert p.visuals[0].source == "telegram:f1" and p.missing_visuals() == []
+    assert b.store.inbox(99) == []
+
+
+@pytest.mark.asyncio
+async def test_llm_failure_message_is_short_and_suggests_senaryo(tmp_path: Path) -> None:
+    from app.studio.llm import LLMError
+
+    b, tg = _bot(tmp_path)
+
+    class Broken:
+        async def complete_json(self, system: str, user: str) -> dict[str, Any]:
+            raise LLMError(
+                'GroqLLM: Groq HTTP 400: {"error":{"code":"json_validate_failed"}} | '
+                'GeminiLLM: Gemini HTTP 400: {"error": {"message": "API key not valid."}}'
+            )
+
+    b._writer = ScriptWriter(Broken())
+    await b.handle(_msg("/yeni Emu Savaşı"))
+    assert "• Groq: geçerli JSON üretemedi" in tg.last
+    assert "• Gemini: API anahtarı geçersiz" in tg.last
+    assert "/senaryo" in tg.last and "{" not in tg.last

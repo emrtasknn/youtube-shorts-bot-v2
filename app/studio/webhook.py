@@ -51,7 +51,14 @@ def run_migrations() -> bool:
 
             cfg = Config(str(ini))
             cfg.set_main_option("script_location", str(base / "migrations"))
-            command.upgrade(cfg, "head")
+            # alembic.ini's logging section sets the root logger to WARN; put ours back.
+            root = logging.getLogger()
+            level, handlers = root.level, root.handlers[:]
+            try:
+                command.upgrade(cfg, "head")
+            finally:
+                root.handlers[:] = handlers
+                root.setLevel(level)
             return True
     log.warning("alembic.ini bulunamadı; migration atlandı")
     return False

@@ -109,3 +109,73 @@ def test_user_photos_of_keeps_only_user_sources() -> None:
         ],
     )
     assert [ph.source for ph in user_photos_of(p)] == ["telegram:1"]
+
+
+def test_split_script_lines_one_shot_per_sentence() -> None:
+    from app.studio.script_writer import split_script_lines
+
+    text = (
+        "1932'de Avustralya ordusu emulara savaş açtı. Hedef 20.000 kuştu!\n\n"
+        "- Ve bu savaşı kuşlar kazandı."
+    )
+    assert split_script_lines(text) == [
+        "1932'de Avustralya ordusu emulara savaş açtı.",
+        "Hedef 20.000 kuştu!",
+        "Ve bu savaşı kuşlar kazandı.",
+    ]
+    long = " ".join(f"kelime{i}," if i == 9 else f"kelime{i}" for i in range(30))
+    parts = split_script_lines(long)
+    assert parts[0].endswith("kelime9,")  # cut at the comma first
+    assert [len(x.split()) for x in parts] == [10, 10, 10]  # then balanced, no 2-word tail
+
+
+def test_project_from_script_without_photos() -> None:
+    from app.studio.script_writer import project_from_script
+
+    p = project_from_script("Emu Savaşı", "1932'de savaş başladı. Emular kazandı.")
+    assert p.title == "Emu Savaşı" and len(p.lines) == 2
+    assert p.lines[0].caption == "1932'de savaş başladı."
+    assert "bin dokuz yüz otuz iki" in p.lines[0].narration
+    assert [ln.visual for ln in p.lines] == [0, 1]
+    assert p.missing_visuals() == [0, 1]
+    assert p.validate() == []
+
+
+def test_project_from_script_spreads_lines_over_pool_photos() -> None:
+    from app.studio.models import UserPhoto
+    from app.studio.script_writer import project_from_script
+
+    script = "Bir. İki. Üç. Dört. Beş."
+    photos = [UserPhoto("telegram:a", "Emu"), UserPhoto("telegram:b")]
+    p = project_from_script("Emu", script, photos)
+    assert [ln.visual for ln in p.lines] == [0, 0, 0, 1, 1]
+    assert [v.source for v in p.visuals] == ["telegram:a", "telegram:b"]
+    assert p.missing_visuals() == []
+
+
+def test_project_from_script_requires_text() -> None:
+    from app.studio.script_writer import project_from_script
+
+    with pytest.raises(LLMError):
+        project_from_script("Başlık", "   \n  ")
+
+
+@pytest.mark.asyncio
+async def test_groq_retries_without_json_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    import httpx
+
+    from app.studio.llm import GroqLLM
+
+    bodies: list[dict[str, Any]] = []
+    replies = [
+        httpx.Response(400, json={"error": {"code": "json_validate_failed"}}),
+        httpx.Response(200, json={"choices": [{"message": {"content": '```json\n{"a": 1}\n```'}}]}),
+    ]
+
+    async def fake_post(self: Any, body: dict[str, Any]) -> httpx.Response:
+        bodies.append(dict(body))
+        return replies.pop(0)
+
+    monkeypatch.setattr(GroqLLM, "_post", fake_post)
+    assert await GroqLLM("k").complete_json("sys", "user") == {"a": 1}
+    assert "response_format" in bodies[0] and "response_format" not in bodies[1]

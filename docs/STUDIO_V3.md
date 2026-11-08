@@ -127,6 +127,7 @@ python -m app studio-render --project-file p.json --no-upload --no-notify --tts 
 | Albüm, açıklama `/yeni <konu>` | Fotoğraflar + konu tek seferde: albümün hepsi havuza girer ve metin hemen yazılır |
 | Fotoğraf, açıklama `+ …` ya da `havuz …` | Açık proje varken bile fotoğrafı bir sonraki video için havuza koyar |
 | `/havuz` · `/havuz temizle` | Havuzdaki fotoğrafları göster / boşalt |
+| `/senaryo Başlık` + alt satırlarda metin | Kendi senaryon, yapay zekâ kullanılmaz: her cümle bir sahne olur, havuzdaki fotoğraflar sahnelere sırayla dağıtılır |
 | `/metin` · `/gorseller` · `/durum` | Metni, görsel durumunu, proje durumunu göster |
 | `/render` · `/iptal` | |
 | `5: yeni cümle` | 5. satırı değiştir (rakamları seslendirme için otomatik yazıya çevirir) |
