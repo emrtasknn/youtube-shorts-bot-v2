@@ -61,6 +61,9 @@ Telegram'a önizleme + başlık/açıklama/etiket/yorum
 | `STUDIO_ALIGN_MODEL` | `base` | faster-whisper boyutu; sadece EMA dışı bir ses kullanılınca çalışır. Boş = kapalı, hece tahmini |
 | `LEGACY_INTELLIGENCE_ENABLED` | `false` | Eski hattın M10–M13 override katmanlarını yeniden açar |
 | `STUDIO_DIR` | `storage/studio` | Proje JSON'ları ve render çıktıları |
+| `STUDIO_STORE` | `file` | `db`: projeler ve görsel havuzu `DATABASE_URL`'deki Postgres'te (yeniden başlatmada kaybolmaz; ücretsiz hostlarda şart) |
+| `STUDIO_PUBLIC_URL` | | Webhook adresi; Render'da boş bırak (`RENDER_EXTERNAL_URL` kullanılır) |
+| `TELEGRAM_WEBHOOK_SECRET` | | Webhook gizli anahtarı; boşsa bot token'ından türetilir |
 
 Mevcut `TELEGRAM_*`, `YOUTUBE_*`, `GROQ_API_KEY`, `GEMINI_API_KEY`, `FISH_AUDIO_API_KEY` aynen kullanılır.
 `TELEGRAM_ADMIN_USER_ID` doluysa bot sadece o kullanıcıya cevap verir.
@@ -85,9 +88,26 @@ pip install -e ".[studio,ema,align]" # + faster-whisper kelime hizalama
 python -m app studio-bot
 ```
 
-Render.com: `render.yaml` `python -m app studio-bot` çalıştırır ve
-`STUDIO_RENDER_MODE=github` kullanır. Proje dosyaları worker diskinde tutulur; yeniden
-deploy olursa açık projeler kaybolur (yayınlanmış videolar etkilenmez).
+İki çalışma şekli var:
+
+| Komut | Nerede | Not |
+| --- | --- | --- |
+| `python -m app studio-webhook` | **Ücretsiz** Render web service | Telegram mesajı servisi uyandırır; uyuduktan sonraki ilk cevap 30-60 sn gecikebilir. `STUDIO_STORE=db` + `DATABASE_URL` gerekir |
+| `python -m app studio-bot` | Kendi bilgisayarın ya da ücretli worker | Long polling; sürekli açık kalmalı |
+
+### Render.com (ücretsiz)
+
+`render.yaml` ücretsiz bir web service tanımlar (`youtube-shorts-bot-v2-studio`):
+`alembic upgrade head && python -m app studio-webhook`, `STUDIO_STORE=db`,
+`STUDIO_RENDER_MODE=github`. Render → New → Blueprint ile kurulur; `sync: false` olan
+değerleri (token'lar, `DATABASE_URL`) panelden gir.
+
+* **Veritabanı:** Render'ın ücretsiz Postgres'i 30 günde silinir. Supabase'in ücretsiz
+  Postgres'i önerilir. Render IPv6'ya çıkamadığı için Supabase'de **Session pooler**
+  bağlantı adresini kullan ve başını `postgresql+psycopg://` yap.
+* Bot açılırken webhook'u kendisi kaydeder (`setWebhook`). Aynı token'ı başka bir program
+  (eski hat ya da `studio-bot`) dinlememeli; `studio-bot` başlarsa webhook'u siler.
+* Render yeniden deploy ederken ya da servis uyuduğunda açık projeler kaybolmaz (Postgres).
 
 ### Komut satırı
 
@@ -133,6 +153,8 @@ app/studio/
   jobs.py           render + gizli yükleme + Telegram önizleme (local ve Actions ortak)
   publisher.py      YouTube: gizli yükle, etiket/thumbnail, yayınla, sil
   bot.py            Telegram akışı
+  webhook.py        Telegram webhook sunucusu (ücretsiz hostlar için, ek bağımlılık yok)
+  store_sql.py      Postgres'te proje + görsel havuzu (STUDIO_STORE=db)
 ```
 
 ## Bilinen sınırlar

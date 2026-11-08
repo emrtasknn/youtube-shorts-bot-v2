@@ -6,8 +6,17 @@ from pathlib import Path
 
 from app.config.settings import Settings
 from app.studio.llm import FallbackLLM, GeminiLLM, GroqLLM, JsonLLM
+from app.studio.models import ProjectStore
 from app.studio.publisher import StudioYouTube
+from app.studio.store_sql import SqlProjectStore
 from app.studio.tts import ChainTTS, EmaLightningTTS, FishAudioTTS, PiperTTS, TTSBackend
+
+
+def build_store(settings: Settings) -> ProjectStore | SqlProjectStore:
+    """``STUDIO_STORE=db`` keeps projects in DATABASE_URL (survives restarts / free hosts)."""
+    if settings.studio_store.strip().lower() == "db":
+        return SqlProjectStore.from_url(settings.database_url, Path(settings.studio_dir))
+    return ProjectStore(Path(settings.studio_dir))
 
 
 def build_llm(settings: Settings) -> FallbackLLM:

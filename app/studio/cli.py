@@ -1,6 +1,7 @@
 """Studio commands.
 
 python -m app studio-bot                         run the Telegram bot (long polling)
+python -m app studio-webhook                     run the bot behind a Telegram webhook (free web hosts)
 python -m app studio-render --project-file p.json [--no-upload] [--no-notify]
 python -m app studio-render --payload <base64>   (used by GitHub Actions)
 python -m app studio-script "konu"               print a script JSON (LLM test)
@@ -23,6 +24,7 @@ def _parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="python -m app", description="Studio V3")
     sub = ap.add_subparsers(dest="command", required=True)
     sub.add_parser("studio-bot", help="Run the Studio Telegram bot")
+    sub.add_parser("studio-webhook", help="Run the Studio bot behind a Telegram webhook")
     r = sub.add_parser("studio-render", help="Render one project")
     src = r.add_mutually_exclusive_group(required=True)
     src.add_argument("--project-file")
@@ -42,6 +44,10 @@ async def _amain(args: argparse.Namespace) -> None:
         from app.studio.bot import StudioBot
 
         await StudioBot(settings).run()
+    elif args.command == "studio-webhook":
+        from app.studio.webhook import run_webhook
+
+        await run_webhook(settings)
     elif args.command == "studio-render":
         from app.studio.jobs import decode_payload, run_render_job
 
