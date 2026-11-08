@@ -136,3 +136,14 @@ async def test_run_webhook_migrates_only_with_db_store(
             )
         )
     assert events == ["migrate", "set:https://x.io/telegram/webhook"]
+
+
+def test_cli_keeps_bot_token_out_of_logs(monkeypatch: pytest.MonkeyPatch) -> None:
+    import logging
+
+    from app.studio import cli
+
+    monkeypatch.setattr(cli.asyncio, "run", lambda coro: coro.close())
+    cli.main(["studio-script", "x"])
+    assert logging.getLogger("httpx").getEffectiveLevel() >= logging.WARNING
+    assert logging.getLogger("httpcore").getEffectiveLevel() >= logging.WARNING

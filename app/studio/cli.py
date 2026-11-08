@@ -77,4 +77,7 @@ async def _amain(args: argparse.Namespace) -> None:
 
 def main(argv: list[str]) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+    # httpx logs every request URL at INFO; Telegram URLs contain the bot token.
+    for noisy in ("httpx", "httpcore"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
     asyncio.run(_amain(_parser().parse_args(argv)))
