@@ -220,3 +220,84 @@ async def test_groq_body_and_error_detail(monkeypatch: pytest.MonkeyPatch) -> No
     with pytest.raises(LLMError):
         await GroqLLM("k", model="llama-3.3-70b-versatile").complete_json("s", "u")
     assert "reasoning_effort" not in bodies[1]
+
+
+def _good_output() -> dict[str, Any]:
+    sentence = "Bu satır tam bir cümle ve izleyiciyi videonun sonuna kadar tutar."
+    lines: list[dict[str, Any]] = [{"narration": sentence, "visual": 1} for _ in range(12)]
+    lines.insert(5, {"narration": "yasak", "card": "YASAK", "visual": 1})
+    return {**LLM_OUTPUT, "lines": lines}
+
+
+class _SeqLLM:
+    def __init__(self, *outputs: dict[str, Any]) -> None:
+        self.outputs = list(outputs)
+        self.calls: list[str] = []
+
+    async def complete_json(self, system: str, user: str) -> dict[str, Any]:
+        self.calls.append(user)
+        return self.outputs.pop(0)
+
+
+def test_script_problems_lists_broken_rules() -> None:
+    from app.studio.script_writer import script_problems
+
+    bad = project_from_llm(
+        {
+            "lines": [
+                {"narration": "Gece operasyonu", "visual": 1},
+                {"narration": "kilavuz", "card": "KILAVUZ"},
+                {"narration": "gölge", "card": "GÖLGE"},
+            ],
+            "visuals": [{"description": "x"}],
+        },
+        "t",
+    )
+    problems = " | ".join(script_problems(bad))
+    assert "en az 12 satır" in problems
+    assert "tam olarak 1 kart" in problems and "şu an 2" in problems
+    assert "çok kısa" in problems
+    assert "yarım cümle: 1" in problems
+    assert script_problems(project_from_llm(_good_output(), "t")) == []
+
+
+@pytest.mark.asyncio
+async def test_good_draft_is_used_without_retry() -> None:
+    llm = _SeqLLM(_good_output())
+    p = await ScriptWriter(llm).write("Emu Savaşı")
+    assert len(llm.calls) == 1 and len(p.lines) == 13
+
+
+@pytest.mark.asyncio
+async def test_bad_draft_is_retried_with_the_problems() -> None:
+    llm = _SeqLLM(LLM_OUTPUT, _good_output())
+    p = await ScriptWriter(llm).write("Emu Savaşı")
+    assert len(llm.calls) == 2
+    assert "kanal kurallarına uymadı" in llm.calls[1] and "ÖNCEKİ TASLAK" in llm.calls[1]
+    assert "Uydurma bilgi ekleme" in llm.calls[1]
+    assert len(p.lines) == 13
+
+
+@pytest.mark.asyncio
+async def test_worse_retry_keeps_first_draft() -> None:
+    worse = {"lines": [{"narration": "Kısa", "visual": 1}], "visuals": [{"description": "x"}]}
+    llm = _SeqLLM(_good_output() | {"lines": _good_output()["lines"][:11]}, worse)
+    p = await ScriptWriter(llm).write("Emu Savaşı")
+    assert len(llm.calls) == 2 and len(p.lines) == 11
+
+
+@pytest.mark.asyncio
+async def test_fallback_llm_reports_provider() -> None:
+    from app.studio.llm import FallbackLLM
+
+    class GroqLLM:
+        async def complete_json(self, system: str, user: str) -> dict[str, Any]:
+            raise LLMError("down")
+
+    class GeminiLLM:
+        async def complete_json(self, system: str, user: str) -> dict[str, Any]:
+            return _good_output()
+
+    writer = ScriptWriter(FallbackLLM([GroqLLM(), GeminiLLM()]))  # type: ignore[list-item]
+    await writer.write("Emu")
+    assert writer.provider == "gemini"

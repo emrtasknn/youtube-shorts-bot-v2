@@ -178,27 +178,91 @@ def user_photos_of(project: Project) -> list[UserPhoto]:
     ]
 
 
+MIN_LINES, MIN_WORDS, MIN_LINE_WORDS = 12, 95, 4
+
+
+def script_problems(project: Project) -> list[str]:
+    """Channel rules a draft breaks, phrased as instructions for the next attempt."""
+    problems: list[str] = []
+    spoken = [ln for ln in project.lines if not ln.card]
+    cards = len(project.lines) - len(spoken)
+    if len(project.lines) < MIN_LINES:
+        problems.append(f"en az {MIN_LINES} satır yaz (şu an {len(project.lines)})")
+    if cards != 1:
+        problems.append(f"tam olarak 1 kart anı olmalı (şu an {cards})")
+    words = sum(len(ln.narration.split()) for ln in spoken)
+    if words < MIN_WORDS:
+        problems.append(f"metin çok kısa ({words} kelime); 110-150 kelime yaz")
+    short = [
+        str(i)
+        for i, ln in enumerate(project.lines, 1)
+        if not ln.card and len(ln.narration.split()) < MIN_LINE_WORDS
+    ]
+    if short:
+        problems.append(
+            "şu satırlar yarım cümle: "
+            + ", ".join(short)
+            + ". Her satır özne ve yüklemi olan tam bir cümle olmalı"
+        )
+    return problems
+
+
 class ScriptWriter:
+    """Writes a script; when a draft breaks the channel rules it asks once more."""
+
     def __init__(self, llm: JsonLLM) -> None:
         self._llm = llm
+
+    @property
+    def provider(self) -> str:
+        return str(getattr(self._llm, "used", "") or "")
+
+    async def _draft(self, topic: str, prompt: str) -> Project:
+        return project_from_llm(await self._llm.complete_json(SYSTEM_PROMPT, prompt), topic)
+
+    async def _write_checked(
+        self,
+        topic: str,
+        notes: str,
+        photos: list[UserPhoto],
+        feedback: str = "",
+        previous: str = "",
+    ) -> Project:
+        project = await self._draft(
+            topic, build_user_prompt(topic, notes, feedback, previous, photos=photos)
+        )
+        problems = script_problems(project)
+        if not problems:
+            return project
+        retry_feedback = (
+            (feedback + "\n" if feedback else "")
+            + "Önceki taslak kanal kurallarına uymadı, düzelt: "
+            + "; ".join(problems)
+            + ". Uydurma bilgi ekleme; emin olmadığın tarih, isim ve olayı yazma."
+        )
+        try:
+            second = await self._draft(
+                topic,
+                build_user_prompt(
+                    topic, notes, retry_feedback, script_as_json(project), photos=photos
+                ),
+            )
+        except LLMError:
+            return project
+        return second if len(script_problems(second)) <= len(problems) else project
 
     async def write(
         self, topic: str, notes: str = "", photos: list[UserPhoto] | None = None
     ) -> Project:
         photos = photos or []
-        data = await self._llm.complete_json(
-            SYSTEM_PROMPT, build_user_prompt(topic, notes, photos=photos)
-        )
-        project = project_from_llm(data, topic)
+        project = await self._write_checked(topic, notes, photos)
         attach_user_photos(project, photos)
         return project
 
     async def revise(self, project: Project, feedback: str) -> Project:
-        data = await self._llm.complete_json(
-            SYSTEM_PROMPT,
-            build_user_prompt(project.topic, feedback=feedback, previous=script_as_json(project)),
+        revised = await self._write_checked(
+            project.topic, "", [], feedback=feedback, previous=script_as_json(project)
         )
-        revised = project_from_llm(data, project.topic)
         # keep identity, chat and any visuals the user already supplied
         revised.id, revised.chat_id, revised.created_at = (
             project.id,
