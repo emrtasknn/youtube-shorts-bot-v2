@@ -86,7 +86,8 @@ services:
         value: db
       - key: TELEGRAM_WEBHOOK_SECRET
         generateValue: true
-    # Studio V3 bot behind a Telegram webhook. Only one program may receive a bot
-    # token's updates: the legacy pipeline (telegram-poll / telegram-webhook) must
-    # not run with the same token. A paid worker can use `python -m app studio-bot`.
-    dockerCommand: sh -c "alembic upgrade head && python -m app studio-webhook"
+    # Studio V3 bot behind a Telegram webhook; with STUDIO_STORE=db it runs
+    # `alembic upgrade head` itself (Render's Docker Command has no shell, so no `&&`).
+    # Only one program may receive a bot token's updates: the legacy pipeline
+    # (telegram-poll / telegram-webhook) must not run with the same token.
+    dockerCommand: python -m app studio-webhook

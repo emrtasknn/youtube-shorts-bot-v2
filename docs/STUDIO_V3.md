@@ -98,7 +98,9 @@ python -m app studio-bot
 ### Render.com (ücretsiz)
 
 `render.yaml` ücretsiz bir web service tanımlar (`youtube-shorts-bot-v2-studio`):
-`alembic upgrade head && python -m app studio-webhook`, `STUDIO_STORE=db`,
+Docker Command `python -m app studio-webhook` (`STUDIO_STORE=db` iken açılışta
+`alembic upgrade head` kendisi çalışır; Render bu alanı kabuksuz çalıştırdığı için
+`sh -c "… && …"` yazma), `STUDIO_STORE=db`,
 `STUDIO_RENDER_MODE=github`. Render → New → Blueprint ile kurulur; `sync: false` olan
 değerleri (token'lar, `DATABASE_URL`) panelden gir.
 
