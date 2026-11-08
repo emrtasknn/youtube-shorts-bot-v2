@@ -48,6 +48,23 @@ class Settings(BaseSettings):
     fish_audio_format: str = "mp3"
     fish_audio_reference_id: str = ""
     fish_audio_timeout_seconds: float = 120.0
+    # M10-M13 production decision / topic selection / experiment / optimization
+    # overrides in the legacy pipeline. Off by default: there is no reliable
+    # performance data to act on until video quality is fixed (see STUDIO_V3.md).
+    legacy_intelligence_enabled: bool = False
+    # ---- Studio V3 (topic + human visuals + EMA TTS) ----
+    studio_dir: str = "storage/studio"
+    studio_tts: str = "ema,fish"  # comma separated fallback chain: ema | fish | piper
+    studio_piper_model_dir: str = ""
+    studio_llm: str = "groq,gemini"  # fallback chain
+    studio_gemini_model: str = "gemini-2.5-flash"
+    studio_render_mode: str = "local"  # local | github
+    studio_github_repo: str = ""  # owner/repo for workflow_dispatch
+    studio_github_token: str = ""  # fine-grained PAT with actions:write
+    studio_github_workflow: str = "studio-render.yml"
+    studio_github_ref: str = "main"
+    studio_render_workers: int = 0  # 0 = auto
+    studio_align_model: str = "base"  # faster-whisper size for word timing; "" disables
 
 
 @lru_cache
