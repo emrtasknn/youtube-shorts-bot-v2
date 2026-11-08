@@ -219,3 +219,15 @@ async def test_bot_with_database_store_keeps_state_across_restarts(tmp_path: Pat
     q = restarted.current(99)
     assert q is not None and q.id == p.id and q.status == ProjectStatus.COLLECTING
     assert "Proje bulunamadı" not in tg.last
+
+
+@pytest.mark.asyncio
+async def test_help_is_turkish_and_lists_every_command(tmp_path: Path) -> None:
+    b, tg = _bot(tmp_path)
+    for cmd in ("/yardim", "/start", "/help"):
+        await b.handle(_msg(cmd))
+        assert "KOMUTLAR" in tg.last
+    for needed in ("/yeni", "/metin", "/gorseller", "/render", "/durum", "/iptal", "/havuz"):
+        assert needed in tg.last
+    assert "Commands" not in tg.last and "->" in tg.last
+    assert len(tg.last) < 3800  # one Telegram message

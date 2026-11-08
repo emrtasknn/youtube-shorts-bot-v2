@@ -43,7 +43,38 @@ from app.studio.visual_search import search_commons
 
 log = logging.getLogger("studio.bot")
 
-HELP = __doc__ or ""
+HELP = """🎬 Bir Garip Tarih · Shorts Stüdyosu
+
+Akış: konu → metin onayı → görseller → render → yayın
+
+📌 KOMUTLAR
+/yeni <konu> · yeni Short başlat
+   (uzun metin de yapıştırabilirsin: ilk satır konu, gerisi kaynak notu)
+/metin · metni tekrar göster
+/gorseller · görselleri ve eksikleri göster
+/render · videoyu hazırla
+/durum · projenin durumu
+/iptal · projeyi iptal et
+/havuz · bekleyen fotoğrafları göster
+/havuz temizle · havuzu boşalt
+
+✏️ METNİ DÜZENLEME (düz mesaj olarak yaz)
+5: yeni cümle → 5. satırı değiştirir
+5 -> 3 → 5. satır 3. görseli kullanır
+g3: açıklama → 3. görselin tarifini değiştirir
+düzelt: daha kısa yap → metni baştan yazdırır
+
+🖼 GÖRSELLER
+• Metni onayladıktan sonra fotoğrafları sırayla gönder.
+• Belirli bir görsele koymak için açıklamaya numarasını yaz: 3
+• Eksikler için 🔎 düğmesiyle Wikimedia'dan aday seçebilirsin.
+
+📥 KENDİ FOTOĞRAFLARINLA BAŞLA
+• Önce fotoğrafları gönder, açıklamaya içinde ne olduğunu yaz.
+  Sonra /yeni <konu> yaz: metin bu fotoğrafların etrafında kurulur.
+• Ya da tek bir albüm gönder, albümün açıklaması: /yeni <konu>
+• Proje açıkken açıklamaya "+" yazarsan fotoğraf bir sonraki video
+  için havuza gider."""
 LINE_EDIT = re.compile(r"^\s*(\d{1,2})\s*[:.)-]\s*(.+)$", re.S)
 LINE_VISUAL = re.compile(r"^\s*(\d{1,2})\s*->\s*(\d{1,2})\s*$")
 VISUAL_EDIT = re.compile(r"^\s*g(\d{1,2})\s*:\s*(.+)$", re.I | re.S)
