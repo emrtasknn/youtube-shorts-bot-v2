@@ -102,8 +102,10 @@ def short_llm_error(exc: Exception) -> str:
             detail = " geçerli JSON üretemedi"
         elif "429" in low or "rate" in low and "limit" in low:
             detail = " istek sınırı doldu, biraz sonra dene"
+        elif m := re.search(r'"message"\s*:\s*"([^"]+)', detail):
+            detail = " " + m.group(1)[:140]
         else:
-            detail = detail[:120]
+            detail = detail[:140]
         parts.append(f"• {name.replace('LLM', '')}:{detail}")
     return "\n".join(parts)
 

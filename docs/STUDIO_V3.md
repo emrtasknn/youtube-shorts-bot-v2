@@ -57,7 +57,8 @@ Telegram'a önizleme + başlık/açıklama/etiket/yorum
 | `STUDIO_EMA_SEED` | `0` | Aynı seed = yeniden render'da aynı ses; `-1` = her seferinde farklı |
 | `STUDIO_EMA_DEVICE` | `auto` | `auto` · `cpu` · `cuda` |
 | `STUDIO_LLM` | `groq,gemini` | Metin yazarı sırası |
-| `STUDIO_GEMINI_MODEL` | `gemini-2.5-flash` | |
+| `STUDIO_GEMINI_MODEL` | | Studio'nun Gemini modeli; boş = `GEMINI_MODEL` |
+| `STUDIO_GROQ_MODEL` | | Studio'nun Groq modeli; boş = `GROQ_MODEL` |
 | `STUDIO_ALIGN_MODEL` | `base` | faster-whisper boyutu; sadece EMA dışı bir ses kullanılınca çalışır. Boş = kapalı, hece tahmini |
 | `LEGACY_INTELLIGENCE_ENABLED` | `false` | Eski hattın M10–M13 override katmanlarını yeniden açar |
 | `STUDIO_DIR` | `storage/studio` | Proje JSON'ları ve render çıktıları |

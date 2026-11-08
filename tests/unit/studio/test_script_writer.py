@@ -179,3 +179,44 @@ async def test_groq_retries_without_json_mode(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr(GroqLLM, "_post", fake_post)
     assert await GroqLLM("k").complete_json("sys", "user") == {"a": 1}
     assert "response_format" in bodies[0] and "response_format" not in bodies[1]
+
+
+def test_studio_models_fall_back_to_shared_settings() -> None:
+    from app.config.settings import Settings
+    from app.studio.factory import build_llm
+
+    s = Settings(
+        groq_api_key="g", gemini_api_key="m", groq_model="llama-x", gemini_model="gemini-new"
+    )
+    groq, gemini = build_llm(s)._providers  # type: ignore[attr-defined]
+    assert groq._model == "llama-x" and gemini._model == "gemini-new"
+    s2 = Settings(
+        groq_api_key="g",
+        gemini_api_key="m",
+        studio_groq_model="studio-groq",
+        studio_gemini_model="studio-gem",
+    )
+    groq, gemini = build_llm(s2)._providers  # type: ignore[attr-defined]
+    assert groq._model == "studio-groq" and gemini._model == "studio-gem"
+
+
+@pytest.mark.asyncio
+async def test_groq_body_and_error_detail(monkeypatch: pytest.MonkeyPatch) -> None:
+    import httpx
+
+    from app.studio.llm import GroqLLM
+
+    bodies: list[dict[str, Any]] = []
+
+    async def fake_post(self: Any, body: dict[str, Any]) -> httpx.Response:
+        bodies.append(dict(body))
+        msg = {"content": None, "reasoning": "thinking..."}
+        return httpx.Response(200, json={"choices": [{"message": msg, "finish_reason": "length"}]})
+
+    monkeypatch.setattr(GroqLLM, "_post", fake_post)
+    with pytest.raises(LLMError, match="finish_reason=length, 0 karakter"):
+        await GroqLLM("k", model="openai/gpt-oss-20b").complete_json("s", "u")
+    assert bodies[0]["reasoning_effort"] == "low" and bodies[0]["max_completion_tokens"] == 8192
+    with pytest.raises(LLMError):
+        await GroqLLM("k", model="llama-3.3-70b-versatile").complete_json("s", "u")
+    assert "reasoning_effort" not in bodies[1]

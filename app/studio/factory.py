@@ -26,7 +26,7 @@ def build_llm(settings: Settings) -> FallbackLLM:
             providers.append(
                 GroqLLM(
                     settings.groq_api_key,
-                    model=settings.groq_model,
+                    model=settings.studio_groq_model or settings.groq_model,
                     base_url=settings.groq_base_url,
                 )
             )
@@ -34,7 +34,7 @@ def build_llm(settings: Settings) -> FallbackLLM:
             providers.append(
                 GeminiLLM(
                     settings.gemini_api_key,
-                    model=settings.studio_gemini_model,
+                    model=settings.studio_gemini_model or settings.gemini_model,
                     base_url=settings.gemini_base_url,
                 )
             )

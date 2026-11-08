@@ -63,12 +63,17 @@ class GroqLLM:
         body: dict[str, Any] = {
             "model": self._model,
             "temperature": 0.8,
+            "max_completion_tokens": 8192,
             "response_format": {"type": "json_object"},
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
         }
+        if "gpt-oss" in self._model:
+            # reasoning models spend the token budget thinking first; keep that short
+            # so the script itself fits in the answer
+            body["reasoning_effort"] = "low"
         r = await self._post(body)
         if r.status_code == 400 and "json_validate_failed" in r.text:
             # Groq's strict JSON mode sometimes rejects an empty/partial generation;
@@ -77,8 +82,13 @@ class GroqLLM:
             r = await self._post(body)
         if r.status_code >= 400:
             raise LLMError(f"Groq HTTP {r.status_code}: {r.text[:300]}")
-        content = r.json()["choices"][0]["message"]["content"]
-        return parse_json_object(str(content or ""))
+        choice = r.json()["choices"][0]
+        content = str(choice.get("message", {}).get("content") or "")
+        try:
+            return parse_json_object(content)
+        except LLMError as exc:
+            reason = choice.get("finish_reason", "?")
+            raise LLMError(f"{exc} (finish_reason={reason}, {len(content)} karakter)") from exc
 
 
 class GeminiLLM:
