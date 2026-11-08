@@ -84,3 +84,55 @@ async def test_bot_errors_do_not_break_the_server(tmp_path: Path) -> None:
     assert hook.accept({"update_id": 1})
     await asyncio.gather(*list(hook._tasks))
     assert not hook.accept({"update_id": 1})
+
+
+def test_run_migrations_finds_repo_and_upgrades(monkeypatch: pytest.MonkeyPatch) -> None:
+    from alembic import command
+
+    from app.studio import webhook
+
+    calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        command,
+        "upgrade",
+        lambda cfg, rev: calls.append((cfg.get_main_option("script_location"), rev)),
+    )
+    assert webhook.run_migrations() is True
+    assert calls and calls[0][1] == "head" and calls[0][0].endswith("migrations")
+
+
+@pytest.mark.asyncio
+async def test_run_webhook_migrates_only_with_db_store(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.studio import webhook
+
+    events: list[str] = []
+
+    class StopServe(Exception):
+        pass
+
+    async def fake_set_webhook(self: Any, url: str, *, secret_token: str = "") -> dict[str, Any]:
+        events.append(f"set:{url}")
+        return {}
+
+    async def fake_serve(self: Any, host: str, port: int) -> None:
+        raise StopServe
+
+    monkeypatch.setattr(webhook, "run_migrations", lambda: events.append("migrate") or True)
+    monkeypatch.setattr("app.studio.telegram.StudioTelegram.set_webhook", fake_set_webhook)
+    monkeypatch.setattr(webhook.StudioWebhook, "serve", fake_serve)
+
+    with pytest.raises(StopServe):
+        await webhook.run_webhook(_settings(tmp_path, studio_public_url="https://x.io"))
+    assert events == ["set:https://x.io/telegram/webhook"]
+
+    events.clear()
+    url = f"sqlite:///{tmp_path / 'db.sqlite'}"
+    with pytest.raises(StopServe):
+        await webhook.run_webhook(
+            _settings(
+                tmp_path, studio_public_url="https://x.io", studio_store="db", database_url=url
+            )
+        )
+    assert events == ["migrate", "set:https://x.io/telegram/webhook"]

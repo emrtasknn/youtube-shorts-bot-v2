@@ -19,6 +19,7 @@ import json
 import logging
 import os
 from collections import deque
+from pathlib import Path
 from typing import Any
 
 from app.config.settings import Settings
@@ -34,6 +35,26 @@ def webhook_secret(settings: Settings) -> str:
     if settings.telegram_webhook_secret:
         return settings.telegram_webhook_secret
     return hashlib.sha256(f"studio:{settings.telegram_bot_token}".encode()).hexdigest()[:48]
+
+
+def run_migrations() -> bool:
+    """``alembic upgrade head`` from inside the app.
+
+    Render runs the Docker Command without a shell, so ``a && b`` cannot be used
+    there; the bot migrates its own database at start instead.
+    """
+    for base in (Path.cwd(), Path(__file__).resolve().parents[2]):
+        ini = base / "alembic.ini"
+        if ini.is_file() and (base / "migrations").is_dir():
+            from alembic import command
+            from alembic.config import Config
+
+            cfg = Config(str(ini))
+            cfg.set_main_option("script_location", str(base / "migrations"))
+            command.upgrade(cfg, "head")
+            return True
+    log.warning("alembic.ini bulunamadı; migration atlandı")
+    return False
 
 
 def public_url(settings: Settings) -> str:
@@ -139,6 +160,8 @@ async def run_webhook(settings: Settings) -> None:
             "Webhook için genel adres gerekli: Render'da RENDER_EXTERNAL_URL otomatik gelir, "
             "başka yerde STUDIO_PUBLIC_URL ayarla"
         )
+    if settings.studio_store.strip().lower() == "db":
+        await asyncio.to_thread(run_migrations)
     bot = StudioBot(settings)
     hook = StudioWebhook(bot, settings)
     await bot.bot.set_webhook(base + hook.path, secret_token=hook.secret)
