@@ -9,5 +9,5 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir .
+    && pip install --no-cache-dir ".[studio]"
 CMD ["sh","-c","alembic upgrade head && python -m app telegram-webhook"]

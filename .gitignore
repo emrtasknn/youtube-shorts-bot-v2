@@ -13,6 +13,7 @@ build/
 storage/generated/*
 storage/cache/*
 storage/temp/*
+storage/studio/*
 !storage/**/.gitkeep
 token.json
 client_secrets.json

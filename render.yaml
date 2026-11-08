@@ -67,4 +67,18 @@ services:
         sync: false
       - key: FISH_AUDIO_TIMEOUT_SECONDS
         value: "120"
-    dockerCommand: /bin/sh -c "alembic upgrade head && python -m app telegram-poll"
+      # ---- Studio V3 ----
+      - key: STUDIO_RENDER_MODE
+        value: github
+      - key: STUDIO_GITHUB_REPO
+        value: emrtasknn/youtube-shorts-bot-v2
+      - key: STUDIO_GITHUB_REF
+        value: main
+      - key: STUDIO_GITHUB_TOKEN
+        sync: false
+      - key: STUDIO_LLM
+        value: groq,gemini
+    # Studio V3 bot. The legacy pipeline is still available with:
+    #   alembic upgrade head && python -m app telegram-poll
+    # (only one of them may poll the same Telegram token at a time)
+    dockerCommand: python -m app studio-bot

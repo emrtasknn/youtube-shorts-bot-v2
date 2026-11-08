@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import sys
 import uuid
 
 from sqlalchemy.orm import Session
@@ -171,6 +172,11 @@ async def _run(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
+    if len(sys.argv) > 1 and sys.argv[1].startswith("studio-"):
+        from app.studio.cli import main as studio_main
+
+        studio_main(sys.argv[1:])
+        return
     args = _build_parser().parse_args()
     asyncio.run(_run(args))
 
