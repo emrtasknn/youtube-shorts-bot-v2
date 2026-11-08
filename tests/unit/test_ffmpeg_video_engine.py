@@ -23,6 +23,9 @@ def test_builder_creates_vertical_scene_pipeline(tmp_path: Path) -> None:
 
     assert command[:4] == ["ffmpeg", "-y", "-hide_banner", "-loglevel"]
     assert "-stream_loop" in command
+    assert command[command.index("-preset") + 1] == "superfast"
+    assert command[command.index("-crf") + 1] == "20"
+    assert command[command.index("-threads") + 1] == "2"
     assert "-loop" not in command
     assert "scale=1080:1920" in filter_complex
     assert "crop=1080:1920" in filter_complex

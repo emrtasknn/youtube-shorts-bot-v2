@@ -30,8 +30,10 @@ class FakeResponse:
 class FakeClient:
     def __init__(self):
         self.posts = []
+        self.gets = []
 
-    def get(self, url):
+    def get(self, url, **kwargs):
+        self.gets.append((url, kwargs))
         return FakeResponse({})
 
     def post(self, url, headers=None, json_payload=None, **kwargs):
@@ -96,6 +98,7 @@ def test_gemini_vision_verifier_uses_actual_image_bytes_and_returns_accept() -> 
     assert result.decision == VisualVerificationDecision.ACCEPT
     assert result.score.overall > 0.78
     assert len(client.posts) == 1
+    assert client.gets[0][1]["headers"]["User-Agent"].startswith("YouTubeShortsBotV2/")
     parts = client.posts[0][2]["contents"][0]["parts"]
     assert "inline_data" in parts[1]
     assert parts[1]["inline_data"]["data"]
@@ -147,3 +150,61 @@ def test_cost_aware_vision_verifier_logs_primary_failure_before_fallback(
     assert "Primary visual verification failed" in caplog.text
     assert "gemini-vision-v1" in caplog.text
     assert "RuntimeError" in caplog.text
+
+
+def test_cost_aware_vision_opens_circuit_after_first_primary_failure() -> None:
+    class BrokenVision:
+        name = "gemini-vision-v1"
+
+        def __init__(self):
+            self.calls = 0
+
+        def verify(self, item, *, context):
+            self.calls += 1
+            raise RuntimeError("vision unavailable")
+
+    primary = BrokenVision()
+    verifier = CostAwareVisionVerifier(
+        primary,
+        fallback=DeterministicVisualSemanticVerifier(),
+        max_verified_candidates=6,
+    )
+
+    first = verifier.verify(
+        {"title": "Roman emperor standing in Rome"},
+        context=_context(),
+    )
+    second = verifier.verify(
+        {"title": "Roman emperor standing in Rome"},
+        context=_context(),
+    )
+
+    assert first.verifier.startswith("failover:")
+    assert second.verifier.startswith("failover:")
+    assert primary.calls == 1
+
+
+def test_cost_aware_vision_respects_verified_candidate_budget() -> None:
+    class CountingVision:
+        name = "gemini-vision-v1"
+
+        def __init__(self):
+            self.calls = 0
+
+        def verify(self, item, *, context):
+            self.calls += 1
+            return DeterministicVisualSemanticVerifier().verify(item, context=context)
+
+    primary = CountingVision()
+    verifier = CostAwareVisionVerifier(
+        primary,
+        fallback=DeterministicVisualSemanticVerifier(),
+        max_verified_candidates=2,
+    )
+    for _ in range(4):
+        verifier.verify(
+            {"title": "Roman emperor standing in Rome"},
+            context=_context(),
+        )
+
+    assert primary.calls == 2
