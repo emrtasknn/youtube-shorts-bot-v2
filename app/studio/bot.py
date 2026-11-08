@@ -325,6 +325,8 @@ class StudioBot:
             self.store.save(old)
         p.chat_id = chat
         self.store.save(p)
+        if self.writer.provider:
+            await self.say(chat, f"🤖 Metni yazan: {self.writer.provider}")
         await self.send_script(chat, p)
 
     async def new_project_from_script(self, chat: int, message: str) -> None:

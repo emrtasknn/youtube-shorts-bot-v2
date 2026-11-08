@@ -135,12 +135,15 @@ class FallbackLLM:
         if not providers:
             raise LLMError("Hiç LLM sağlayıcısı yapılandırılmamış (GROQ_API_KEY / GEMINI_API_KEY)")
         self._providers = providers
+        self.used = ""
 
     async def complete_json(self, system: str, user: str) -> dict[str, Any]:
         errors: list[str] = []
         for p in self._providers:
             try:
-                return await p.complete_json(system, user)
+                out = await p.complete_json(system, user)
+                self.used = type(p).__name__.removesuffix("LLM").lower()
+                return out
             except (LLMError, httpx.HTTPError, KeyError) as exc:
                 errors.append(f"{type(p).__name__}: {exc}")
         raise LLMError(" | ".join(errors))
