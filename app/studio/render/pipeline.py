@@ -13,6 +13,7 @@ from pathlib import Path
 import httpx
 import numpy as np
 
+from app.studio.align import Aligner
 from app.studio.models import Project
 from app.studio.render.audio import SoundDesigner, mix, write_wav
 from app.studio.render.engine import FrameRenderer, encode_shot, prepare_visuals
@@ -33,6 +34,7 @@ class RenderOutput:
     thumb_horizontal: Path
     duration: float
     tts_used: str
+    alignment: str = "syllable"
 
 
 async def fetch_visual(source: str, dest: Path, telegram: TelegramDownloader | None) -> Path:
@@ -78,6 +80,7 @@ async def render_project(
     fps: int = 30,
     workers: int | None = None,
     progress: Callable[[str], Awaitable[None]] | None = None,
+    aligner: Aligner | None = None,
 ) -> RenderOutput:
     global _RENDERER, _TOTAL
 
@@ -110,7 +113,9 @@ async def render_project(
     visuals = prepare_visuals(paths, focus)
 
     await say(f"🎙 Seslendirme ({tts.name})")
-    voice = await build_voice_track(project.lines, tts)
+    voice = await build_voice_track(project.lines, tts, aligner=aligner)
+    if aligner is not None:
+        await say(f"⏱ Kelime hizalama: {voice.alignment}")
     total = voice.duration
     voice_wav = workdir / "voice.wav"
     write_wav(voice_wav, voice.audio, SAMPLE_RATE)
@@ -254,4 +259,5 @@ async def render_project(
         thumb_h,
         float(np.round(total, 2)),
         getattr(tts, "used", "") or tts.name,
+        voice.alignment,
     )

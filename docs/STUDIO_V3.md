@@ -32,7 +32,8 @@ Telegram'a önizleme + başlık/açıklama/etiket/yorum
 | --- | --- |
 | `zoompan` tam piksele yuvarlıyor → titreme, 1080'e kırpılmış görsele zoom → bulanıklık | Her kare OpenCV `warpAffine` ile alt-piksel hassasiyetinde, orijinal çözünürlükten çiziliyor |
 | Yatay arşiv fotoğrafları ortadan 9:16 kırpılıyor | Yatay görseller "kart" düzeninde (bulanık arka plan + çerçeve), dikeyler tam ekran; yüz tespiti ile odak |
-| Altyazı toplam süreye harf sayısıyla dağıtılıyor, İngilizce stopword vurgusu | Her satır ayrı seslendiriliyor (satır senkronu kesin), kelimeler Türkçe hece ağırlığıyla; o anki kelime sarı |
+| Altyazı toplam süreye harf sayısıyla dağıtılıyor, İngilizce stopword vurgusu | Her satır ayrı seslendiriliyor (satır senkronu kesin); kelime zamanları **faster-whisper** ile gerçek sesten alınıp bilinen metne hizalanıyor (`app/studio/align.py`), eşleşmeyen kelimeler hece ağırlığıyla dolduruluyor; o anki kelime sarı |
+| M10–M13 optimizasyon/deney/karar katmanları video kalitesi oturmadan üretimi yönlendiriyor | `LEGACY_INTELLIGENCE_ENABLED=false` (varsayılan): eski hatta karar, konu seçimi, deney ve optimizasyon override'ları yok sayılıyor. Studio bu katmanları hiç kullanmıyor |
 | Docker'da Arial yok | Poppins (OFL) repoda: `app/studio/assets/fonts` |
 | Pexels modern stok, Wikimedia gürültülü, üstüne doğrulayıcı katmanları | Görseli insan verir; eksikler için aday gösterilir, insan seçer |
 | Kurgu dili yok | Kesmede zoom-punch + flash + whoosh, sepia/altın/soğuk grade, grain, vinyet, üst bağlam etiketi, dev "kart" anı, loop'lu kapanış, prosedürel (telifsiz) müzik + otomatik ducking, -14 LUFS |
@@ -51,6 +52,8 @@ Telegram'a önizleme + başlık/açıklama/etiket/yorum
 | `STUDIO_PIPER_MODEL_DIR` | | Piper (sherpa-onnx) model klasörü — son çare |
 | `STUDIO_LLM` | `groq,gemini` | Metin yazarı sırası |
 | `STUDIO_GEMINI_MODEL` | `gemini-2.5-flash` | |
+| `STUDIO_ALIGN_MODEL` | `base` | faster-whisper boyutu (kelime hizalama); boş = kapalı, sadece hece tahmini |
+| `LEGACY_INTELLIGENCE_ENABLED` | `false` | Eski hattın M10–M13 override katmanlarını yeniden açar |
 | `STUDIO_DIR` | `storage/studio` | Proje JSON'ları ve render çıktıları |
 
 Mevcut `TELEGRAM_*`, `YOUTUBE_*`, `GROQ_API_KEY`, `GEMINI_API_KEY`, `FISH_AUDIO_API_KEY` aynen kullanılır.
@@ -72,6 +75,7 @@ Workflow: `.github/workflows/studio-render.yml`. Elle de tetiklenebilir; `projec
 ```bash
 pip install -e ".[studio]"          # bot + render
 pip install -e ".[studio,ema]"      # + EMA Lightning (torch CPU ile)
+pip install -e ".[studio,ema,align]" # + faster-whisper kelime hizalama
 python -m app studio-bot
 ```
 
@@ -107,6 +111,7 @@ app/studio/
   script_writer.py  kanal kurallı prompt, LLM JSON → Project
   llm.py            Groq + Gemini JSON istemcileri, yedekli
   tts.py            EMA Lightning / Fish Audio / Piper + satır satır ses izi
+  align.py          faster-whisper kelime zaman damgaları → bilinen metne bulanık hizalama
   text.py           Türkçe sayı okuma, büyük harf, hece ağırlığı, altyazı parçalama
   visual_search.py  Wikimedia Commons aday araması
   render/planner.py satır zamanlaması → planlar (kamera hareketleri, kart anları)
@@ -124,7 +129,11 @@ app/studio/
 * EMA Lightning bu branch hazırlanırken sandbox'ta kurulamadığı için **gerçek ortamda ilk
   çalıştırmada doğrulanmalı**; hata verirse zincirdeki sıradaki TTS (Fish → Piper) devreye girer
   ve önizleme mesajında hangi sesin kullanıldığı yazar.
-* Kelime zamanlaması satır içinde tahmini (hece ağırlığı); satır sınırları kesin.
+* faster-whisper modeli ilk çalıştırmada Hugging Face'ten indirilir (Actions'ta önbelleğe alınır);
+  sandbox'ta model indirilemediği için hizalama sahte tanıyıcıyla test edildi. Model yoksa ya da hata
+  verirse render durmaz, hece tahminine düşer; önizleme mesajında `🔤 whisper (%)` / `syllable` yazar.
+* Eski hattaki `ProviderPerformanceLearning` sağlayıcı yönlendirmesinin (reliability) parçası olduğu
+  için kapatılmadı; metrics/learning/recommendation servisleri zaten hiçbir giriş noktasından çağrılmıyor.
 * YouTube API yorum sabitlemeye izin vermez; yorum eklenir, sabitlemeyi uygulamadan yap.
   Shorts için özel thumbnail API'de her hesapta kabul edilmeyebilir; uyarı olarak bildirilir.
 * Her gizli yükleme YouTube kotasından ~1600 birim harcar (günlük 10.000).

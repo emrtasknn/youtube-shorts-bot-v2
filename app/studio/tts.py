@@ -22,6 +22,7 @@ import httpx
 import numpy as np
 import numpy.typing as npt
 
+from app.studio.align import Aligner, align_line_words, matched_ratio
 from app.studio.models import Line
 from app.studio.text import WordTiming, distribute_words
 
@@ -225,6 +226,7 @@ class VoiceTrack:
     audio: Audio
     lines: list[LineTiming]
     words: list[WordTiming]
+    alignment: str = "syllable"  # "whisper (87%)" when faster-whisper aligned the words
 
     @property
     def duration(self) -> float:
@@ -232,7 +234,11 @@ class VoiceTrack:
 
 
 async def build_voice_track(
-    lines: list[Line], tts: TTSBackend, *, lead_in: float = 0.25
+    lines: list[Line],
+    tts: TTSBackend,
+    *,
+    lead_in: float = 0.25,
+    aligner: Aligner | None = None,
 ) -> VoiceTrack:
     pieces: list[Audio] = [np.zeros(int(lead_in * SAMPLE_RATE), np.float32)]
     t = lead_in
@@ -259,4 +265,28 @@ async def build_voice_track(
             gap = 0.15
         pieces.append(np.zeros(int(gap * SAMPLE_RATE), np.float32))
         t += gap
-    return VoiceTrack(np.concatenate(pieces), timings, words)
+    audio = np.concatenate(pieces)
+    track = VoiceTrack(audio, timings, words)
+    if aligner is not None:
+        await _apply_alignment(track, lines, aligner)
+    return track
+
+
+async def _apply_alignment(track: VoiceTrack, lines: list[Line], aligner: Aligner) -> None:
+    """Replace syllable estimates with real word timings; keep estimates on failure."""
+    try:
+        recognized = await asyncio.to_thread(aligner.transcribe, track.audio, SAMPLE_RATE)
+    except Exception as exc:  # optional feature: never fail the render
+        track.alignment = f"syllable (whisper hata: {type(exc).__name__})"
+        return
+    words: list[WordTiming] = []
+    ratios: list[float] = []
+    for lt in track.lines:
+        line = lines[lt.index]
+        if line.card:
+            continue
+        words.extend(align_line_words(line.shown, lt.start, lt.end, lt.index, recognized))
+        ratios.append(matched_ratio(line.shown, recognized, lt.start, lt.end))
+    track.words = words
+    pct = int(100 * sum(ratios) / max(len(ratios), 1))
+    track.alignment = f"whisper ({pct}%)"

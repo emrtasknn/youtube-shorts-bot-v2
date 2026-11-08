@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -126,7 +126,13 @@ class GenerateCustomShort:
         video_engine: VideoEngine,
         downloader: AssetDownloader,
         storage_root: Path = Path("storage/runs"),
+        intelligence_enabled: bool | None = None,
     ) -> None:
+        if intelligence_enabled is None:
+            from app.config.settings import get_settings
+
+            intelligence_enabled = get_settings().legacy_intelligence_enabled
+        self._intelligence_enabled = intelligence_enabled
         self._session = session
         self._text = text
         self._stock_media = stock_media
@@ -135,7 +141,21 @@ class GenerateCustomShort:
         self._downloader = downloader
         self._storage_root = storage_root
 
+    def effective_request(self, request: CustomShortRequest) -> CustomShortRequest:
+        """Drop M10-M13 overrides unless LEGACY_INTELLIGENCE_ENABLED is true."""
+        if self._intelligence_enabled:
+            return request
+        return replace(
+            request,
+            production_decision=None,
+            topic_selection_decision=None,
+            experiment_variant=None,
+            experiment_assignment=None,
+            optimization_decision=None,
+        )
+
     async def execute(self, request: CustomShortRequest) -> CustomShortResult:
+        request = self.effective_request(request)
         if (request.experiment_variant is None) != (request.experiment_assignment is None):
             raise ValueError("experiment variant and assignment must be provided together")
         if (

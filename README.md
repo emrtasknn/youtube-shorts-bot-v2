@@ -12,11 +12,11 @@ The V1 pipeline keeps human approval as a mandatory control-plane gate. M10–M1
 
 Semi-automatic flow built for quality: `/yeni <konu>` in Telegram → approve the script →
 send your own images (missing ones: pick from Wikimedia candidates) → EMA Lightning
-narration → smooth sub-pixel edit with word-synced captions, procedural music and
+narration with faster-whisper word alignment → smooth sub-pixel edit with word-synced captions, procedural music and
 thumbnails → private YouTube upload → **Yayınla** makes it public.
 
 ~~~bash
-pip install -e ".[studio]"   # add ",ema" for EMA Lightning TTS
+pip install -e ".[studio]"   # add ",ema,align" for EMA Lightning TTS + faster-whisper word alignment
 python -m app studio-bot
 ~~~
 

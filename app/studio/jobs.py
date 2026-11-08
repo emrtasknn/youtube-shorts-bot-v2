@@ -11,6 +11,7 @@ from pathlib import Path
 import httpx
 
 from app.config.settings import Settings
+from app.studio.align import build_aligner
 from app.studio.factory import build_tts, build_youtube
 from app.studio.models import Project, ProjectStatus, ProjectStore
 from app.studio.render.pipeline import render_project
@@ -81,6 +82,7 @@ async def run_render_job(
             height=width * 16 // 9,
             workers=settings.studio_render_workers or None,
             progress=progress,
+            aligner=build_aligner(settings.studio_align_model),
         )
         warnings: list[str] = []
         yt = build_youtube(settings) if upload else None
@@ -99,7 +101,7 @@ async def run_render_job(
         store.save(project)
         if notify and bot and chat:
             caption = (
-                f"🎬 {project.title}\n⏱ {out.duration:.1f} sn · 🎙 {out.tts_used}\n"
+                f"🎬 {project.title}\n⏱ {out.duration:.1f} sn · 🎙 {out.tts_used} · 🔤 {out.alignment}\n"
                 + (
                     f"🔒 Gizli yüklendi: https://youtu.be/{project.youtube_id}\n"
                     if project.youtube_id
