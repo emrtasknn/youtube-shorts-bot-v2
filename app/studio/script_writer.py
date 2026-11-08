@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from app.studio.llm import JsonLLM, LLMError
@@ -219,3 +220,80 @@ def split_topic_and_notes(message: str) -> tuple[str, str]:
     if len(first) > 160:
         return first[:120].rsplit(" ", 1)[0], text
     return first.strip(), rest.strip()
+
+
+# ------------------------------------------------------------------ own script (no LLM)
+_SENTENCE = re.compile(r"(?<=[.!?…])\s+(?=[\"'“‘(\[]?[A-ZÇĞİÖŞÜ0-9])")
+MAX_LINE_WORDS = 18
+
+
+def split_script_lines(text: str) -> list[str]:
+    """One shot per sentence: split on line breaks, then on sentence ends."""
+    out: list[str] = []
+    for raw in text.splitlines():
+        raw = raw.strip().lstrip("-•*").strip()
+        if not raw:
+            continue
+        for sentence in _SENTENCE.split(raw):
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+            words = sentence.split()
+            while len(words) > MAX_LINE_WORDS:  # very long sentence: cut at a comma if possible
+                even = -(-len(words) // -(-len(words) // MAX_LINE_WORDS))  # balanced parts
+                cut = next(
+                    (i + 1 for i in range(MAX_LINE_WORDS - 1, 5, -1) if words[i].endswith(",")),
+                    even,
+                )
+                out.append(" ".join(words[:cut]))
+                words = words[cut:]
+            if words:
+                out.append(" ".join(words))
+    return out
+
+
+def project_from_script(title: str, script: str, photos: list[UserPhoto] | None = None) -> Project:
+    """Build a project straight from the user's own script, without any LLM.
+
+    Every sentence becomes a line. With pool photos, the lines are spread over
+    them in order (consecutive groups); without photos each line gets its own
+    visual slot, described by the line itself.
+    """
+    photos = photos or []
+    sentences = split_script_lines(script)
+    if not sentences:
+        raise LLMError("Senaryo boş: başlıktan sonraki satırlara metni yaz")
+    title = title.strip() or sentences[0][:60]
+    if photos:
+        visuals = [
+            Visual(description=ph.note or f"Fotoğraf {i + 1}") for i, ph in enumerate(photos)
+        ]
+        n = len(photos)
+        owner = [min(i * n // len(sentences), n - 1) for i in range(len(sentences))]
+    else:
+        visuals = [Visual(description=s[:80], query=s[:80]) for s in sentences]
+        owner = list(range(len(sentences)))
+    lines = []
+    for sentence, vis in zip(sentences, owner, strict=True):
+        spoken = spell_numbers(sentence)
+        lines.append(
+            Line(
+                narration=spoken,
+                caption=sentence if sentence != spoken else "",
+                visual=vis,
+                era=Era.OLD,
+            )
+        )
+    project = Project(
+        topic=title,
+        lines=lines,
+        visuals=visuals,
+        title=title[:100],
+        description=" ".join(sentences[:2])[:400] + "\n\n#shorts #tarih #birgariptarih",
+        tags=["tarih", "shorts", "bir garip tarih", *[w for w in title.split() if len(w) > 3]][:15],
+        pinned_comment="Sence bu hikâyenin en garip yanı ne?",
+        thumbnail_text=" ".join(title.split()[:4]),
+        thumbnail_visual=0,
+    )
+    attach_user_photos(project, photos)
+    return project

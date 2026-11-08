@@ -36,7 +36,12 @@ from app.studio.factory import build_llm, build_store, build_youtube
 from app.studio.jobs import dispatch_github, write_project_file
 from app.studio.llm import LLMError
 from app.studio.models import Project, ProjectStatus, UserPhoto
-from app.studio.script_writer import ScriptWriter, split_topic_and_notes, user_photos_of
+from app.studio.script_writer import (
+    ScriptWriter,
+    project_from_script,
+    split_topic_and_notes,
+    user_photos_of,
+)
 from app.studio.telegram import StudioTelegram, keyboard
 from app.studio.text import spell_numbers
 from app.studio.visual_search import search_commons
@@ -48,8 +53,9 @@ HELP = """🎬 Bir Garip Tarih · Shorts Stüdyosu
 Akış: konu → metin onayı → görseller → render → yayın
 
 📌 KOMUTLAR
-/yeni <konu> · yeni Short başlat
-   (uzun metin de yapıştırabilirsin: ilk satır konu, gerisi kaynak notu)
+/yeni <konu> · yapay zekâ metni yazsın
+/senaryo · kendi metnini yapıştır (yapay zekâ kullanmaz)
+   ilk satır: /senaryo Başlık, alt satırlar: metin. Her cümle bir sahne olur.
 /metin · metni tekrar göster
 /gorseller · görselleri ve eksikleri göster
 /render · videoyu hazırla
@@ -82,6 +88,24 @@ REVISE = re.compile(r"^\s*(düzelt|duzelt|revize)\s*:\s*(.+)$", re.I | re.S)
 TO_POOL = re.compile(r"^\s*(\+|havuz\b)\s*", re.I)
 ALBUM_WAIT = 2.5  # seconds to wait for the rest of an album before writing the script
 OPEN = (ProjectStatus.DRAFT, ProjectStatus.COLLECTING)
+
+
+def short_llm_error(exc: Exception) -> str:
+    """One short line per provider instead of raw JSON error bodies."""
+    parts = []
+    for part in str(exc).split(" | "):
+        name, _, detail = part.partition(":")
+        low = detail.lower()
+        if "api key not valid" in low or "api_key_invalid" in low or "invalid api key" in low:
+            detail = " API anahtarı geçersiz"
+        elif "json_validate_failed" in low or "json" in low and "valid" in low:
+            detail = " geçerli JSON üretemedi"
+        elif "429" in low or "rate" in low and "limit" in low:
+            detail = " istek sınırı doldu, biraz sonra dene"
+        else:
+            detail = detail[:120]
+        parts.append(f"• {name.replace('LLM', '')}:{detail}")
+    return "\n".join(parts)
 
 
 def render_script(p: Project) -> str:
@@ -194,8 +218,8 @@ class StudioBot:
 
     # ------------------------------------------------------------ text
     async def on_text(self, chat: int, text: str) -> None:
-        cmd, _, arg = text.partition(" ")
-        cmd = cmd.split("@")[0].lower()
+        head, *rest = re.split(r"\s", text, maxsplit=1)
+        cmd, arg = head.split("@")[0].lower(), (rest[0] if rest else "")
         if cmd in ("/start", "/yardim", "/help"):
             await self.say(chat, HELP)
             return
@@ -206,6 +230,9 @@ class StudioBot:
                 )
                 return
             await self.new_project(chat, arg)
+            return
+        if cmd == "/senaryo":
+            await self.new_project_from_script(chat, arg)
             return
         if cmd == "/havuz":
             await self.show_pool(chat, clear=arg.strip().lower() in ("temizle", "sil", "boşalt"))
@@ -283,7 +310,11 @@ class StudioBot:
         try:
             p = await self.writer.write(topic, notes, photos)
         except LLMError as exc:
-            await self.say(chat, f"❌ Metin yazılamadı: {exc}")
+            await self.say(
+                chat,
+                f"❌ Metin yazılamadı:\n{short_llm_error(exc)}\n\n"
+                "Kendi metninle devam edebilirsin:\n/senaryo Başlık\n(alt satırlara metni yapıştır)",
+            )
             return
         self.store.clear_inbox(chat)
         old = self.current(chat)
@@ -292,6 +323,33 @@ class StudioBot:
             self.store.save(old)
         p.chat_id = chat
         self.store.save(p)
+        await self.send_script(chat, p)
+
+    async def new_project_from_script(self, chat: int, message: str) -> None:
+        title, _, script = message.strip().partition("\n")
+        if not script.strip():
+            await self.say(
+                chat,
+                "Kullanım (tek mesajda):\n/senaryo Emu Savaşı\n1932'de Avustralya ordusu emulara "
+                "savaş açtı.\nVe bu savaşı kuşlar kazandı.\n\nİlk satır başlık, alt satırlar "
+                "metin. Her cümle bir sahne olur.",
+            )
+            return
+        photos = self.store.inbox(chat)
+        try:
+            p = project_from_script(title, script, photos)
+        except LLMError as exc:
+            await self.say(chat, f"❌ {exc}")
+            return
+        old = self.current(chat)
+        if old is not None and old.status in (ProjectStatus.DRAFT, ProjectStatus.COLLECTING):
+            old.status = ProjectStatus.CANCELLED
+            self.store.save(old)
+        p.chat_id = chat
+        self.store.save(p)
+        self.store.clear_inbox(chat)
+        extra = f" · 📎 {len(photos)} fotoğrafın sahnelere dağıtıldı" if photos else ""
+        await self.say(chat, f"📝 Senaryodan {len(p.lines)} sahne çıkarıldı{extra}.")
         await self.send_script(chat, p)
 
     async def send_script(self, chat: int, p: Project) -> None:

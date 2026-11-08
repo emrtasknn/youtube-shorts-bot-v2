@@ -51,25 +51,34 @@ class GroqLLM:
             raise LLMError("GROQ_API_KEY gerekli")
         self._key, self._model, self._url, self._timeout = api_key, model, base_url, timeout
 
-    async def complete_json(self, system: str, user: str) -> dict[str, Any]:
+    async def _post(self, body: dict[str, Any]) -> httpx.Response:
         async with httpx.AsyncClient(timeout=self._timeout) as client:
-            r = await client.post(
+            return await client.post(
                 f"{self._url.rstrip('/')}/chat/completions",
                 headers={"Authorization": f"Bearer {self._key}"},
-                json={
-                    "model": self._model,
-                    "temperature": 0.8,
-                    "response_format": {"type": "json_object"},
-                    "messages": [
-                        {"role": "system", "content": system},
-                        {"role": "user", "content": user},
-                    ],
-                },
+                json=body,
             )
+
+    async def complete_json(self, system: str, user: str) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "model": self._model,
+            "temperature": 0.8,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+        }
+        r = await self._post(body)
+        if r.status_code == 400 and "json_validate_failed" in r.text:
+            # Groq's strict JSON mode sometimes rejects an empty/partial generation;
+            # ask again without it and pull the JSON object out of the text.
+            body.pop("response_format")
+            r = await self._post(body)
         if r.status_code >= 400:
             raise LLMError(f"Groq HTTP {r.status_code}: {r.text[:300]}")
         content = r.json()["choices"][0]["message"]["content"]
-        return parse_json_object(str(content))
+        return parse_json_object(str(content or ""))
 
 
 class GeminiLLM:
