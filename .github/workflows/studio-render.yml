@@ -1,0 +1,85 @@
+name: Studio Render
+
+# Triggered by the Studio Telegram bot (STUDIO_RENDER_MODE=github) via workflow_dispatch.
+# Renders the Short, uploads it to YouTube as PRIVATE and sends the preview with
+# "Yayınla / Yeniden render / İptal" buttons to Telegram.
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "base64(gzip(project.json)) — the bot fills this in"
+        required: true
+        type: string
+      tts:
+        description: "TTS chain override (ema | fish | piper)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: studio-render
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONUNBUFFERED: "1"
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+      YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+      YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+      YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+      FISH_AUDIO_API_KEY: ${{ secrets.FISH_AUDIO_API_KEY }}
+      STUDIO_TTS: ${{ vars.STUDIO_TTS || 'ema,fish' }}
+      STUDIO_DIR: ${{ github.workspace }}/storage/studio
+      PROJECT_PAYLOAD: ${{ inputs.project }}
+      TTS_OVERRIDE: ${{ inputs.tts }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Cache TTS model weights
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+            ~/.cache/ema_lightning
+            ~/.cache/torch
+          key: studio-tts-v1
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install ".[studio,ema]"
+
+      - name: Render, upload private, notify Telegram
+        run: |
+          python -m app studio-render --payload @PROJECT_PAYLOAD --tts "$TTS_OVERRIDE"
+
+      - name: Keep the video for 3 days
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-short
+          path: |
+            storage/studio/*/final.mp4
+            storage/studio/*/thumb_*.jpg
+            storage/studio/*/timeline.json
+          retention-days: 3
+          if-no-files-found: ignore

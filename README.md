@@ -8,6 +8,20 @@ Production-oriented, provider-agnostic modular monolith for automated YouTube Sh
 
 The V1 pipeline keeps human approval as a mandatory control-plane gate. M10–M13 optimization decisions remain evidence-driven and reversible; experiments do not autonomously change production policy or publish content.
 
+## Studio V3 (branch `studio-v3`)
+
+Semi-automatic flow built for quality: `/yeni <konu>` in Telegram → approve the script →
+send your own images (missing ones: pick from Wikimedia candidates) → EMA Lightning
+narration → smooth sub-pixel edit with word-synced captions, procedural music and
+thumbnails → private YouTube upload → **Yayınla** makes it public.
+
+~~~bash
+pip install -e ".[studio]"   # add ",ema" for EMA Lightning TTS
+python -m app studio-bot
+~~~
+
+See **docs/STUDIO_V3.md** for setup, commands and design notes.
+
 ## Architecture
 
 The runtime is organized around:
