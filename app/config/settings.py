@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     studio_dir: str = "storage/studio"
     studio_tts: str = "ema,fish"  # comma separated fallback chain: ema | fish | piper
     studio_piper_model_dir: str = ""
+    studio_ema_speed: float = 1.0  # EMA Lightning tempo, 0.25-4
+    studio_ema_seed: int = 0  # same seed = same voice take on re-render; -1 = random
+    studio_ema_device: str = "auto"  # auto | cpu | cuda
     studio_llm: str = "groq,gemini"  # fallback chain
     studio_gemini_model: str = "gemini-2.5-flash"
     studio_render_mode: str = "local"  # local | github

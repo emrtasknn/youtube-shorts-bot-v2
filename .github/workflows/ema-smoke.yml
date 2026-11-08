@@ -1,0 +1,59 @@
+name: EMA Smoke
+
+# Downloads the real EMA Lightning weights from Hugging Face, voices a few Turkish
+# lines through Studio's TTS code and checks the word timings. Uploads the WAV so
+# the voice can be listened to. Needs no secrets.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "app/studio/tts.py"
+      - "app/studio/align.py"
+      - "scripts/ema_smoke.py"
+      - ".github/workflows/ema-smoke.yml"
+      - "pyproject.toml"
+
+permissions:
+  contents: read
+
+jobs:
+  ema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Cache TTS model weights
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: studio-tts-v1
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install ".[studio,ema]"
+
+      - name: Voice test lines with EMA Lightning
+        run: python scripts/ema_smoke.py storage/ema_smoke.wav
+
+      - name: Upload the voice
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ema-smoke
+          path: storage/ema_smoke.wav
+          retention-days: 7
+          if-no-files-found: ignore

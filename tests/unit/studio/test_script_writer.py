@@ -76,3 +76,36 @@ def test_parse_json_object_handles_fences() -> None:
     assert parse_json_object('```json\n{"a": 1}\n```') == {"a": 1}
     with pytest.raises(LLMError):
         parse_json_object("no json here")
+
+
+@pytest.mark.asyncio
+async def test_write_puts_user_photos_first() -> None:
+    from app.studio.models import UserPhoto
+
+    llm = FakeLLM(LLM_OUTPUT)
+    photos = [
+        UserPhoto("telegram:a", "Emu askerleri 1932"),
+        UserPhoto("telegram:b"),
+        UserPhoto("telegram:c", "Makineli tüfek"),
+    ]
+    p = await ScriptWriter(llm).write("Emu Savaşı", photos=photos)
+    assert "KULLANICININ FOTOĞRAFLARI (3 adet" in llm.calls[-1]
+    assert "Emu askerleri 1932" in llm.calls[-1]
+    assert [v.source for v in p.visuals[:3]] == ["telegram:a", "telegram:b", "telegram:c"]
+    # the model returned only 2 visuals: a 3rd slot is added for the extra photo
+    assert p.visuals[2].description == "Makineli tüfek"
+
+
+def test_user_photos_of_keeps_only_user_sources() -> None:
+    from app.studio.models import Visual
+    from app.studio.script_writer import user_photos_of
+
+    p = Project(
+        topic="t",
+        visuals=[
+            Visual("a", source="telegram:1"),
+            Visual("b", source="url:https://x"),
+            Visual("c"),
+        ],
+    )
+    assert [ph.source for ph in user_photos_of(p)] == ["telegram:1"]

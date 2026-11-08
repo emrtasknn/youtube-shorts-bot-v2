@@ -64,6 +64,18 @@ class Visual:
 
 
 @dataclass(slots=True)
+class UserPhoto:
+    """A picture the user sent before (or together with) the topic.
+
+    ``source`` uses the same scheme as ``Visual.source``; ``note`` is the photo's
+    caption ("Emu askerleri 1932") and tells the script writer what it shows.
+    """
+
+    source: str
+    note: str = ""
+
+
+@dataclass(slots=True)
 class Line:
     """One narration line == one shot (long lines are split by the planner).
 
@@ -219,6 +231,39 @@ class ProjectStore:
         if not p.is_file():
             return None
         return Project.from_json(p.read_text(encoding="utf-8"))
+
+    # ---------- per-chat photo pool (pictures waiting for the next /yeni) ----------
+    def _inbox_path(self, chat_id: int) -> Path:
+        return self.root / "_inbox" / f"{chat_id}.json"
+
+    def inbox(self, chat_id: int) -> list[UserPhoto]:
+        p = self._inbox_path(chat_id)
+        if not p.is_file():
+            return []
+        try:
+            raw = json.loads(p.read_text(encoding="utf-8"))
+        except ValueError:
+            return []
+        return [
+            UserPhoto(str(x.get("source", "")), str(x.get("note", "")))
+            for x in raw
+            if isinstance(x, dict) and x.get("source")
+        ]
+
+    def add_to_inbox(self, chat_id: int, photo: UserPhoto) -> int:
+        photos = self.inbox(chat_id)
+        photos.append(photo)
+        p = self._inbox_path(chat_id)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        tmp = p.with_suffix(".tmp")
+        tmp.write_text(
+            json.dumps([asdict(x) for x in photos], ensure_ascii=False), encoding="utf-8"
+        )
+        tmp.replace(p)
+        return len(photos)
+
+    def clear_inbox(self, chat_id: int) -> None:
+        self._inbox_path(chat_id).unlink(missing_ok=True)
 
     def latest_for_chat(self, chat_id: int, *, active_only: bool = True) -> Project | None:
         best: Project | None = None

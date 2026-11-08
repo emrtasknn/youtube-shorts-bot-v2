@@ -6,7 +6,7 @@ import json
 from typing import Any
 
 from app.studio.llm import JsonLLM, LLMError
-from app.studio.models import Era, Line, Project, Visual
+from app.studio.models import Era, Line, Project, UserPhoto, Visual
 from app.studio.text import spell_numbers
 
 SYSTEM_PROMPT = """Sen "Bir Garip Tarih" YouTube Shorts kanalının baş senaristisin.
@@ -44,10 +44,33 @@ SADECE şu şemada JSON döndür:
 """
 
 
-def build_user_prompt(topic: str, notes: str = "", feedback: str = "", previous: str = "") -> str:
+def user_photos_prompt(photos: list[UserPhoto]) -> str:
+    """Tell the writer which pictures the user already has; they become visuals 1..N."""
+    rows = [
+        f"{i}. {ph.note.strip() or 'açıklamasız fotoğraf (konuyla ilgili bir sahne)'}"
+        for i, ph in enumerate(photos, 1)
+    ]
+    return (
+        f"KULLANICININ FOTOĞRAFLARI ({len(photos)} adet, zaten elimizde):\n"
+        + "\n".join(rows)
+        + f"\nvisuals listesinin İLK {len(photos)} öğesi sırasıyla bu fotoğraflar olmalı "
+        "(description'ı açıklamaya göre yaz). Hepsini satırlarda kullan; hikâyeyi bu "
+        "görsellerin etrafında kur. Eksik kalan anlar için bunlardan SONRA yeni görseller ekle."
+    )
+
+
+def build_user_prompt(
+    topic: str,
+    notes: str = "",
+    feedback: str = "",
+    previous: str = "",
+    photos: list[UserPhoto] | None = None,
+) -> str:
     parts = [f"KONU: {topic.strip()}"]
     if notes.strip():
         parts.append(f"KAYNAK NOTLARI (bunlara sadık kal):\n{notes.strip()}")
+    if photos:
+        parts.append(user_photos_prompt(photos))
     if previous:
         parts.append(f"ÖNCEKİ TASLAK:\n{previous}")
     if feedback.strip():
@@ -133,13 +156,41 @@ def script_as_json(project: Project) -> str:
     )
 
 
+def attach_user_photos(project: Project, photos: list[UserPhoto]) -> None:
+    """Put the user's photos into visuals 1..N (adding slots if the model made too few)."""
+    for i, ph in enumerate(photos):
+        if i >= len(project.visuals):
+            project.visuals.append(Visual(description=ph.note or f"Senin fotoğrafın {i + 1}"))
+        v = project.visuals[i]
+        v.source, v.attribution, v.focus_x, v.focus_y = ph.source, "", None, None
+        v.candidates = []
+        if ph.note and not v.description:
+            v.description = ph.note
+
+
+def user_photos_of(project: Project) -> list[UserPhoto]:
+    """Photos the user supplied to a project (kept when the script is rewritten)."""
+    return [
+        UserPhoto(v.source, v.description)
+        for v in project.visuals
+        if v.source.startswith(("telegram:", "file:"))
+    ]
+
+
 class ScriptWriter:
     def __init__(self, llm: JsonLLM) -> None:
         self._llm = llm
 
-    async def write(self, topic: str, notes: str = "") -> Project:
-        data = await self._llm.complete_json(SYSTEM_PROMPT, build_user_prompt(topic, notes))
-        return project_from_llm(data, topic)
+    async def write(
+        self, topic: str, notes: str = "", photos: list[UserPhoto] | None = None
+    ) -> Project:
+        photos = photos or []
+        data = await self._llm.complete_json(
+            SYSTEM_PROMPT, build_user_prompt(topic, notes, photos=photos)
+        )
+        project = project_from_llm(data, topic)
+        attach_user_photos(project, photos)
+        return project
 
     async def revise(self, project: Project, feedback: str) -> Project:
         data = await self._llm.complete_json(

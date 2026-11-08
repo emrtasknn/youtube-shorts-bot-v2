@@ -36,7 +36,13 @@ def build_tts(settings: Settings, override: str = "") -> ChainTTS:
     backends: list[TTSBackend] = []
     for name in [p.strip() for p in (override or settings.studio_tts).split(",") if p.strip()]:
         if name == "ema":
-            backends.append(EmaLightningTTS())
+            backends.append(
+                EmaLightningTTS(
+                    speed=settings.studio_ema_speed,
+                    seed=settings.studio_ema_seed,
+                    device=settings.studio_ema_device,
+                )
+            )
         elif name == "fish" and settings.fish_audio_api_key:
             backends.append(
                 FishAudioTTS(

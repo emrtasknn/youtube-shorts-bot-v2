@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -134,3 +135,65 @@ async def test_line_visual_reassign_and_visual_edit(tmp_path: Path) -> None:
     assert p is not None
     assert p.lines[0].visual == 0
     assert p.visuals[1].description == "Anna Bertha'nın el röntgeni"
+
+
+def _photo(file_id: str, caption: str = "", album: str = "") -> dict[str, Any]:
+    extra: dict[str, Any] = {"photo": [{"file_id": file_id, "file_size": 1}]}
+    if caption:
+        extra["caption"] = caption
+    if album:
+        extra["media_group_id"] = album
+    return _msg(**extra)
+
+
+@pytest.mark.asyncio
+async def test_photos_before_topic_go_to_pool_and_fill_visuals(tmp_path: Path) -> None:
+    b, tg = _bot(tmp_path)
+    await b.handle(_photo("f1", "Röntgen laboratuvarı"))
+    assert "Havuza eklendi (1)" in tg.last
+    await b.handle(_photo("f2"))
+    await b.handle(_msg("/havuz"))
+    assert "Havuzda 2 fotoğraf" in tg.last and "Röntgen laboratuvarı" in tg.last
+
+    await b.handle(_msg("/yeni Röntgen'in keşfi"))
+    assert any("2 fotoğrafın kullanılacak" in m[1] for m in tg.sent)
+    p = b.current(99)
+    assert p is not None
+    assert [v.source for v in p.visuals[:2]] == ["telegram:f1", "telegram:f2"]
+    assert b.store.inbox(99) == []  # pool is emptied once used
+    assert "KULLANICININ FOTOĞRAFLARI (2 adet" in b.writer._llm.calls[-1]  # type: ignore[attr-defined]
+
+    # rewriting from scratch keeps the user's photos
+    await b.handle(_cb(f"rw:{p.id}"))
+    p = b.current(99)
+    assert p is not None
+    assert [v.source for v in p.visuals[:2]] == ["telegram:f1", "telegram:f2"]
+
+
+@pytest.mark.asyncio
+async def test_album_with_yeni_caption_starts_project(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(bot_module, "ALBUM_WAIT", 0)
+    b, tg = _bot(tmp_path)
+    await b.handle(_photo("a1", "/yeni Röntgen'in keşfi", album="G"))
+    await b.handle(_photo("a2", album="G"))
+    await b.handle(_photo("a3", album="G"))
+    await asyncio.gather(*list(b._jobs))
+    p = b.current(99)
+    assert p is not None and p.topic == "Röntgen'in keşfi"
+    assert [v.source for v in p.visuals[:3]] == ["telegram:a1", "telegram:a2", "telegram:a3"]
+    assert not any("Havuza eklendi" in m[1] for m in tg.sent)
+
+
+@pytest.mark.asyncio
+async def test_plus_caption_pools_photo_while_project_open(tmp_path: Path) -> None:
+    b, tg = _bot(tmp_path)
+    await b.handle(_msg("/yeni Röntgen'in keşfi"))
+    await b.handle(_photo("x", "+ sonraki video için"))
+    assert "Havuza eklendi (1)" in tg.last
+    p = b.current(99)
+    assert p is not None and not any(v.filled for v in p.visuals)
+    assert b.store.inbox(99)[0].note == "sonraki video için"
+    await b.handle(_msg("/havuz temizle"))
+    assert b.store.inbox(99) == []

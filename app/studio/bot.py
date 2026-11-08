@@ -14,6 +14,11 @@ Editing (plain messages)
   düzelt: daha kısa     ask the writer to revise the whole script
 Visuals
   send photos in order, or put the visual number in the photo caption ("3").
+Your own photos with the topic
+  send photos first (caption = what it shows), then /yeni <konu>: the script is
+  built around them. Or send one album with the caption "/yeni <konu>".
+  /havuz                show the waiting photos · /havuz temizle to empty it
+  caption "+" or "havuz" adds a photo to the pool while a project is open.
 """
 
 from __future__ import annotations
@@ -31,8 +36,8 @@ from app.config.settings import Settings
 from app.studio.factory import build_llm, build_youtube
 from app.studio.jobs import dispatch_github, write_project_file
 from app.studio.llm import LLMError
-from app.studio.models import Project, ProjectStatus, ProjectStore
-from app.studio.script_writer import ScriptWriter, split_topic_and_notes
+from app.studio.models import Project, ProjectStatus, ProjectStore, UserPhoto
+from app.studio.script_writer import ScriptWriter, split_topic_and_notes, user_photos_of
 from app.studio.telegram import StudioTelegram, keyboard
 from app.studio.text import spell_numbers
 from app.studio.visual_search import search_commons
@@ -44,6 +49,9 @@ LINE_EDIT = re.compile(r"^\s*(\d{1,2})\s*[:.)-]\s*(.+)$", re.S)
 LINE_VISUAL = re.compile(r"^\s*(\d{1,2})\s*->\s*(\d{1,2})\s*$")
 VISUAL_EDIT = re.compile(r"^\s*g(\d{1,2})\s*:\s*(.+)$", re.I | re.S)
 REVISE = re.compile(r"^\s*(düzelt|duzelt|revize)\s*:\s*(.+)$", re.I | re.S)
+TO_POOL = re.compile(r"^\s*(\+|havuz\b)\s*", re.I)
+ALBUM_WAIT = 2.5  # seconds to wait for the rest of an album before writing the script
+OPEN = (ProjectStatus.DRAFT, ProjectStatus.COLLECTING)
 
 
 def render_script(p: Project) -> str:
@@ -92,6 +100,8 @@ class StudioBot:
         self.store = ProjectStore(Path(settings.studio_dir))
         self._writer: ScriptWriter | None = None
         self._jobs: set[asyncio.Task[None]] = set()
+        self._pool_albums: set[str] = set()  # media_group_ids whose photos go to the pool
+        self._acked_albums: set[str] = set()
 
     @property
     def writer(self) -> ScriptWriter:
@@ -167,6 +177,9 @@ class StudioBot:
                 return
             await self.new_project(chat, arg)
             return
+        if cmd == "/havuz":
+            await self.show_pool(chat, clear=arg.strip().lower() in ("temizle", "sil", "boşalt"))
+            return
         p = self.current(chat)
         if p is None:
             await self.say(chat, "Aktif proje yok. /yeni <konu> ile başla.")
@@ -233,13 +246,16 @@ class StudioBot:
     # ------------------------------------------------------------ flow steps
     async def new_project(self, chat: int, message: str) -> None:
         topic, notes = split_topic_and_notes(message)
+        photos = self.store.inbox(chat)
         await self.bot.send_chat_action(chat)
-        await self.say(chat, f"✍️ «{topic}» için metin yazılıyor…")
+        extra = f" (📎 {len(photos)} fotoğrafın kullanılacak)" if photos else ""
+        await self.say(chat, f"✍️ «{topic}» için metin yazılıyor…{extra}")
         try:
-            p = await self.writer.write(topic, notes)
+            p = await self.writer.write(topic, notes, photos)
         except LLMError as exc:
             await self.say(chat, f"❌ Metin yazılamadı: {exc}")
             return
+        self.store.clear_inbox(chat)
         old = self.current(chat)
         if old is not None and old.status in (ProjectStatus.DRAFT, ProjectStatus.COLLECTING):
             old.status = ProjectStatus.CANCELLED
@@ -265,18 +281,84 @@ class StudioBot:
         rows.append([("🎬 Render", f"render:{p.id}")])
         return keyboard(*rows)
 
-    async def on_photo(self, chat: int, msg: dict[str, Any]) -> None:
-        p = self.current(chat)
-        if p is None:
-            await self.say(chat, "Önce /yeni ile bir proje başlat.")
+    async def show_pool(self, chat: int, *, clear: bool = False) -> None:
+        if clear:
+            self.store.clear_inbox(chat)
+            await self.say(chat, "🧹 Görsel havuzu boşaltıldı.")
             return
-        if p.status == ProjectStatus.DRAFT:
-            p.status = ProjectStatus.COLLECTING  # sending photos implies script approval
+        photos = self.store.inbox(chat)
+        if not photos:
+            await self.say(
+                chat,
+                "📥 Havuz boş. Fotoğraf gönder (açıklamaya ne olduğunu yaz), sonra /yeni <konu>.",
+            )
+            return
+        rows = [f"{i}. {ph.note or '(açıklamasız)'}" for i, ph in enumerate(photos, 1)]
+        await self.say(
+            chat,
+            f"📥 Havuzda {len(photos)} fotoğraf:\n"
+            + "\n".join(rows)
+            + "\n\n/yeni <konu> yazınca metin bunlarla kurulacak · /havuz temizle",
+        )
+
+    async def _to_pool(self, chat: int, file_id: str, note: str, album: str) -> None:
+        n = self.store.add_to_inbox(chat, UserPhoto(f"telegram:{file_id}", note))
+        if album:
+            if album in self._acked_albums:
+                return  # one reply per album is enough
+            self._acked_albums.add(album)
+        await self.say(
+            chat,
+            f"📥 Havuza eklendi ({n}). Başka fotoğraf da gönderebilirsin; "
+            "/yeni <konu> yazınca metin bu görsellerle kurulacak.",
+        )
+
+    async def _start_after_album(self, chat: int, message: str, album: str) -> None:
+        if album:
+            await asyncio.sleep(ALBUM_WAIT)  # let the album's other photos arrive
+        try:
+            await self.new_project(chat, message)
+        finally:
+            self._pool_albums.discard(album)
+            self._acked_albums.discard(album)
+
+    async def on_photo(self, chat: int, msg: dict[str, Any]) -> None:
         if "photo" in msg:
             file_id = str(max(msg["photo"], key=lambda ph: int(ph.get("file_size", 0)))["file_id"])
         else:
             file_id = str(msg["document"]["file_id"])
         caption = str(msg.get("caption", "")).strip()
+        album = str(msg.get("media_group_id", ""))
+
+        # photo (or album) captioned "/yeni <konu>": pool it and start the project with it
+        cmd, _, arg = caption.partition(" ")
+        if cmd.split("@")[0].lower() == "/yeni":
+            if not arg.strip():
+                await self.say(chat, "Açıklamaya konuyu da yaz: /yeni Emu Savaşı")
+                return
+            self.store.add_to_inbox(chat, UserPhoto(f"telegram:{file_id}"))
+            if album:
+                self._pool_albums.add(album)
+                self._acked_albums.add(album)
+            task = asyncio.create_task(self._start_after_album(chat, arg, album))
+            self._jobs.add(task)
+            task.add_done_callback(self._jobs.discard)
+            return
+        if album and album in self._pool_albums:
+            self.store.add_to_inbox(chat, UserPhoto(f"telegram:{file_id}", caption))
+            return
+        p = self.current(chat)
+        if m := TO_POOL.match(caption):
+            await self._to_pool(chat, file_id, caption[m.end() :].strip(), album)
+            return
+        if p is None or p.status not in OPEN:
+            # no open project: keep the picture for the next topic
+            if album:
+                self._pool_albums.add(album)
+            await self._to_pool(chat, file_id, caption, album)
+            return
+        if p.status == ProjectStatus.DRAFT:
+            p.status = ProjectStatus.COLLECTING  # sending photos implies script approval
         target: int | None = None
         if m := re.match(r"^g?(\d{1,2})", caption, re.I):
             target = int(m.group(1)) - 1
@@ -394,7 +476,7 @@ class StudioBot:
         elif action == "rw":
             await self.say(chat, "✍️ Baştan yazılıyor…")
             try:
-                fresh = await self.writer.write(p.topic)
+                fresh = await self.writer.write(p.topic, photos=user_photos_of(p))
             except LLMError as exc:
                 await self.say(chat, f"❌ {exc}")
                 return
