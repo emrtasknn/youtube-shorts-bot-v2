@@ -62,7 +62,8 @@ class Settings(BaseSettings):
     studio_ema_seed: int = 0  # same seed = same voice take on re-render; -1 = random
     studio_ema_device: str = "auto"  # auto | cpu | cuda
     studio_llm: str = "groq,gemini"  # fallback chain
-    studio_gemini_model: str = "gemini-2.5-flash"
+    studio_gemini_model: str = ""  # empty = GEMINI_MODEL
+    studio_groq_model: str = ""  # empty = GROQ_MODEL
     studio_render_mode: str = "local"  # local | github
     studio_github_repo: str = ""  # owner/repo for workflow_dispatch
     studio_github_token: str = ""  # fine-grained PAT with actions:write

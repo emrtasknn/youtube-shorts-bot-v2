@@ -274,3 +274,15 @@ async def test_llm_failure_message_is_short_and_suggests_senaryo(tmp_path: Path)
     assert "• Groq: geçerli JSON üretemedi" in tg.last
     assert "• Gemini: API anahtarı geçersiz" in tg.last
     assert "/senaryo" in tg.last and "{" not in tg.last
+
+
+def test_short_llm_error_extracts_provider_message() -> None:
+    from app.studio.bot import short_llm_error
+
+    text = short_llm_error(
+        Exception(
+            'GeminiLLM: Gemini HTTP 404: {\n  "error": {\n    "code": 404,\n    "message": '
+            '"This model models/gemini-2.5-flash is no longer available."}}'
+        )
+    )
+    assert text == "• Gemini: This model models/gemini-2.5-flash is no longer available."
