@@ -197,3 +197,25 @@ async def test_plus_caption_pools_photo_while_project_open(tmp_path: Path) -> No
     assert b.store.inbox(99)[0].note == "sonraki video için"
     await b.handle(_msg("/havuz temizle"))
     assert b.store.inbox(99) == []
+
+
+@pytest.mark.asyncio
+async def test_bot_with_database_store_keeps_state_across_restarts(tmp_path: Path) -> None:
+    import sqlalchemy as sa
+
+    from app.studio.store_sql import SqlProjectStore, metadata
+
+    url = f"sqlite:///{tmp_path / 'studio.db'}"
+    metadata.create_all(sa.create_engine(url))
+    b, _ = _bot(tmp_path, studio_store="db", database_url=url)
+    assert isinstance(b.store, SqlProjectStore)
+    await b.handle(_photo("f1", "Emu askerleri"))
+    await b.handle(_msg("/yeni Röntgen'in keşfi"))
+    p = b.current(99)
+    assert p is not None and p.visuals[0].source == "telegram:f1"
+
+    restarted, tg = _bot(tmp_path, studio_store="db", database_url=url)  # free host woke up
+    await restarted.handle(_cb(f"ok:{p.id}"))
+    q = restarted.current(99)
+    assert q is not None and q.id == p.id and q.status == ProjectStatus.COLLECTING
+    assert "Proje bulunamadı" not in tg.last

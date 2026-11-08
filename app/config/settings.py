@@ -54,6 +54,8 @@ class Settings(BaseSettings):
     legacy_intelligence_enabled: bool = False
     # ---- Studio V3 (topic + human visuals + EMA TTS) ----
     studio_dir: str = "storage/studio"
+    studio_store: str = "file"  # file | db (projects + photo pool in DATABASE_URL)
+    studio_public_url: str = ""  # webhook base URL; on Render RENDER_EXTERNAL_URL is used
     studio_tts: str = "ema,fish"  # comma separated fallback chain: ema | fish | piper
     studio_piper_model_dir: str = ""
     studio_ema_speed: float = 1.0  # EMA Lightning tempo, 0.25-4

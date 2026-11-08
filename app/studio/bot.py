@@ -27,16 +27,15 @@ import asyncio
 import logging
 import re
 import sys
-from pathlib import Path
 from typing import Any
 
 import httpx
 
 from app.config.settings import Settings
-from app.studio.factory import build_llm, build_youtube
+from app.studio.factory import build_llm, build_store, build_youtube
 from app.studio.jobs import dispatch_github, write_project_file
 from app.studio.llm import LLMError
-from app.studio.models import Project, ProjectStatus, ProjectStore, UserPhoto
+from app.studio.models import Project, ProjectStatus, UserPhoto
 from app.studio.script_writer import ScriptWriter, split_topic_and_notes, user_photos_of
 from app.studio.telegram import StudioTelegram, keyboard
 from app.studio.text import spell_numbers
@@ -97,7 +96,7 @@ class StudioBot:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.bot = StudioTelegram(settings.telegram_bot_token)
-        self.store = ProjectStore(Path(settings.studio_dir))
+        self.store = build_store(settings)
         self._writer: ScriptWriter | None = None
         self._jobs: set[asyncio.Task[None]] = set()
         self._pool_albums: set[str] = set()  # media_group_ids whose photos go to the pool

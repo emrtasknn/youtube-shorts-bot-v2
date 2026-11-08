@@ -1,11 +1,15 @@
 services:
-  - type: worker
-    name: youtube-shorts-bot-v2-telegram
+  # Studio bot on a FREE web service: Telegram webhook wakes it, projects live in
+  # Postgres (STUDIO_STORE=db) so nothing is lost when it sleeps. Renders run on
+  # GitHub Actions (STUDIO_RENDER_MODE=github).
+  - type: web
+    name: youtube-shorts-bot-v2-studio
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    plan: starter
+    plan: free
     autoDeploy: true
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -78,7 +82,11 @@ services:
         sync: false
       - key: STUDIO_LLM
         value: groq,gemini
-    # Studio V3 bot. The legacy pipeline is still available with:
-    #   alembic upgrade head && python -m app telegram-poll
-    # (only one of them may poll the same Telegram token at a time)
-    dockerCommand: python -m app studio-bot
+      - key: STUDIO_STORE
+        value: db
+      - key: TELEGRAM_WEBHOOK_SECRET
+        generateValue: true
+    # Studio V3 bot behind a Telegram webhook. Only one program may receive a bot
+    # token's updates: the legacy pipeline (telegram-poll / telegram-webhook) must
+    # not run with the same token. A paid worker can use `python -m app studio-bot`.
+    dockerCommand: sh -c "alembic upgrade head && python -m app studio-webhook"
