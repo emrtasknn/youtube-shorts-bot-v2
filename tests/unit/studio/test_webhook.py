@@ -147,3 +147,32 @@ def test_cli_keeps_bot_token_out_of_logs(monkeypatch: pytest.MonkeyPatch) -> Non
     cli.main(["studio-script", "x"])
     assert logging.getLogger("httpx").getEffectiveLevel() >= logging.WARNING
     assert logging.getLogger("httpcore").getEffectiveLevel() >= logging.WARNING
+
+
+def test_run_migrations_restores_root_logging(monkeypatch: pytest.MonkeyPatch) -> None:
+    import logging
+
+    from alembic import command
+
+    from app.studio import webhook
+
+    class AlembicConsole(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            return None
+
+    def fake_upgrade(cfg: Any, rev: str) -> None:  # what alembic.ini's fileConfig does
+        root = logging.getLogger()
+        root.setLevel(logging.WARNING)
+        root.handlers[:] = [AlembicConsole()]
+
+    root = logging.getLogger()
+    before_level, before_handlers = root.level, root.handlers[:]
+    root.setLevel(logging.INFO)
+    try:
+        monkeypatch.setattr(command, "upgrade", fake_upgrade)
+        assert webhook.run_migrations() is True
+        assert root.level == logging.INFO
+        assert not any(isinstance(h, AlembicConsole) for h in root.handlers)
+    finally:
+        root.setLevel(before_level)
+        root.handlers[:] = before_handlers
