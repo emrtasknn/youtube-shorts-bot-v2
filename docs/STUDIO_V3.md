@@ -7,7 +7,10 @@ Amaç tek: izleyiciyi tutan, kurgusu düzgün tarih Shorts'u. Eski hat silinmedi
 ## Akış
 
 ```
+(opsiyonel) kendi fotoğrafların ─► 📥 görsel havuzu (açıklama = fotoğrafta ne var)
+      │
 /yeni <konu>  ─► LLM metni + sahne/görsel listesi yazar (Groq → Gemini yedek)
+      │           havuzdaki fotoğraflar g1..gN olur, hikâye onların etrafında kurulur
       │           düzenle: "5: yeni cümle" · "5 -> 3" · "g3: açıklama" · "düzelt: istek"
       ▼
 ✅ Metni onayla
@@ -32,7 +35,7 @@ Telegram'a önizleme + başlık/açıklama/etiket/yorum
 | --- | --- |
 | `zoompan` tam piksele yuvarlıyor → titreme, 1080'e kırpılmış görsele zoom → bulanıklık | Her kare OpenCV `warpAffine` ile alt-piksel hassasiyetinde, orijinal çözünürlükten çiziliyor |
 | Yatay arşiv fotoğrafları ortadan 9:16 kırpılıyor | Yatay görseller "kart" düzeninde (bulanık arka plan + çerçeve), dikeyler tam ekran; yüz tespiti ile odak |
-| Altyazı toplam süreye harf sayısıyla dağıtılıyor, İngilizce stopword vurgusu | Her satır ayrı seslendiriliyor (satır senkronu kesin); kelime zamanları **faster-whisper** ile gerçek sesten alınıp bilinen metne hizalanıyor (`app/studio/align.py`), eşleşmeyen kelimeler hece ağırlığıyla dolduruluyor; o anki kelime sarı |
+| Altyazı toplam süreye harf sayısıyla dağıtılıyor, İngilizce stopword vurgusu | Her satır ayrı seslendiriliyor (satır senkronu kesin). Kelime zamanları **EMA Lightning'in kendisinden** geliyor (sesi üreten kare planından, 40 ms hassasiyet) ve bilinen metne hizalanıyor (`app/studio/align.py`). EMA dışı bir yedek ses kullanılırsa **faster-whisper** gerçek sesten zaman çıkarıyor; o da yoksa hece ağırlığı. O anki kelime sarı |
 | M10–M13 optimizasyon/deney/karar katmanları video kalitesi oturmadan üretimi yönlendiriyor | `LEGACY_INTELLIGENCE_ENABLED=false` (varsayılan): eski hatta karar, konu seçimi, deney ve optimizasyon override'ları yok sayılıyor. Studio bu katmanları hiç kullanmıyor |
 | Docker'da Arial yok | Poppins (OFL) repoda: `app/studio/assets/fonts` |
 | Pexels modern stok, Wikimedia gürültülü, üstüne doğrulayıcı katmanları | Görseli insan verir; eksikler için aday gösterilir, insan seçer |
@@ -50,9 +53,12 @@ Telegram'a önizleme + başlık/açıklama/etiket/yorum
 | `STUDIO_GITHUB_REF` | `main` | Workflow'un çalışacağı branch |
 | `STUDIO_TTS` | `ema,fish` | Sırayla denenecek TTS'ler: `ema`, `fish`, `piper` |
 | `STUDIO_PIPER_MODEL_DIR` | | Piper (sherpa-onnx) model klasörü — son çare |
+| `STUDIO_EMA_SPEED` | `1.0` | EMA konuşma hızı (0.25–4) |
+| `STUDIO_EMA_SEED` | `0` | Aynı seed = yeniden render'da aynı ses; `-1` = her seferinde farklı |
+| `STUDIO_EMA_DEVICE` | `auto` | `auto` · `cpu` · `cuda` |
 | `STUDIO_LLM` | `groq,gemini` | Metin yazarı sırası |
 | `STUDIO_GEMINI_MODEL` | `gemini-2.5-flash` | |
-| `STUDIO_ALIGN_MODEL` | `base` | faster-whisper boyutu (kelime hizalama); boş = kapalı, sadece hece tahmini |
+| `STUDIO_ALIGN_MODEL` | `base` | faster-whisper boyutu; sadece EMA dışı bir ses kullanılınca çalışır. Boş = kapalı, hece tahmini |
 | `LEGACY_INTELLIGENCE_ENABLED` | `false` | Eski hattın M10–M13 override katmanlarını yeniden açar |
 | `STUDIO_DIR` | `storage/studio` | Proje JSON'ları ve render çıktıları |
 
@@ -94,13 +100,18 @@ python -m app studio-render --project-file p.json --no-upload --no-notify --tts 
 
 | Komut | |
 | --- | --- |
-| `/yeni <konu>` | Yeni Short. Uzun metin de yapıştırılabilir: ilk satır konu, gerisi kaynak notu |
+| `/yeni <konu>` | Yeni Short. Uzun metin de yapıştırılabilir: ilk satır konu, gerisi kaynak notu. Havuzda fotoğraf varsa metin onlarla kurulur |
+| Fotoğraf (açık proje yokken) | 📥 Havuza girer; açıklamaya fotoğrafta ne olduğunu yaz ("Emu askerleri, 1932") |
+| Albüm, açıklama `/yeni <konu>` | Fotoğraflar + konu tek seferde: albümün hepsi havuza girer ve metin hemen yazılır |
+| Fotoğraf, açıklama `+ …` ya da `havuz …` | Açık proje varken bile fotoğrafı bir sonraki video için havuza koyar |
+| `/havuz` · `/havuz temizle` | Havuzdaki fotoğrafları göster / boşalt |
 | `/metin` · `/gorseller` · `/durum` | Metni, görsel durumunu, proje durumunu göster |
 | `/render` · `/iptal` | |
 | `5: yeni cümle` | 5. satırı değiştir (rakamları seslendirme için otomatik yazıya çevirir) |
 | `5 -> 3` | 5. satır 3. görseli kullansın |
 | `g3: açıklama` | 3. görselin açıklamasını/arama ipucunu değiştir |
 | `düzelt: daha gerilimli yap` | Metni bütünüyle yeniden yazdır (gönderilen görseller korunur) |
+| 🔁 Baştan yaz | Metni sıfırdan yazdır; senin fotoğrafların yine g1..gN olarak korunur |
 | Fotoğraf | Sıradaki boş görsele; açıklamaya `3` yazarsan 3. görsele |
 
 ## Modüller
@@ -110,7 +121,7 @@ app/studio/
   models.py         Project / Line / Visual + JSON ProjectStore
   script_writer.py  kanal kurallı prompt, LLM JSON → Project
   llm.py            Groq + Gemini JSON istemcileri, yedekli
-  tts.py            EMA Lightning / Fish Audio / Piper + satır satır ses izi
+  tts.py            EMA Lightning (ses + kelime zamanları) / Fish Audio / Piper + satır satır ses izi
   align.py          faster-whisper kelime zaman damgaları → bilinen metne bulanık hizalama
   text.py           Türkçe sayı okuma, büyük harf, hece ağırlığı, altyazı parçalama
   visual_search.py  Wikimedia Commons aday araması
@@ -126,9 +137,13 @@ app/studio/
 
 ## Bilinen sınırlar
 
-* EMA Lightning bu branch hazırlanırken sandbox'ta kurulamadığı için **gerçek ortamda ilk
-  çalıştırmada doğrulanmalı**; hata verirse zincirdeki sıradaki TTS (Fish → Piper) devreye girer
-  ve önizleme mesajında hangi sesin kullanıldığı yazar.
+* EMA Lightning (`ema-lightning` 1.1.x, model: huggingface.co/canberkkkkkk/ema-lightning) süreç
+  içinde çalışır; ağırlıklar (~34 MB) ilk kullanımda Hugging Face'ten iner ve Actions'ta
+  `~/.cache/huggingface` altında önbelleğe alınır. Tek ses vardır (klonlama / duygu yok).
+  Model yüklenemez ya da hata verirse zincirdeki sıradaki TTS (Fish → Piper) devreye girer ve
+  önizleme mesajında hangi sesin kullanıldığı yazar. CPU'da yaklaşık 6× gerçek zamandan hızlıdır.
+* Linux'ta PyPI'deki torch CUDA paketleriyle ~1.5 GB iner; CPU makinede önce
+  `pip install torch --index-url https://download.pytorch.org/whl/cpu` kurun (workflow böyle yapar).
 * faster-whisper modeli ilk çalıştırmada Hugging Face'ten indirilir (Actions'ta önbelleğe alınır);
   sandbox'ta model indirilemediği için hizalama sahte tanıyıcıyla test edildi. Model yoksa ya da hata
   verirse render durmaz, hece tahminine düşer; önizleme mesajında `🔤 whisper (%)` / `syllable` yazar.
