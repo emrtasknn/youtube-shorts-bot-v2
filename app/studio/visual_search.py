@@ -13,10 +13,10 @@ from typing import Any
 
 import httpx
 
+from app.studio.http import USER_AGENT
 from app.studio.models import Candidate
 
 API = "https://commons.wikimedia.org/w/api.php"
-USER_AGENT = "BirGaripTarihStudio/1.0 (https://github.com/emrtasknn/youtube-shorts-bot-v2)"
 _BAD_TITLE = re.compile(r"(logo|icon|map|flag|coat of arms|signature|diagram|svg)", re.I)
 
 

@@ -14,7 +14,7 @@ from app.config.settings import Settings
 from app.studio.align import build_aligner
 from app.studio.factory import build_tts, build_youtube
 from app.studio.models import Project, ProjectStatus, ProjectStore
-from app.studio.render.pipeline import render_project
+from app.studio.render.pipeline import VisualFetchError, render_project
 from app.studio.telegram import StudioTelegram, keyboard
 
 
@@ -129,7 +129,9 @@ async def run_render_job(
         return project
     except Exception as exc:  # report every failure back to the admin
         project.status = ProjectStatus.FAILED
-        project.error = f"{type(exc).__name__}: {exc}"[:500]
+        project.error = (
+            str(exc) if isinstance(exc, VisualFetchError) else f"{type(exc).__name__}: {exc}"
+        )[:500]
         store.save(project)
         if notify and bot and chat:
             await bot.send_message(
