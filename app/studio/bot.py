@@ -47,7 +47,7 @@ from app.studio.script_writer import (
 )
 from app.studio.telegram import StudioTelegram, keyboard
 from app.studio.text import spell_numbers
-from app.studio.visual_search import search_commons
+from app.studio.visual_search import image_url, search_commons_terms, search_terms
 
 log = logging.getLogger("studio.bot")
 
@@ -76,6 +76,7 @@ YouTube videoyu o saatte kendisi herkese açar.
 5: yeni cümle → 5. satırı değiştirir
 5 -> 3 → 5. satır 3. görseli kullanır
 g3: açıklama → 3. görselin tarifini değiştirir
+g3: https://… → 3. görsel bu linkteki resim olur (Commons sayfa linki de olur)
 düzelt: daha kısa yap → metni baştan yazdırır
 
 🖼 GÖRSELLER
@@ -298,11 +299,31 @@ class StudioBot:
         if m := VISUAL_EDIT.match(text):
             vi = int(m.group(1)) - 1
             if 0 <= vi < len(p.visuals):
-                p.visuals[vi].description = m.group(2).strip()
-                p.visuals[vi].query = ""
-                p.visuals[vi].candidates = []
+                value = m.group(2).strip()
+                v = p.visuals[vi]
+                if re.match(r"^https?://\S+$", value):
+                    # a link: use that picture directly
+                    v.source, v.attribution, v.focus_x, v.focus_y = (
+                        f"url:{image_url(value)}",
+                        "",
+                        None,
+                        None,
+                    )
+                    v.candidates = []
+                    if p.status == ProjectStatus.DRAFT:
+                        p.status = ProjectStatus.COLLECTING
+                    self.store.save(p)
+                    missing = p.missing_visuals()
+                    tail = (
+                        "Eksik: " + ", ".join(f"g{i + 1}" for i in missing)
+                        if missing
+                        else "Tüm görseller hazır! 🎬 Render'a basabilirsin."
+                    )
+                    await self.say(chat, f"✅ g{vi + 1} linkten kaydedildi.\n{tail}")
+                    return
+                v.description, v.query, v.candidates = value, "", []
                 self.store.save(p)
-                await self.say(chat, f"✅ g{vi + 1}: {p.visuals[vi].description}")
+                await self.say(chat, f"✅ g{vi + 1}: {v.description}")
             return
         if m := LINE_EDIT.match(text):
             li = int(m.group(1)) - 1
@@ -502,9 +523,9 @@ class StudioBot:
         await self.say(chat, f"🔎 {len(missing)} görsel için aday aranıyor…")
         for vi in missing:
             v = p.visuals[vi]
-            query = v.query or v.description
+            queries = ([v.query] if v.query else []) + search_terms(v.description)
             try:
-                v.candidates = await search_commons(query)
+                v.candidates = await search_commons_terms(queries)
             except httpx.HTTPError as exc:
                 await self.say(chat, f"g{vi + 1}: arama hatası ({exc})")
                 continue

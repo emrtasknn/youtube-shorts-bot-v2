@@ -370,3 +370,21 @@ def test_plan_regex_does_not_catch_other_words() -> None:
     assert bot_module.PLAN.match("planı değiştir") is None
     assert bot_module.PLAN.match("plan: 18:30") is not None
     assert bot_module.PLAN.match("Planla yarın 18:30") is not None
+
+
+@pytest.mark.asyncio
+async def test_visual_from_link(tmp_path: Path) -> None:
+    b, tg = _bot(tmp_path)
+    await b.handle(_msg("/yeni Röntgen'in keşfi"))
+    await b.handle(_msg("g2: https://commons.wikimedia.org/wiki/File:Anitkabir.jpg"))
+    p = b.current(99)
+    assert p is not None
+    assert (
+        p.visuals[1].source
+        == "url:https://commons.wikimedia.org/wiki/Special:FilePath/Anitkabir.jpg"
+    )
+    assert "linkten kaydedildi" in tg.last
+    await b.handle(_msg("g1: Röntgen'in laboratuvarı"))
+    p = b.current(99)
+    assert p is not None and p.visuals[0].description == "Röntgen'in laboratuvarı"
+    assert p.visuals[0].source == ""
