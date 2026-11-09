@@ -219,3 +219,39 @@ def test_refresh_token_script_builds_offline_pkce_url() -> None:
     assert q["code_challenge_method"] == ["S256"] and q["state"] == ["st"]
     assert "youtube.force-ssl" in q["scope"][0] and "youtube.upload" in q["scope"][0]
     assert verifier != challenge
+
+
+@pytest.mark.asyncio
+async def test_studio_schedule_and_check(monkeypatch: pytest.MonkeyPatch) -> None:
+    import json
+
+    from app.studio.publisher import StudioYouTube
+
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        if request.url.host == "oauth2.googleapis.com":
+            return httpx.Response(200, json={"access_token": "tok"})
+        if request.url.path.endswith("/channels"):
+            return httpx.Response(200, json={"items": [{"snippet": {"title": "Bir Garip Tarih"}}]})
+        return httpx.Response(200, json={"id": "v1"})
+
+    transport = httpx.MockTransport(handler)
+    real_client = httpx.AsyncClient
+
+    def client_factory(*args: object, **kwargs: object) -> httpx.AsyncClient:
+        kwargs["transport"] = transport
+        return real_client(*args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(httpx, "AsyncClient", client_factory)
+    yt = StudioYouTube("cid", "secret", "refresh")
+    assert await yt.check() == "Bir Garip Tarih"
+    await yt.schedule("v1", "2026-11-09T16:00:00Z")
+    put = [r for r in seen if r.method == "PUT"][-1]
+    assert put.url.params["part"] == "status"
+    assert json.loads(put.content)["status"] == {
+        "privacyStatus": "private",
+        "publishAt": "2026-11-09T16:00:00Z",
+        "selfDeclaredMadeForKids": False,
+    }

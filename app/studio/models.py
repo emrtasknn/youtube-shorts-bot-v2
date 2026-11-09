@@ -22,6 +22,7 @@ class ProjectStatus(StrEnum):
     COLLECTING = "collecting"  # script approved, collecting visuals
     RENDERING = "rendering"
     REVIEW = "review"  # preview sent, waiting for publish approval
+    SCHEDULED = "scheduled"  # private on YouTube, goes public at scheduled_at
     PUBLISHED = "published"
     CANCELLED = "cancelled"
     FAILED = "failed"
@@ -111,6 +112,7 @@ class Project:
     status: ProjectStatus = ProjectStatus.DRAFT
     chat_id: int = 0
     youtube_id: str = ""
+    scheduled_at: str = ""  # RFC 3339 UTC, when YouTube makes it public
     error: str = ""
     id: str = field(default_factory=lambda: uuid.uuid4().hex[:10])
     created_at: float = field(default_factory=time.time)
@@ -187,6 +189,7 @@ class Project:
             status=ProjectStatus(data.get("status", ProjectStatus.DRAFT)),
             chat_id=int(data.get("chat_id", 0)),
             youtube_id=str(data.get("youtube_id", "")),
+            scheduled_at=str(data.get("scheduled_at", "")),
             error=str(data.get("error", "")),
             id=str(data.get("id") or uuid.uuid4().hex[:10]),
             created_at=float(data.get("created_at", time.time())),

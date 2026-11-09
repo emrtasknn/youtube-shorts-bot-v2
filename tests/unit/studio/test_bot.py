@@ -286,3 +286,87 @@ def test_short_llm_error_extracts_provider_message() -> None:
         )
     )
     assert text == "• Gemini: This model models/gemini-2.5-flash is no longer available."
+
+
+class FakeYouTube:
+    def __init__(self, fail: str = "") -> None:
+        self.fail = fail
+        self.scheduled: list[tuple[str, str]] = []
+        self.comments: list[tuple[str, str]] = []
+
+    async def check(self) -> str:
+        from app.infrastructure.providers.youtube import YouTubePublishError
+
+        if self.fail:
+            raise YouTubePublishError(self.fail, retryable=False)
+        return "Bir Garip Tarih"
+
+    async def schedule(self, video_id: str, publish_at: str) -> None:
+        self.scheduled.append((video_id, publish_at))
+
+    async def add_comment(self, video_id: str, text: str) -> str:
+        self.comments.append((video_id, text))
+        return "Yorum eklendi"
+
+
+@pytest.mark.asyncio
+async def test_youtube_command_reports_channel_or_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    b, tg = _bot(tmp_path)
+    monkeypatch.setattr(bot_module, "build_youtube", lambda s: FakeYouTube())
+    await b.handle(_msg("/youtube"))
+    assert "✅" in tg.last and "Bir Garip Tarih" in tg.last
+    monkeypatch.setattr(
+        bot_module,
+        "build_youtube",
+        lambda s: FakeYouTube("YouTube OAuth token yenilenemedi: invalid_grant"),
+    )
+    await b.handle(_msg("/youtube"))
+    assert "❌" in tg.last and "invalid_grant" in tg.last
+
+
+@pytest.mark.asyncio
+async def test_schedule_from_buttons_and_text(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from datetime import datetime, timedelta, timezone
+
+    b, tg = _bot(tmp_path)
+    yt = FakeYouTube()
+    monkeypatch.setattr(bot_module, "build_youtube", lambda s: yt)
+    monkeypatch.setattr(
+        b, "_now", lambda: datetime(2026, 11, 9, 10, 0, tzinfo=timezone(timedelta(hours=3)))
+    )
+    await b.handle(_msg("/yeni Röntgen'in keşfi"))
+    p = b.current(99)
+    assert p is not None
+    p.youtube_id, p.status = "vid123", ProjectStatus.REVIEW
+    b.store.save(p)
+
+    await b.handle(_cb(f"plan:{p.id}:vid123"))
+    buttons = tg.last_buttons()
+    assert buttons[0] == f"pat:{p.id}:vid123:202611091600"  # Bugün 19:00 TR = 16:00 UTC
+    await b.handle(_cb(buttons[0]))
+    assert yt.scheduled == [("vid123", "2026-11-09T16:00:00Z")]
+    assert "Planlandı: 9 Kasım 19:00" in tg.last
+    saved = b.store.load(p.id)
+    assert saved is not None and saved.status == ProjectStatus.SCHEDULED
+    assert saved.scheduled_at == "2026-11-09T16:00:00Z"
+    assert f"cmt:{p.id}:vid123" in tg.last_buttons()
+
+    await b.handle(_msg("plan yarın 21:30"))
+    assert yt.scheduled[-1] == ("vid123", "2026-11-10T18:30:00Z")
+    await b.handle(_msg("plan 10:05"))
+    assert "en az 15 dakika" in tg.last
+    await b.handle(_msg("plan öğlen"))
+    assert "anlayamadım" in tg.last
+
+    await b.handle(_cb(f"cmt:{p.id}:vid123"))
+    assert yt.comments and "💬" in tg.last
+
+
+def test_plan_regex_does_not_catch_other_words() -> None:
+    assert bot_module.PLAN.match("planı değiştir") is None
+    assert bot_module.PLAN.match("plan: 18:30") is not None
+    assert bot_module.PLAN.match("Planla yarın 18:30") is not None

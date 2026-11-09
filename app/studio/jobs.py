@@ -36,8 +36,11 @@ def with_attribution(project: Project) -> str:
 
 def review_keyboard(project: Project) -> dict[str, object]:
     vid = project.youtube_id or "-"
+    first = [("🚀 Yayınla", f"pub:{project.id}:{vid}")]
+    if project.youtube_id:
+        first.append(("⏰ Planla", f"plan:{project.id}:{vid}"))
     return keyboard(
-        [("🚀 Yayınla", f"pub:{project.id}:{vid}")],
+        first,
         [("🔁 Yeniden render", f"rr:{project.id}"), ("🗑 İptal", f"del:{project.id}:{vid}")],
     )
 
@@ -73,6 +76,15 @@ async def run_render_job(
 
     project.status = ProjectStatus.RENDERING
     store.save(project)
+    warnings: list[str] = []
+    yt = build_youtube(settings) if upload else None
+    if yt is not None:
+        try:  # fail fast: say now, not after a 5-minute render, that the upload will fail
+            await yt.check()
+        except (YouTubePublishError, httpx.HTTPError) as exc:
+            warnings.append(f"YouTube'a yüklenemedi: {exc}")
+            await progress(f"⚠️ YouTube token hatalı, video yine hazırlanacak:\n{exc}")
+            yt = None
     try:
         out = await render_project(
             project,
@@ -85,8 +97,6 @@ async def run_render_job(
             progress=progress,
             aligner=build_aligner(settings.studio_align_model),
         )
-        warnings: list[str] = []
-        yt = build_youtube(settings) if upload else None
         if yt is not None:
             await progress("📤 YouTube'a gizli olarak yükleniyor")
             original = project.description
@@ -101,7 +111,7 @@ async def run_render_job(
                 warnings += res.warnings
             finally:
                 project.description = original
-        elif upload:
+        elif upload and not warnings:
             warnings.append("YouTube bilgileri yok: video yüklenmedi, sadece önizleme.")
         project.status = ProjectStatus.REVIEW
         project.error = ""
