@@ -27,11 +27,14 @@ import asyncio
 import logging
 import re
 import sys
+from datetime import datetime
 from typing import Any
 
 import httpx
 
 from app.config.settings import Settings
+from app.infrastructure.providers.youtube import YouTubePublishError
+from app.studio import schedule
 from app.studio.factory import build_llm, build_store, build_youtube
 from app.studio.jobs import dispatch_github, write_project_file
 from app.studio.llm import LLMError
@@ -63,6 +66,11 @@ Akış: konu → metin onayı → görseller → render → yayın
 /iptal · projeyi iptal et
 /havuz · bekleyen fotoğrafları göster
 /havuz temizle · havuzu boşalt
+/youtube · YouTube bağlantısını test et
+
+⏰ PLANLI YAYIN
+Önizlemedeki ⏰ Planla düğmesi ya da: plan yarın 18:30 · plan 12.11 21:00
+YouTube videoyu o saatte kendisi herkese açar.
 
 ✏️ METNİ DÜZENLEME (düz mesaj olarak yaz)
 5: yeni cümle → 5. satırı değiştirir
@@ -85,6 +93,7 @@ LINE_EDIT = re.compile(r"^\s*(\d{1,2})\s*[:.)-]\s*(.+)$", re.S)
 LINE_VISUAL = re.compile(r"^\s*(\d{1,2})\s*->\s*(\d{1,2})\s*$")
 VISUAL_EDIT = re.compile(r"^\s*g(\d{1,2})\s*:\s*(.+)$", re.I | re.S)
 REVISE = re.compile(r"^\s*(düzelt|duzelt|revize)\s*:\s*(.+)$", re.I | re.S)
+PLAN = re.compile(r"^\s*plan(?:la)?(?:\s*:\s*|\s+)(\S.*)$", re.I)
 TO_POOL = re.compile(r"^\s*(\+|havuz\b)\s*", re.I)
 ALBUM_WAIT = 2.5  # seconds to wait for the rest of an album before writing the script
 OPEN = (ProjectStatus.DRAFT, ProjectStatus.COLLECTING)
@@ -233,6 +242,9 @@ class StudioBot:
                 return
             await self.new_project(chat, arg)
             return
+        if cmd == "/youtube":
+            await self.check_youtube(chat)
+            return
         if cmd == "/senaryo":
             await self.new_project_from_script(chat, arg)
             return
@@ -259,6 +271,9 @@ class StudioBot:
             await self.on_edit(chat, p, text)
 
     async def on_edit(self, chat: int, p: Project, text: str) -> None:
+        if m := PLAN.match(text):
+            await self.plan_from_text(chat, p, m.group(1))
+            return
         if m := REVISE.match(text):
             await self.say(chat, "✍️ Metin yeniden yazılıyor…")
             try:
@@ -611,6 +626,13 @@ class StudioBot:
                         pass
                 p.youtube_id = ""
             await self.start_render(chat, p)
+        elif action == "plan" and len(parts) == 2:
+            await self.ask_schedule(chat, p, parts[1])
+        elif action == "pat" and len(parts) == 3:
+            tz = schedule.local_tz(self.settings.studio_timezone)
+            await self.schedule_at(chat, p, parts[1], schedule.decode(parts[2], tz))
+        elif action == "cmt" and len(parts) == 2:
+            await self.add_comment(chat, p, parts[1])
         elif action == "pub" and len(parts) == 2:
             await self.publish(chat, p, parts[1])
         elif action == "del" and len(parts) == 2:
@@ -623,6 +645,96 @@ class StudioBot:
             p.status = ProjectStatus.CANCELLED
             self.store.save(p)
             await self.say(chat, "🗑 İptal edildi.")
+
+    # ------------------------------------------------------------ YouTube helpers
+    def _now(self) -> datetime:
+        return datetime.now(schedule.local_tz(self.settings.studio_timezone))
+
+    async def check_youtube(self, chat: int) -> None:
+        yt = build_youtube(self.settings)
+        if yt is None:
+            await self.say(
+                chat, "❌ YOUTUBE_CLIENT_ID / YOUTUBE_CLIENT_SECRET / YOUTUBE_REFRESH_TOKEN eksik."
+            )
+            return
+        try:
+            channel = await yt.check()
+        except (YouTubePublishError, httpx.HTTPError) as exc:
+            await self.say(chat, f"❌ YouTube bağlantısı çalışmıyor:\n{exc}")
+            return
+        await self.say(
+            chat,
+            f"✅ YouTube bağlantısı çalışıyor · Kanal: {channel}\n"
+            "(Bu test bu sunucudaki token'ı dener; render GitHub'daki secret'ı kullanır.)",
+        )
+
+    async def ask_schedule(self, chat: int, p: Project, video_id: str) -> None:
+        if video_id in ("", "-"):
+            await self.say(
+                chat, "Video YouTube'a yüklenmemiş; önce /youtube ile bağlantıyı düzelt."
+            )
+            return
+        rows = [
+            [(label, f"pat:{p.id}:{video_id}:{schedule.encode(when)}")]
+            for label, when in schedule.quick_options(self._now())
+        ]
+        await self.say(
+            chat,
+            "⏰ Ne zaman yayına girsin? (Türkiye saati)\n"
+            "Başka bir saat için yaz: plan 18:30 · plan yarın 21:00 · plan 12.11 19:30",
+            keyboard(*rows) if rows else None,
+        )
+
+    async def plan_from_text(self, chat: int, p: Project, when_text: str) -> None:
+        when = schedule.parse_when(when_text, self._now())
+        if when is None:
+            await self.say(
+                chat, "Saati anlayamadım. Örnek: plan 18:30 · plan yarın 21:00 · plan 12.11 19:30"
+            )
+            return
+        if not p.youtube_id:
+            await self.say(chat, "Bu projenin YouTube'da yüklü videosu yok; önce render + yükleme.")
+            return
+        await self.schedule_at(chat, p, p.youtube_id, when)
+
+    async def schedule_at(self, chat: int, p: Project, video_id: str, when: datetime) -> None:
+        if schedule.too_soon(when, self._now()):
+            await self.say(chat, "Yayın saati en az 15 dakika sonrası olmalı.")
+            return
+        yt = build_youtube(self.settings)
+        if yt is None:
+            await self.say(chat, "YouTube bilgileri yok.")
+            return
+        try:
+            await yt.schedule(video_id, schedule.to_rfc3339(when))
+        except (YouTubePublishError, httpx.HTTPError) as exc:
+            await self.say(chat, f"❌ {exc}")
+            return
+        p.youtube_id = video_id
+        p.status = ProjectStatus.SCHEDULED
+        p.scheduled_at = schedule.to_rfc3339(when)
+        self.store.save(p)
+        buttons = [[("🚀 Hemen yayınla", f"pub:{p.id}:{video_id}")]]
+        if p.pinned_comment:
+            buttons.append([("💬 Yorumu ekle (yayından sonra)", f"cmt:{p.id}:{video_id}")])
+        await self.say(
+            chat,
+            f"⏰ Planlandı: {schedule.human(when)} (Türkiye saati)\n"
+            f"YouTube o saatte herkese açacak: https://youtube.com/shorts/{video_id}\n"
+            "Gizli videoya yorum eklenemiyor; yayına girince 💬 Yorumu ekle'ye bas.",
+            keyboard(*buttons),
+        )
+
+    async def add_comment(self, chat: int, p: Project, video_id: str) -> None:
+        yt = build_youtube(self.settings)
+        if yt is None or not p.pinned_comment:
+            await self.say(chat, "Eklenecek yorum ya da YouTube bilgisi yok.")
+            return
+        try:
+            note = await yt.add_comment(video_id, p.pinned_comment)
+        except (YouTubePublishError, httpx.HTTPError) as exc:
+            note = f"Yorum eklenemedi: {exc}"
+        await self.say(chat, f"💬 {note}")
 
     async def publish(self, chat: int, p: Project, video_id: str) -> None:
         yt = build_youtube(self.settings)

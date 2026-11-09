@@ -26,7 +26,7 @@ Görseller: fotoğrafları sırayla gönder (ya da açıklamaya numara yaz: "3")
 Telegram'a önizleme + başlık/açıklama/etiket/yorum
       │
       ▼
-🚀 Yayınla → herkese açık + yorum   ·   🔁 Yeniden render   ·   🗑 İptal (gizli videoyu siler)
+🚀 Yayınla → herkese açık + yorum · ⏰ Planla → YouTube o saatte açar · 🔁 Yeniden render · 🗑 İptal
 ```
 
 ## Neden böyle
@@ -146,6 +146,8 @@ python -m app studio-render --project-file p.json --no-upload --no-notify --tts 
 | `/senaryo Başlık` + alt satırlarda metin | Kendi senaryon, yapay zekâ kullanılmaz: her cümle bir sahne olur, havuzdaki fotoğraflar sahnelere sırayla dağıtılır |
 | `/metin` · `/gorseller` · `/durum` | Metni, görsel durumunu, proje durumunu göster |
 | `/render` · `/iptal` | |
+| `/youtube` | YouTube bağlantısını test et: kanal adını ya da Google'ın hatasını gösterir (render beklemeden) |
+| ⏰ Planla / `plan yarın 18:30` | Gizli yüklenmiş videoyu o saatte YouTube'un kendisi açar (`publishAt`, `STUDIO_TIMEZONE`, varsayılan Europe/Istanbul). Gizli videoya yorum eklenemez: yayından sonra 💬 Yorumu ekle |
 | `5: yeni cümle` | 5. satırı değiştir (rakamları seslendirme için otomatik yazıya çevirir) |
 | `5 -> 3` | 5. satır 3. görseli kullansın |
 | `g3: açıklama` | 3. görselin açıklamasını/arama ipucunu değiştir |
