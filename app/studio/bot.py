@@ -669,6 +669,13 @@ class StudioBot:
         )
 
     async def ask_schedule(self, chat: int, p: Project, video_id: str) -> None:
+        if p.status == ProjectStatus.PUBLISHED:
+            await self.say(
+                chat,
+                "Bu video zaten yayında. YouTube planlamayı yalnızca hiç yayınlanmamış gizli "
+                "videolarda kabul ediyor.",
+            )
+            return
         if video_id in ("", "-"):
             await self.say(
                 chat, "Video YouTube'a yüklenmemiş; önce /youtube ile bağlantıyı düzelt."
@@ -698,6 +705,13 @@ class StudioBot:
         await self.schedule_at(chat, p, p.youtube_id, when)
 
     async def schedule_at(self, chat: int, p: Project, video_id: str, when: datetime) -> None:
+        if p.status == ProjectStatus.PUBLISHED:
+            await self.say(
+                chat,
+                "Bu video zaten yayında. YouTube planlamayı yalnızca hiç yayınlanmamış gizli "
+                "videolarda kabul ediyor.",
+            )
+            return
         if schedule.too_soon(when, self._now()):
             await self.say(chat, "Yayın saati en az 15 dakika sonrası olmalı.")
             return
