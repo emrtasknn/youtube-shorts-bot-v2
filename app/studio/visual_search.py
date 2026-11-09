@@ -75,3 +75,63 @@ async def search_commons(query: str, *, limit: int = 3, timeout: float = 30.0) -
         r = await client.get(API, params=params)
         r.raise_for_status()
     return parse_candidates(r.json())[:limit]
+
+
+_WORD = re.compile(r"[\wÇĞİÖŞÜçğıöşüÂâÎîÛû'’]+")
+
+
+def search_terms(text: str) -> list[str]:
+    """Commons queries to try for a visual, most specific first.
+
+    A whole Turkish sentence ("Naaşı önce İstanbul'dan Yavuz zırhlısıyla İzmit'e
+    taşındı.") finds nothing on Commons; its proper names and years do
+    ("İstanbul Yavuz İzmit").
+    """
+    words = _WORD.findall(text)
+    names: list[str] = []
+    for i, w in enumerate(words):
+        base = re.split(r"['’]", w)[0]
+        if re.fullmatch(r"1[5-9]\d\d|20\d\d", base):
+            names.append(base)
+        elif (
+            base[:1].isupper()
+            and len(base) > 2
+            and (
+                i > 0
+                or "'" in w
+                or "’" in w
+                or (len(words) > 1 and words[1][:1].isupper())  # "Dolmabahçe Sarayı"
+            )
+        ):
+            names.append(base)
+    queries: list[str] = []
+    if len(words) <= 5:
+        queries.append(" ".join(words))
+    if names:
+        queries.append(" ".join(dict.fromkeys(names)))
+        queries.append(" ".join(list(dict.fromkeys(names))[:2]))
+    if words and words[0][:1].isupper():
+        queries.append(re.split(r"['’]", words[0])[0])
+    if not queries and words:
+        queries.append(" ".join(sorted(words, key=len, reverse=True)[:3]))
+    return [q for q in dict.fromkeys(queries) if q.strip()]
+
+
+async def search_commons_terms(queries: list[str], *, limit: int = 3) -> list[Candidate]:
+    """Try each query until one finds candidates."""
+    for q in queries:
+        found = await search_commons(q, limit=limit)
+        if found:
+            return found
+    return []
+
+
+_FILE_PAGE = re.compile(r"^https?://commons\.wikimedia\.org/wiki/(?:File|Dosya):(.+)$", re.I)
+
+
+def image_url(link: str) -> str:
+    """A Commons file page link -> a direct image URL; other links unchanged."""
+    m = _FILE_PAGE.match(link.strip())
+    if m:
+        return f"https://commons.wikimedia.org/wiki/Special:FilePath/{m.group(1)}"
+    return link.strip()
