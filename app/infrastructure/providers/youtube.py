@@ -24,6 +24,26 @@ class YouTubePublishError(RuntimeError):
         self.bytes_uploaded = bytes_uploaded
 
 
+def oauth_error_text(response: httpx.Response) -> str:
+    """Google's OAuth error (code + description) with a hint; never echoes credentials."""
+    try:
+        body = response.json()
+    except ValueError:
+        body = {}
+    error = str(body.get("error") or f"HTTP {response.status_code}")
+    desc = str(body.get("error_description") or "").strip()
+    text = f"YouTube OAuth token yenilenemedi: {error}" + (f" ({desc})" if desc else "")
+    if error == "invalid_grant":
+        text += (
+            ". YOUTUBE_REFRESH_TOKEN süresi dolmuş ya da iptal edilmiş; yeni token al "
+            "(scripts/youtube_refresh_token.py). Google Cloud'da uygulama 'Testing' modundaysa "
+            "token'lar 7 günde düşer: OAuth consent screen'de 'Publish app' yap."
+        )
+    elif error in ("invalid_client", "unauthorized_client"):
+        text += ". YOUTUBE_CLIENT_ID / YOUTUBE_CLIENT_SECRET yanlış ya da bu token'a ait değil."
+    return text
+
+
 class YouTubePublisher:
     _INIT_URL = "https://www.googleapis.com/upload/youtube/v3/videos"
     _CHUNK_SIZE = 8 * 1024 * 1024
@@ -63,7 +83,8 @@ class YouTubePublisher:
                     "grant_type": "refresh_token",
                 },
             )
-            response.raise_for_status()
+            if response.status_code >= 400:
+                raise YouTubePublishError(oauth_error_text(response), retryable=False)
             payload = response.json()
         finally:
             if owned:

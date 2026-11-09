@@ -11,6 +11,7 @@ from pathlib import Path
 import httpx
 
 from app.config.settings import Settings
+from app.infrastructure.providers.youtube import YouTubePublishError
 from app.studio.align import build_aligner
 from app.studio.factory import build_tts, build_youtube
 from app.studio.models import Project, ProjectStatus, ProjectStore
@@ -90,10 +91,16 @@ async def run_render_job(
             await progress("📤 YouTube'a gizli olarak yükleniyor")
             original = project.description
             project.description = with_attribution(project)
-            res = await yt.upload_private(project, out.video, out.thumb_vertical)
-            project.description = original
-            project.youtube_id = res.video_id
-            warnings += res.warnings
+            try:
+                res = await yt.upload_private(project, out.video, out.thumb_vertical)
+            except (YouTubePublishError, httpx.HTTPError) as exc:
+                # the render worked: still send the preview, just say why YouTube failed
+                warnings.append(f"YouTube'a yüklenemedi: {exc}")
+            else:
+                project.youtube_id = res.video_id
+                warnings += res.warnings
+            finally:
+                project.description = original
         elif upload:
             warnings.append("YouTube bilgileri yok: video yüklenmedi, sadece önizleme.")
         project.status = ProjectStatus.REVIEW
@@ -108,7 +115,11 @@ async def run_render_job(
                     else ""
                 )
                 + "".join(f"⚠️ {w}\n" for w in warnings)
-                + "\nYayınla'ya basınca herkese açık olur."
+                + (
+                    "\nYayınla'ya basınca herkese açık olur."
+                    if project.youtube_id
+                    else "\nVideo YouTube'a yüklenmedi. Sorunu düzeltip 🔁 Yeniden render'a bas."
+                )
             )
             await bot.send_file(
                 chat,

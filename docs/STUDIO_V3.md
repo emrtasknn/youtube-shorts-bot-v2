@@ -80,6 +80,21 @@ Repo → Settings → Secrets and variables → Actions:
 Workflow: `.github/workflows/studio-render.yml`. Elle de tetiklenebilir; `project` girdisi
 `app.studio.jobs.encode_payload(project)` çıktısıdır. Render sonrası mp4 3 gün artifact olarak saklanır.
 
+### YouTube token'ı (YOUTUBE_REFRESH_TOKEN)
+
+Render "YouTube OAuth token yenilenemedi: invalid_grant" derse token düşmüştür:
+
+1. Google Cloud Console → APIs & Services → OAuth consent screen → **Publish app**
+   ("Testing" modunda Google yenileme token'larını 7 günde iptal eder).
+2. OAuth istemcisi **Desktop app** türünde olmalı (Credentials → Create credentials →
+   OAuth client ID → Desktop app). Yeni istemci açtıysan ID/secret'ı da güncelle.
+3. Kendi bilgisayarında: `python scripts/youtube_refresh_token.py` → tarayıcıda izin ver →
+   ekrana yazılan token'ı GitHub → Settings → Secrets → Actions → `YOUTUBE_REFRESH_TOKEN`
+   olarak kaydet (Render'da da tanımlıysa orada da güncelle).
+
+Yükleme başarısız olsa da render boşa gitmez: önizleme, kapaklar ve metin yine Telegram'a
+gelir, mesajda yüklemenin neden olmadığı yazar.
+
 ### Bot
 
 ```bash
