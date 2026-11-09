@@ -255,3 +255,31 @@ async def test_studio_schedule_and_check(monkeypatch: pytest.MonkeyPatch) -> Non
         "publishAt": "2026-11-09T16:00:00Z",
         "selfDeclaredMadeForKids": False,
     }
+
+
+@pytest.mark.asyncio
+async def test_schedule_error_is_explained_in_turkish(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.studio.publisher import StudioYouTube
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "oauth2.googleapis.com":
+            return httpx.Response(200, json={"access_token": "tok"})
+        return httpx.Response(
+            400,
+            json={
+                "error": {
+                    "message": "The request metadata specifies an invalid scheduled publishing time."
+                }
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    real_client = httpx.AsyncClient
+
+    def client_factory(*args: object, **kwargs: object) -> httpx.AsyncClient:
+        kwargs["transport"] = transport
+        return real_client(*args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(httpx, "AsyncClient", client_factory)
+    with pytest.raises(YouTubePublishError, match="daha önce herkese açıldıysa"):
+        await StudioYouTube("c", "s", "r").schedule("v1", "2026-11-09T18:00:00Z")

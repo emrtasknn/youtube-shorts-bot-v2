@@ -144,8 +144,14 @@ class StudioYouTube:
             },
         )
         if r.status_code >= 400:
+            msg = _api_message(r)
+            if "scheduled publishing time" in msg.lower():
+                msg = (
+                    "YouTube bu saati kabul etmedi. Video daha önce herkese açıldıysa (Yayınla) "
+                    "artık planlanamaz; değilse saatin gelecekte olduğundan emin ol."
+                )
             raise YouTubePublishError(
-                f"Planlanamadı (HTTP {r.status_code}): {_api_message(r)}", retryable=False
+                f"Planlanamadı (HTTP {r.status_code}): {msg}", retryable=False
             )
 
     async def add_comment(self, video_id: str, text: str) -> str:

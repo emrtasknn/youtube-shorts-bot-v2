@@ -388,3 +388,21 @@ async def test_visual_from_link(tmp_path: Path) -> None:
     p = b.current(99)
     assert p is not None and p.visuals[0].description == "Röntgen'in laboratuvarı"
     assert p.visuals[0].source == ""
+
+
+@pytest.mark.asyncio
+async def test_schedule_refused_for_published_video(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    b, tg = _bot(tmp_path)
+    yt = FakeYouTube()
+    monkeypatch.setattr(bot_module, "build_youtube", lambda s: yt)
+    await b.handle(_msg("/yeni Röntgen'in keşfi"))
+    p = b.current(99)
+    assert p is not None
+    p.youtube_id, p.status = "vid123", ProjectStatus.PUBLISHED
+    b.store.save(p)
+    await b.handle(_cb(f"plan:{p.id}:vid123"))
+    assert "zaten yayında" in tg.last
+    await b.handle(_cb(f"pat:{p.id}:vid123:209901011200"))
+    assert "zaten yayında" in tg.last and yt.scheduled == []
