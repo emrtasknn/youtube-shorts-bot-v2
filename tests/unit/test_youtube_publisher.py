@@ -172,3 +172,50 @@ async def test_youtube_publish_does_not_load_entire_file(tmp_path: Path) -> None
         await client.aclose()
 
     assert received_sizes == [3]
+
+
+@pytest.mark.asyncio
+async def test_oauth_invalid_grant_is_explained() -> None:
+    from app.infrastructure.providers.youtube import YouTubePublishError
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            400,
+            json={
+                "error": "invalid_grant",
+                "error_description": "Token has been expired or revoked.",
+            },
+        )
+
+    publisher = YouTubePublisher(
+        "client-id",
+        "client-secret",
+        "refresh-token",
+        client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+    with pytest.raises(YouTubePublishError) as info:
+        await publisher._access_token()
+    text = str(info.value)
+    assert "invalid_grant" in text and "expired or revoked" in text
+    assert "youtube_refresh_token.py" in text and "Publish app" in text
+    assert "client-secret" not in text and "refresh-token" not in text
+    assert info.value.retryable is False
+
+
+def test_refresh_token_script_builds_offline_pkce_url() -> None:
+    import importlib.util
+    import urllib.parse
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[2] / "scripts" / "youtube_refresh_token.py"
+    spec = importlib.util.spec_from_file_location("youtube_refresh_token", path)
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    verifier, challenge = mod.pkce_pair()
+    url = mod.build_auth_url("cid", "http://127.0.0.1:5555/", "st", challenge)
+    q = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)
+    assert q["access_type"] == ["offline"] and q["prompt"] == ["consent"]
+    assert q["code_challenge_method"] == ["S256"] and q["state"] == ["st"]
+    assert "youtube.force-ssl" in q["scope"][0] and "youtube.upload" in q["scope"][0]
+    assert verifier != challenge
