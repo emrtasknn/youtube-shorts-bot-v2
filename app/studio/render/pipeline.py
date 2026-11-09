@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import multiprocessing as mp
 import os
+import re
 import subprocess
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -14,6 +16,7 @@ import httpx
 import numpy as np
 
 from app.studio.align import Aligner
+from app.studio.http import USER_AGENT
 from app.studio.models import Project
 from app.studio.render.audio import SoundDesigner, mix, write_wav
 from app.studio.render.engine import FrameRenderer, encode_shot, prepare_visuals
@@ -22,7 +25,6 @@ from app.studio.render.thumbnail import make_thumbnail
 from app.studio.tts import SAMPLE_RATE, TTSBackend, build_voice_track
 
 TelegramDownloader = Callable[[str, Path], Awaitable[Path]]
-USER_AGENT = "BirGaripTarihStudio/1.0 (youtube shorts renderer)"
 TELEGRAM_VIDEO_LIMIT = 48 * 1024 * 1024
 
 
@@ -46,14 +48,61 @@ async def fetch_visual(source: str, dest: Path, telegram: TelegramDownloader | N
             raise RuntimeError("Telegram görseli için bot token gerekli")
         return await telegram(ref, dest)
     if kind == "url":
-        async with httpx.AsyncClient(
-            timeout=60, follow_redirects=True, headers={"User-Agent": USER_AGENT}
-        ) as client:
-            r = await client.get(ref)
-            r.raise_for_status()
-        dest.write_bytes(r.content)
+        dest.write_bytes(await download_image(ref))
         return dest
     raise ValueError(f"Bilinmeyen görsel kaynağı: {source}")
+
+
+class VisualFetchError(RuntimeError):
+    """A visual could not be downloaded; the message tells the user what to do."""
+
+
+_THUMB = re.compile(r"^(https://[^/]+/wikipedia/[^/]+)/thumb/(\w/\w\w/[^/]+)/[^/]+$")
+_RETRY_STATUS = (403, 429, 500, 502, 503, 504)
+
+
+def original_of_thumb(url: str) -> str | None:
+    """Wikimedia thumbnail URL -> the original file on upload.wikimedia.org."""
+    m = _THUMB.match(url.split("?", 1)[0])
+    if not m:
+        return None
+    path = m.group(1).split("/wikipedia/", 1)[1]
+    return f"https://upload.wikimedia.org/wikipedia/{path}/{m.group(2)}"
+
+
+async def download_image(
+    url: str,
+    *,
+    transport: httpx.AsyncBaseTransport | None = None,
+    pause: float = 2.0,
+) -> bytes:
+    """GET an image with a proper User-Agent; retry once on throttling, then try the original."""
+    candidates = [url.split("?", 1)[0]]
+    original = original_of_thumb(url)
+    if original:
+        candidates.append(original)
+    last = ""
+    async with httpx.AsyncClient(
+        timeout=60, follow_redirects=True, headers={"User-Agent": USER_AGENT}, transport=transport
+    ) as client:
+        for target in candidates:
+            for attempt in range(2):
+                try:
+                    r = await client.get(target)
+                except httpx.HTTPError as exc:
+                    last = f"{type(exc).__name__}"
+                    break
+                if r.status_code < 400 and r.content:
+                    return r.content
+                last = f"HTTP {r.status_code}"
+                if r.status_code not in _RETRY_STATUS or attempt:
+                    break
+                try:
+                    wait = float(r.headers.get("retry-after", pause))
+                except ValueError:
+                    wait = pause
+                await asyncio.sleep(min(wait, 10.0))
+    raise VisualFetchError(last or "boş yanıt")
 
 
 _RENDERER: FrameRenderer | None = None
@@ -108,7 +157,16 @@ async def render_project(
     used = sorted({ln.visual for ln in project.lines if not ln.card})
     paths: dict[int, Path] = {}
     for i in used:
-        paths[i] = await fetch_visual(project.visuals[i].source, img_dir / f"{i + 1}.jpg", telegram)
+        try:
+            paths[i] = await fetch_visual(
+                project.visuals[i].source, img_dir / f"{i + 1}.jpg", telegram
+            )
+        except (VisualFetchError, httpx.HTTPError) as exc:
+            raise VisualFetchError(
+                f"g{i + 1} ({project.visuals[i].description[:60]}) indirilemedi: {exc}. "
+                f"Bu görsel için fotoğraf gönder (açıklamaya {i + 1} yaz) ya da 🔎 ile başka "
+                "aday seç, sonra Tekrar dene."
+            ) from exc
     focus = {i: (project.visuals[i].focus_x, project.visuals[i].focus_y) for i in used}
     visuals = prepare_visuals(paths, focus)
 
