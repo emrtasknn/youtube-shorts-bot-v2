@@ -406,3 +406,66 @@ async def test_schedule_refused_for_published_video(
     assert "zaten yayında" in tg.last
     await b.handle(_cb(f"pat:{p.id}:vid123:209901011200"))
     assert "zaten yayında" in tg.last and yt.scheduled == []
+
+
+class FakeAnalyticsYouTube(FakeYouTube):
+    def __init__(self, curve: list[tuple[float, float]] | None = None, error: str = "") -> None:
+        super().__init__()
+        self.curve = (
+            curve if curve is not None else [(i / 100, 1.0 - i / 200) for i in range(1, 101)]
+        )
+        self.error = error
+        self.asked: list[str] = []
+
+    async def video_info(self, video_id: str) -> dict[str, str]:
+        self.asked.append(video_id)
+        return {"title": "Emu Savaşı", "published": "2026-11-01", "duration": "PT50S"}
+
+    async def video_analytics(self, video_id: str, start: str, end: str) -> Any:
+        from app.infrastructure.providers.youtube import YouTubePublishError
+
+        if self.error:
+            raise YouTubePublishError(self.error, retryable=False)
+        return {"views": 1000.0, "averageViewPercentage": 80.0}, self.curve
+
+
+@pytest.mark.asyncio
+async def test_analiz_uses_latest_video_and_reports(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    b, tg = _bot(tmp_path)
+    yt = FakeAnalyticsYouTube()
+    monkeypatch.setattr(bot_module, "build_youtube", lambda s: yt)
+    await b.handle(_msg("/analiz"))
+    assert "yüklenmiş video yok" in tg.last
+
+    await b.handle(_msg("/yeni Röntgen'in keşfi"))
+    p = b.current(99)
+    assert p is not None
+    p.youtube_id, p.status = "Ab3_dE-fGh1", ProjectStatus.PUBLISHED
+    b.store.save(p)
+    await b.handle(_msg("/analiz"))
+    assert yt.asked == ["Ab3_dE-fGh1"]
+    assert "📊 Emu Savaşı" in tg.last and "Kanca" in tg.last and "1.000 izlenme" in tg.last
+
+    await b.handle(_msg("/analiz https://youtube.com/shorts/Zz9_yX-wVu8"))
+    assert yt.asked[-1] == "Zz9_yX-wVu8" and "satır eşleştirmesi yapılamadı" in tg.last
+    await b.handle(_msg("/analiz bozuk"))
+    assert "anlayamadım" in tg.last
+
+
+@pytest.mark.asyncio
+async def test_analiz_explains_missing_data_and_errors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    b, tg = _bot(tmp_path)
+    monkeypatch.setattr(bot_module, "build_youtube", lambda s: FakeAnalyticsYouTube(curve=[]))
+    await b.handle(_msg("/analiz Ab3_dE-fGh1"))
+    assert "24–48 saat" in tg.last
+    monkeypatch.setattr(
+        bot_module,
+        "build_youtube",
+        lambda s: FakeAnalyticsYouTube(error="Token'da YouTube Analytics izni yok."),
+    )
+    await b.handle(_msg("/analiz Ab3_dE-fGh1"))
+    assert "❌" in tg.last and "Analytics izni yok" in tg.last

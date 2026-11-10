@@ -146,6 +146,7 @@ python -m app studio-render --project-file p.json --no-upload --no-notify --tts 
 | `/senaryo Başlık` + alt satırlarda metin | Kendi senaryon, yapay zekâ kullanılmaz: her cümle bir sahne olur, havuzdaki fotoğraflar sahnelere sırayla dağıtılır |
 | `/metin` · `/gorseller` · `/durum` | Metni, görsel durumunu, proje durumunu göster |
 | `/render` · `/iptal` | |
+| `/analiz` · `/analiz <link>` | Yayınlanan Short'un izlenme analizi: ilk 3 saniyede kalanlar, en çok kaçılan 3 an ve o an okunan satır, sona kadar izleyenler, tekrar izlenme. YouTube Analytics izni (`yt-analytics.readonly`) gerekir; veriler yayından 24–48 saat sonra gelir |
 | `/youtube` | YouTube bağlantısını test et: kanal adını ya da Google'ın hatasını gösterir (render beklemeden) |
 | ⏰ Planla / `plan yarın 18:30` | Gizli yüklenmiş videoyu o saatte YouTube'un kendisi açar (`publishAt`, `STUDIO_TIMEZONE`, varsayılan Europe/Istanbul). Gizli videoya yorum eklenemez: yayından sonra 💬 Yorumu ekle |
 | `5: yeni cümle` | 5. satırı değiştir (rakamları seslendirme için otomatik yazıya çevirir) |
