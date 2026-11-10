@@ -283,3 +283,37 @@ async def test_schedule_error_is_explained_in_turkish(monkeypatch: pytest.Monkey
     monkeypatch.setattr(httpx, "AsyncClient", client_factory)
     with pytest.raises(YouTubePublishError, match="daha önce herkese açıldıysa"):
         await StudioYouTube("c", "s", "r").schedule("v1", "2026-11-09T18:00:00Z")
+
+
+@pytest.mark.asyncio
+async def test_video_analytics_and_scope_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.studio.publisher import ANALYTICS_SCOPE, StudioYouTube
+
+    mode = {"scope": False}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "oauth2.googleapis.com":
+            return httpx.Response(200, json={"access_token": "tok"})
+        if mode["scope"]:
+            return httpx.Response(
+                403, json={"error": {"message": "Request had insufficient authentication scopes."}}
+            )
+        if request.url.params.get("dimensions") == "elapsedVideoTimeRatio":
+            return httpx.Response(200, json={"rows": [[0.01, 1.0], [0.5, 0.6], [1.0, 0.4]]})
+        return httpx.Response(200, json={"rows": [[120, 7, 1, 71.5, 39.0]]})
+
+    transport = httpx.MockTransport(handler)
+    real_client = httpx.AsyncClient
+
+    def client_factory(*args: object, **kwargs: object) -> httpx.AsyncClient:
+        kwargs["transport"] = transport
+        return real_client(*args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(httpx, "AsyncClient", client_factory)
+    yt = StudioYouTube("c", "s", "r")
+    stats, curve = await yt.video_analytics("v1", "2026-11-01", "2026-11-10")
+    assert stats["views"] == 120 and stats["averageViewPercentage"] == 71.5
+    assert curve == [(0.01, 1.0), (0.5, 0.6), (1.0, 0.4)]
+    mode["scope"] = True
+    with pytest.raises(YouTubePublishError, match=ANALYTICS_SCOPE.replace(".", r"\.")):
+        await yt.video_analytics("v1", "2026-11-01", "2026-11-10")

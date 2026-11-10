@@ -27,14 +27,14 @@ import asyncio
 import logging
 import re
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
 
 from app.config.settings import Settings
 from app.infrastructure.providers.youtube import YouTubePublishError
-from app.studio import schedule
+from app.studio import analytics, schedule
 from app.studio.factory import build_llm, build_store, build_youtube
 from app.studio.jobs import dispatch_github, write_project_file
 from app.studio.llm import LLMError
@@ -67,6 +67,7 @@ Akış: konu → metin onayı → görseller → render → yayın
 /havuz · bekleyen fotoğrafları göster
 /havuz temizle · havuzu boşalt
 /youtube · YouTube bağlantısını test et
+/analiz · son videonun izlenme analizi (ya da /analiz <video linki>)
 
 ⏰ PLANLI YAYIN
 Önizlemedeki ⏰ Planla düğmesi ya da: plan yarın 18:30 · plan 12.11 21:00
@@ -245,6 +246,9 @@ class StudioBot:
             return
         if cmd == "/youtube":
             await self.check_youtube(chat)
+            return
+        if cmd == "/analiz":
+            await self.analyze_video(chat, arg)
             return
         if cmd == "/senaryo":
             await self.new_project_from_script(chat, arg)
@@ -688,6 +692,46 @@ class StudioBot:
             f"✅ YouTube bağlantısı çalışıyor · Kanal: {channel}\n"
             "(Bu test bu sunucudaki token'ı dener; render GitHub'daki secret'ı kullanır.)",
         )
+
+    async def analyze_video(self, chat: int, arg: str) -> None:
+        yt = build_youtube(self.settings)
+        if yt is None:
+            await self.say(chat, "YouTube bilgileri eksik; önce /youtube ile kontrol et.")
+            return
+        video_id = analytics.parse_video_id(arg) if arg.strip() else None
+        if arg.strip() and video_id is None:
+            await self.say(
+                chat, "Video linkini anlayamadım. Örnek: /analiz https://youtube.com/shorts/…"
+            )
+            return
+        project = self.store.latest_with_video(chat, video_id or "")
+        if video_id is None:
+            if project is None:
+                await self.say(
+                    chat, "Analiz edilecek yüklenmiş video yok. /analiz <video linki> yaz."
+                )
+                return
+            video_id = project.youtube_id
+        await self.bot.send_chat_action(chat)
+        today = datetime.now(UTC).date().isoformat()
+        try:
+            info = await yt.video_info(video_id)
+            start = min(info["published"] or today, today)
+            stats, curve = await yt.video_analytics(video_id, start, today)
+        except (YouTubePublishError, httpx.HTTPError) as exc:
+            await self.say(chat, f"❌ {exc}")
+            return
+        if not curve:
+            await self.say(
+                chat,
+                f"⏳ «{info['title']}» için izlenme verisi henüz yok. YouTube Analytics verileri "
+                "genelde yayından 24–48 saat sonra gelir; yarın tekrar dene.",
+            )
+            return
+        ret = analytics.analyze(curve, analytics.parse_duration(info["duration"]))
+        if project is not None:
+            analytics.attach_lines(ret, project)
+        await self.say(chat, analytics.report(info["title"], stats, ret, project))
 
     async def ask_schedule(self, chat: int, p: Project, video_id: str) -> None:
         if p.status == ProjectStatus.PUBLISHED:

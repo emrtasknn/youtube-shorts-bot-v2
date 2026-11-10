@@ -80,6 +80,22 @@ class SqlProjectStore:
             ).scalar_one_or_none()
         return Project.from_json(data) if data else None
 
+    def latest_with_video(self, chat_id: int, video_id: str = "") -> Project | None:
+        """Newest project of this chat that has a YouTube video (or that exact video)."""
+        q = (
+            sa.select(projects.c.data)
+            .where(projects.c.chat_id == chat_id)
+            .order_by(projects.c.created_at.desc())
+            .limit(50)
+        )
+        with self.engine.connect() as conn:
+            rows: list[str] = list(conn.execute(q).scalars())
+            for data in rows:
+                p = Project.from_json(data)
+                if p.youtube_id and (not video_id or p.youtube_id == video_id):
+                    return p
+        return None
+
     def latest_for_chat(self, chat_id: int, *, active_only: bool = True) -> Project | None:
         q = sa.select(projects.c.data).where(projects.c.chat_id == chat_id)
         if active_only:

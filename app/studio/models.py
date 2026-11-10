@@ -268,6 +268,22 @@ class ProjectStore:
     def clear_inbox(self, chat_id: int) -> None:
         self._inbox_path(chat_id).unlink(missing_ok=True)
 
+    def latest_with_video(self, chat_id: int, video_id: str = "") -> Project | None:
+        """Newest project of this chat that has a YouTube video (or that exact video)."""
+        best: Project | None = None
+        for p in self.root.glob("*/project.json"):
+            try:
+                proj = Project.from_json(p.read_text(encoding="utf-8"))
+            except (ValueError, KeyError):
+                continue
+            if proj.chat_id != chat_id or not proj.youtube_id:
+                continue
+            if video_id and proj.youtube_id != video_id:
+                continue
+            if best is None or proj.created_at > best.created_at:
+                best = proj
+        return best
+
     def latest_for_chat(self, chat_id: int, *, active_only: bool = True) -> Project | None:
         best: Project | None = None
         for p in self.root.glob("*/project.json"):

@@ -21,6 +21,26 @@ from app.studio.models import Project
 
 API = "https://www.googleapis.com/youtube/v3"
 UPLOAD_API = "https://www.googleapis.com/upload/youtube/v3"
+ANALYTICS_API = "https://youtubeanalytics.googleapis.com/v2/reports"
+ANALYTICS_SCOPE = "https://www.googleapis.com/auth/yt-analytics.readonly"
+
+
+def _analytics_error(r: httpx.Response) -> YouTubePublishError:
+    msg = _api_message(r)
+    low = (msg + r.text[:500]).lower()
+    if r.status_code in (401, 403) and ("insufficient" in low or "scope" in low):
+        text = (
+            "Token'da YouTube Analytics izni yok. OAuth Playground'da şu kapsamı da ekleyip "
+            f"yeni token al: {ANALYTICS_SCOPE}"
+        )
+    elif "has not been used" in low or "accessnotconfigured" in low or "disabled" in low:
+        text = (
+            "Google Cloud projesinde 'YouTube Analytics API' kapalı: APIs & Services → Library → "
+            "YouTube Analytics API → Enable."
+        )
+    else:
+        text = f"YouTube Analytics hatası (HTTP {r.status_code}): {msg}"
+    return YouTubePublishError(text, retryable=False)
 
 
 def _api_message(r: httpx.Response) -> str:
@@ -192,6 +212,68 @@ class StudioYouTube:
         if pinned_comment:
             warnings.append(await self._comment(token, video_id, pinned_comment))
         return warnings
+
+    # ---------- analytics (/analiz) ----------
+    async def video_info(self, video_id: str) -> dict[str, str]:
+        """Title, publish time and ISO duration of one of the channel's videos."""
+        token = await self._token()
+        r = await self._call(
+            "GET", f"{API}/videos", token, params={"part": "snippet,contentDetails", "id": video_id}
+        )
+        if r.status_code >= 400:
+            raise YouTubePublishError(
+                f"Video okunamadı (HTTP {r.status_code}): {_api_message(r)}", retryable=False
+            )
+        items = r.json().get("items") or []
+        if not items:
+            raise YouTubePublishError("Bu ID ile bir video bulunamadı.", retryable=False)
+        sn, cd = items[0].get("snippet", {}), items[0].get("contentDetails", {})
+        return {
+            "title": str(sn.get("title", "")),
+            "published": str(sn.get("publishedAt", ""))[:10],
+            "duration": str(cd.get("duration", "")),
+        }
+
+    async def _report(self, token: str, params: dict[str, str]) -> list[list[Any]]:
+        r = await self._call("GET", ANALYTICS_API, token, params={"ids": "channel==MINE", **params})
+        if r.status_code >= 400:
+            raise _analytics_error(r)
+        return list(r.json().get("rows") or [])
+
+    async def video_analytics(
+        self, video_id: str, start: str, end: str
+    ) -> tuple[dict[str, float], list[tuple[float, float]]]:
+        """(summary metrics, retention curve) for one video between two dates (YYYY-MM-DD)."""
+        token = await self._token()
+        names = [
+            "views",
+            "likes",
+            "subscribersGained",
+            "averageViewPercentage",
+            "averageViewDuration",
+        ]
+        rows = await self._report(
+            token,
+            {
+                "startDate": start,
+                "endDate": end,
+                "metrics": ",".join(names),
+                "filters": f"video=={video_id}",
+            },
+        )
+        stats = {n: float(v or 0) for n, v in zip(names, rows[0], strict=False)} if rows else {}
+        curve_rows = await self._report(
+            token,
+            {
+                "startDate": start,
+                "endDate": end,
+                "dimensions": "elapsedVideoTimeRatio",
+                "metrics": "audienceWatchRatio",
+                "filters": f"video=={video_id}",
+            },
+        )
+        curve = [(float(r[0]), float(r[1])) for r in curve_rows if len(r) >= 2]
+        return stats, curve
 
     async def delete(self, video_id: str) -> None:
         token = await self._token()
