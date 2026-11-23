@@ -151,5 +151,86 @@
   "date": "1918date QS:P571,+1918-00-00T00:00:00Z/9",
   "page": "https://commons.wikimedia.org/wiki/File:Galata._(BildID_15675004).jpg",
   "http": "200"
+ },
+ "dh9": {
+  "file": "De Havilland DH 9.jpg",
+  "path": "img/dh9.jpg",
+  "license": "Public domain",
+  "artist": "SAS Scandinavian Airlines",
+  "date": "1920a",
+  "page": "https://commons.wikimedia.org/wiki/File:De_Havilland_DH_9.jpg",
+  "http": "200"
+ },
+ "prague": {
+  "file": "Přemysl Koblic, Nádraží (Fotografický obzor, 1930).jpg",
+  "path": "img/prague.jpg",
+  "license": "Public domain",
+  "artist": "Přemysl Koblic",
+  "date": "1930",
+  "page": "https://commons.wikimedia.org/wiki/File:Přemysl_Koblic,_Nádraží_(Fotografický_obzor,_1930).jpg",
+  "http": "200"
+ },
+ "devrim": {
+  "file": "Devrim at Tülomsaş.jpg",
+  "path": "img/devrim.jpg",
+  "license": "Public domain",
+  "artist": "User:Makalp",
+  "date": "1961-10-29",
+  "page": "https://commons.wikimedia.org/wiki/File:Devrim_at_Tülomsaş.jpg",
+  "http": "200"
+ },
+ "grave": {
+  "file": "Vecihi Hürkuş'un mezarı, Cebeci Asri Mezarlığı, 2022 Mart-ön.jpg",
+  "path": "img/grave.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Modern primat",
+  "date": "2022",
+  "page": "https://commons.wikimedia.org/wiki/File:Vecihi_Hürkuş'un_mezarı,_Cebeci_Asri_Mezarlığı,_2022_Mart-ön.jpg",
+  "http": "200"
+ },
+ "hurkus1": {
+  "file": "TAI HURKUS-C (34839092714).jpg",
+  "path": "img/hurkus1.jpg",
+  "license": "CC BY-SA 2.0",
+  "artist": "Anna Zvereva from Tallinn, Estonia",
+  "date": "2017-06-24 14:40",
+  "page": "https://commons.wikimedia.org/wiki/File:TAI_HURKUS-C_(34839092714).jpg",
+  "http": "200"
+ },
+ "hurkus2": {
+  "file": "TAI Hürkuş Advanced Trainer A-C Bourget 2017 (remix).jpg",
+  "path": "img/hurkus2.jpg",
+  "license": "CC BY 4.0",
+  "artist": "Marie-Lan Nguyen",
+  "date": "2018-06-01",
+  "page": "https://commons.wikimedia.org/wiki/File:TAI_Hürkuş_Advanced_Trainer_A-C_Bourget_2017_(remix).jpg",
+  "http": "200"
+ },
+ "hurkus3": {
+  "file": "Eurasia Airshow 2018 (16).jpg",
+  "path": "img/hurkus3.jpg",
+  "license": "CC BY 4.0",
+  "artist": "Mehdi Bakhtiari",
+  "date": "2018-04-26",
+  "page": "https://commons.wikimedia.org/wiki/File:Eurasia_Airshow_2018_(16).jpg",
+  "http": "200"
+ },
+ "cumhuriyet1931": {
+  "file": "1931 06 29 Cumhuriyet Rusuhi ve Vecihi.jpg",
+  "path": "img/cumhuriyet1931.jpg",
+  "license": "Public domain",
+  "artist": "Cumhuriyet Gazetesi",
+  "date": "1931-06-29",
+  "page": "https://commons.wikimedia.org/wiki/File:1931_06_29_Cumhuriyet_Rusuhi_ve_Vecihi.jpg",
+  "http": "200"
+ },
+ "ismet": {
+  "file": "Tarih IV Türkiye Cümhuriyeti.pdf",
+  "path": "img/ismet.jpg",
+  "license": "Public domain",
+  "artist": "maarif vekaleti",
+  "date": "1931",
+  "page": "https://commons.wikimedia.org/wiki/File:Tarih_IV_Türkiye_Cümhuriyeti.pdf",
+  "http": "200"
  }
 }
