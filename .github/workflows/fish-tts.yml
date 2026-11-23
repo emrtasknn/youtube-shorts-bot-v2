@@ -42,7 +42,7 @@ jobs:
           if [ -n "${{ inputs.request }}" ]; then
             echo "files=${{ inputs.request }}" >> "$GITHUB_OUTPUT"
           else
-            echo "files=$(git diff --name-only HEAD~1 HEAD -- 'docs/longform/**/fish_request.json' | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+            echo "files=$(git diff --name-only ${{ github.event.before }} HEAD -- 'docs/longform/**/fish_request.json' | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
           fi
       - name: Synthesize
         run: |

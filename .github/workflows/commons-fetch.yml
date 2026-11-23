@@ -39,7 +39,7 @@ jobs:
           if [ -n "${{ inputs.request }}" ]; then
             echo "files=${{ inputs.request }}" >> "$GITHUB_OUTPUT"
           else
-            echo "files=$(git diff --name-only HEAD~1 HEAD -- 'docs/longform/**/commons_request.json' | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+            echo "files=$(git ls-files 'docs/longform/**/commons_request.json' | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
           fi
       - name: Fetch
         run: |
