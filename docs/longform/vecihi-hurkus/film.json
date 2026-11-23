@@ -168,7 +168,7 @@
    "label": "Nargin Adası, bugün",
    "say": [
     {
-     "text": "Dört bir yanı suyla çevrili, kaçmanın neredeyse imkânsız olduğu bir esir kampı."
+     "text": "Dört bir yanı suyla çevrili, Birinci Dünya Savaşı boyunca binlerce Osmanlı askerinin tutulduğu, kaçmanın neredeyse imkânsız olduğu bir esir kampı."
     },
     {
      "text": "Neredeyse."
@@ -252,8 +252,11 @@
      "text": "Bu başarısızlık Vecihi'yi durdurmaya yetmiyor."
     },
     {
-     "text": "Anadolu'ya geçmenin bir yolunu bulan genç pilot, Ağustos bin dokuz yüz yirmide Batı Cephesi'nde, Kurtuluş Savaşı'nın ilk keşif uçuşlarından birine çıkıyor.",
-     "sub": "Anadolu'ya geçmenin bir yolunu bulan genç pilot, Ağustos 1920'de Batı Cephesi'nde, Kurtuluş Savaşı'nın ilk keşif uçuşlarından birine çıkıyor."
+     "text": "Anadolu'ya geçmenin bir yolunu bulan genç pilot, Ağustos bin dokuz yüz yirmide Batı Cephesi'nde, Kula ile Alaşehir arasındaki hat üzerinde, Kurtuluş Savaşı'nın ilk keşif uçuşlarından birine çıkıyor.",
+     "sub": "Anadolu'ya geçmenin bir yolunu bulan genç pilot, Ağustos 1920'de Batı Cephesi'nde, Kula ile Alaşehir arasındaki hat üzerinde, Kurtuluş Savaşı'nın ilk keşif uçuşlarından birine çıkıyor."
+    },
+    {
+     "text": "Ardından Simav ve Demirci yörelerinde, Yunan ordugâhlarının üzerine bombalama uçuşları yapıyor."
     },
     {
      "text": "Birinci İnönü'de ise İsmet Paşa'nın isteğiyle düşman hatlarının üzerinde uçarak orduya gözcülük ediyor.",
@@ -408,7 +411,10 @@
      "sub": "Vecihi, K-VI'yı kapalı bir yerde korumak için izin istese de, Hava Kuvvetleri bu talebi geri çeviriyor."
     },
     {
-     "text": "Türkiye'nin ilk yerli uçağı açıkta, kaderine terk ediliyor ve bir gün ortadan kayboluyor. Nasıl yok olduğu, bugün hâlâ bilinmiyor."
+     "text": "Türk Tayyare Cemiyeti ise uçağı, bağış toplamak için yapılacak uçuşlarda kullanmak istiyor."
+    },
+    {
+     "text": "Ama Türkiye'nin ilk yerli uçağı açıkta, kaderine terk ediliyor ve bir gün ortadan kayboluyor. Nasıl yok olduğu, bugün hâlâ bilinmiyor."
     }
    ]
   },
@@ -484,6 +490,10 @@
    "label": "“Vecihi'nin tayyaresini Çek fen heyeti takdir etti”, 8 Ağustos 1931",
    "say": [
     {
+     "text": "Çek uzmanlar uçağı inceledikten sonra ondan övgüyle söz ediyor. İstanbul gazeteleri haberi, Vecihi'nin tayyaresini Çek fen heyeti takdir etti başlığıyla veriyor.",
+     "sub": "Çek uzmanlar uçağı inceledikten sonra ondan övgüyle söz ediyor. İstanbul gazeteleri haberi, “Vecihi'nin tayyaresini Çek fen heyeti takdir etti” başlığıyla veriyor."
+    },
+    {
      "text": "Türkiye'de yapılmış bir uçağın uçabildiğini kanıtlamak için, onu başka bir ülkeye götürmek gerekmişti."
     }
    ]
@@ -558,6 +568,10 @@
    "say": [
     {
      "text": "On iki öğrenciyle başlayan derslere katılanlardan biri olan Bedriye Tahir, pek çok kaynağa göre Türkiye'nin ilk kadın pilotu olacaktı."
+    },
+    {
+     "text": "Bugün bu unvan çoğu zaman Sabiha Gökçen'le birlikte anılır; oysa Gökçen uçuş eğitimine, Bedriye Tahir'den yaklaşık iki yıl sonra, bin dokuz yüz otuz beşte başlayacaktı.",
+     "sub": "Bugün bu unvan çoğu zaman Sabiha Gökçen'le birlikte anılır; oysa Gökçen uçuş eğitimine, Bedriye Tahir'den yaklaşık iki yıl sonra, 1935'te başlayacaktı."
     }
    ]
   },
@@ -689,6 +703,10 @@
      "sub": "29 Ağustos 2013'te Ankara'da, Türk Havacılık ve Uzay Sanayii'nin tasarladığı yerli eğitim uçağı ilk kez havalanıyor."
     },
     {
+     "text": "Uçağın tasarım çalışmaları, iki bin altıda başlamıştı.",
+     "sub": "Uçağın tasarım çalışmaları 2006'da başlamıştı."
+    },
+    {
      "text": "Otuz üç dakikalık uçuşun ardından piste indiğinde, onu alkışlar karşılıyor."
     }
    ]
@@ -729,6 +747,23 @@
    ]
   },
   {
+   "kind": "date",
+   "title": "28 Ocak 2025",
+   "say": [
+    {
+     "text": "Yirmi sekiz Ocak iki bin yirmi beşte, o on beş dakikalık uçuşun yüzüncü yılı, Türkiye'de törenlerle anıldı.",
+     "sub": "28 Ocak 2025'te, o on beş dakikalık uçuşun yüzüncü yılı, Türkiye'de törenlerle anıldı."
+    },
+    {
+     "text": "Vecihi on dört'ün birebir bir kopyası da yapıldı ve test uçuşlarını başarıyla tamamladı.",
+     "sub": "Vecihi XIV'ün birebir bir kopyası da yapıldı ve test uçuşlarını başarıyla tamamladı."
+    },
+    {
+     "text": "Yaşarken önüne kapatılan kapılar, adı için tek tek açılıyordu."
+    }
+   ]
+  },
+  {
    "kind": "photo",
    "image": "img/portrait.jpg",
    "fit": "contain",
@@ -749,7 +784,7 @@
   {
    "kind": "end",
    "title": "Görseller",
-   "hold": 9.0,
+   "hold": 15.0,
    "lines": [
     "Wikimedia Commons",
     "1930 10 15 Havacilik ve Spor Vecihi Bey.jpg · Public domain",
