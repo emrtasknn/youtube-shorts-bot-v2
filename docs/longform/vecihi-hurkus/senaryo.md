@@ -1,6 +1,6 @@
 # Vecihi Hürkuş — Uzun Video Senaryosu (v2)
 
-**Kanal:** Bir Garip Tarih · **Hedef süre:** ~10:00 · **Format:** 16:9, 1080p/4K
+**Kanal:** Bir Garip Tarih · **Hedef süre:** en az 10:00 (üst sınır yok) · **Format:** 16:9, 1080p/4K
 **Çalışma başlığı:** *Esir Kampından Kaçtı, İlk Türk Uçağını Yaptı, Ceza Aldı*
 
 > **v2 değişikliği:** Anlatım dili baştan yazıldı. Kesik "yaptı / kaçtı / gitti" dizileri yerine
@@ -170,9 +170,10 @@ Shorts tarzı zıplayan altyazı yok (YouTube CC dosyası ayrı yüklenecek).
 
 ## Üretim notları
 
-- **Süre kontrolü:** v2 anlatımı ~1.300 kelime + 3 alıntı (bağlaçlarla uzadı). EMA hız 0.93 ile ilk kayıt
-  alınıp toplam süre ölçülecek; 10:30'u aşarsa sırayla kısaltılacak yerler: (1) 1916 kazası cümlesi,
-  (2) İnönü cümlesi, (3) MTA cümlesi.
+- **Süre kontrolü:** Hedef **en az 10:00**, üst sınır yok. v2 anlatımı ~1.300 kelime + 3 alıntı; EMA hız 0.93
+  ile ilk kayıt alınıp toplam süre (sessizlikler ve kartlar dahil) ölçülecek. Hiçbir sahne süre için kısaltılmaz.
+  **10:00'ın altında kalırsa** yalnızca doğrulanmış bilgiyle uzatılır: (1) Bölüm 5'te Bedriye Tahir'in hikâyesi,
+  (2) Bölüm 2'de Sakarya öncesi keşif uçuşları, (3) Bölüm 4'te Prag yolculuğunun ayrıntıları — dolgu cümle eklenmez.
 - **Sayılar** metinde yazıyla yazıldı (TTS doğru okusun diye). "K-VI" → "K-6", "Vecihi XIV" → "Vecihi 14" okunur; ekranda Roma rakamıyla yazılır.
 - **`[MAKAM]` satırları** belge metni değil, karar özeti — ekranda küçük "karar özeti" notu kalacak.
 - **Görsel arşiv listesi:** Wikimedia Commons (Vecihi, K-VI, Vecihi XIV, DH.9, TAI Hürkuş), SALT Araştırma, Milli Kütüphane süreli yayınlar, Gastearşivi, THK arşivi, Tayyareci Vecihi Hürkuş Müzesi Derneği.
