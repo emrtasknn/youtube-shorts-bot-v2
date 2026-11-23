@@ -1,0 +1,57 @@
+name: Fish Audio TTS batch
+
+# Renders narration lines with Fish Audio where its API is reachable and commits the
+# audio back to the same branch. Triggered by pushing a fish_request.json (see
+# scripts/fish_batch.py) or manually.
+
+on:
+  push:
+    branches: ["claude/**"]
+    paths: ["docs/longform/**/fish_request.json"]
+  workflow_dispatch:
+    inputs:
+      request:
+        description: "path to fish_request.json"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fish-tts-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FISH_AUDIO_API_KEY: ${{ secrets.FISH_AUDIO_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "httpx>=0.27,<1"
+      - name: Find request files
+        id: req
+        run: |
+          if [ -n "${{ inputs.request }}" ]; then
+            echo "files=${{ inputs.request }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "files=$(git diff --name-only HEAD~1 HEAD -- 'docs/longform/**/fish_request.json' | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Synthesize
+        run: |
+          for f in ${{ steps.req.outputs.files }}; do python scripts/fish_batch.py "$f"; done
+      - name: Commit audio
+        run: |
+          git config user.name "fish-tts-bot"
+          git config user.email "fish-tts-bot@users.noreply.github.com"
+          git add docs/longform
+          if git diff --cached --quiet; then echo "nothing new"; exit 0; fi
+          git commit -m "chore(longform): Fish Audio narration batch [skip ci]"
+          git push

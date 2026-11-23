@@ -1,0 +1,9 @@
+{
+ "out": "fish",
+ "model": "s2.1-pro-free",
+ "search": {"language": "tr", "limit": 4, "sort_by": "score"},
+ "lines": [
+  {"id": "makam_acilis", "text": "İzmir, Seydiköy. Ocak, bin dokuz yüz yirmi beş. İzinsiz uçuş. Ceza: maaşının yarısı. On gün ev hapsi."},
+  {"id": "makam_karar", "text": "Emir komuta zincirinin ihlali. Uçuş disiplinine aykırılık. Maaşının yarısı kesilecek. On gün ev hapsi."}
+ ]
+}
