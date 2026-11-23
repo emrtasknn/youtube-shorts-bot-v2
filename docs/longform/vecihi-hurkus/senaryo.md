@@ -1,7 +1,11 @@
-# Vecihi Hürkuş — Uzun Video Senaryosu (v1)
+# Vecihi Hürkuş — Uzun Video Senaryosu (v2)
 
 **Kanal:** Bir Garip Tarih · **Hedef süre:** ~10:00 · **Format:** 16:9, 1080p/4K
 **Çalışma başlığı:** *Esir Kampından Kaçtı, İlk Türk Uçağını Yaptı, Ceza Aldı*
+
+> **v2 değişikliği:** Anlatım dili baştan yazıldı. Kesik "yaptı / kaçtı / gitti" dizileri yerine
+> bağlaçlı, ritmi değişen, uzun ve kısa cümleleri dengeleyen bir anlatı dili kullanıldı.
+> Olgular, kaynaklar ve sahne akışı v1 ile aynıdır.
 
 ## Ses rolleri
 
@@ -27,62 +31,60 @@ Shorts tarzı zıplayan altyazı yok (YouTube CC dosyası ayrı yüklenecek).
 |---|---|---|
 | `[MAKAM]` | İzmir, Seydiköy. Ocak bin dokuz yüz yirmi beş. İzinsiz uçuş. Ceza: maaşının yarısı. On gün ev hapsi. | Siyah ekran → kâğıt dokusu üstünde daktiloyla yazılan satırlar. Son satırda **kırmızı damga** sesi + görüntüsü. *(Ekranda küçük not: "karar özeti")* |
 | — | *(1 sn sessizlik)* | |
-| `[ANLATICI]` | Uçağını, düşmanın eline geçmesin diye kendi eliyle yaktı. Hazar Denizi'nin ortasındaki bir esir kampından kaçtı. Ama hayatının en ağır cezasını, Türkiye'de yapılmış ilk uçağı gökyüzüne çıkardığı gün aldı. | Vecihi'nin arşiv portresi, gözlere doğru çok yavaş itme. Hiç müzik yok; sadece uzak rüzgâr. |
-| `[ANLATICI]` | Yirmi sekiz Ocak bin dokuz yüz yirmi beş. Seydiköy tayyare meydanı. Kimseye haber vermeden bir uçağı dışarı çıkarıyor. Bu uçağı kendisi yaptı. Adı: Vecihi K-6. | Vecihi K-VI'nın gerçek fotoğrafı (Wikimedia Commons). Pervane sesi yavaşça yükselir. |
-| `[ANLATICI]` | On beş dakika havada kalıyor. İniyor. Ve bu, başına gelenlerin en hafifi. | Pervane sesi kesilir. **Başlık kartı: VECİHİ** (beyaz, sade, 2 sn). |
+| `[ANLATICI]` | Düşmanın eline geçmesin diye kendi uçağını ateşe veren, Hazar Denizi'nin ortasındaki bir esir kampından kurtulmayı başaran bir adamın hikâyesi bu. Ne var ki hayatının en ağır darbesi ne savaşta geldi ne de esarette; Türkiye'de yapılan ilk uçağı gökyüzüne çıkardığı gün geldi. | Vecihi'nin arşiv portresi, gözlere doğru çok yavaş itme. Müzik yok; yalnızca uzak rüzgâr. |
+| `[ANLATICI]` | Yirmi sekiz Ocak bin dokuz yüz yirmi beş sabahı, Seydiköy tayyare meydanında, kimsenin haberi olmadan bir uçak dışarı çıkarılıyor. Tasarımı da yapımı da, şimdi kokpitinde oturan adama ait: Vecihi K-6. | Vecihi K-VI'nın gerçek fotoğrafı (Wikimedia Commons). Pervane sesi yavaşça yükselir. |
+| `[ANLATICI]` | On beş dakika boyunca havada kalan bu uçak yere indiğinde, onu bekleyen şey bir ödül değil, bir ceza kâğıdı olacaktı. Üstelik bu ceza, Vecihi'nin başına gelecekler arasında en hafifiydi. | Pervane sesi kesilir. **Başlık kartı: VECİHİ** (beyaz, sade, 2 sn). |
 
 ## BÖLÜM 1 — UÇAĞINI YAKAN ADAM · 0:35–2:20
 
 | Ses | Metin | Görsel / Ses tasarımı |
 |---|---|---|
 | — | | Kart: **1 · UÇAĞINI YAKAN ADAM** |
-| `[ANLATICI]` | Vecihi, bin sekiz yüz doksan altıda İstanbul'da doğdu. Birinci Dünya Savaşı başladığında on sekiz yaşındaydı. Önce makinist oldu; uçakların motorunu tamir eden adam. Bin dokuz yüz on altıda Irak cephesinde bir uçak kazasında yaralandı ve İstanbul'a geri gönderildi. | Genç Vecihi fotoğrafı · Osmanlı Tayyare Mektebi / Yeşilköy arşiv fotoğrafları · basit çizgi harita: İstanbul → Irak cephesi |
-| `[ANLATICI]` | İyileşince tek bir şey istedi: uçmak. Ve pilot oldu. | Pilot kıyafetli Vecihi fotoğrafı |
-| `[ANLATICI]` | Bin dokuz yüz on yedi, Kafkas Cephesi. Vecihi ve Şükrü Koçak, havada bir Rus uçağıyla karşılaşıyor. Rus uçağı düşüyor. Türk havacılık tarihinde bu, ilk hava zaferi olarak kabul edilir. | Kafkas Cephesi haritası (düz çizgi, tek renk vurgu) · dönemin Rus keşif uçağı fotoğrafı (tip doğrulanırsa) |
-| `[ANLATICI]` | Birkaç hafta sonra, sekiz Ekim bin dokuz yüz on yedide, sıra onlara geliyor. Vecihi'nin uçağı vuruluyor ve Rus hatlarının gerisine iniyor. Yapabileceği tek bir şey var. Uçağı ateşe veriyor. Düşman o uçağı kullanamayacak. | Harita üzerinde uçuş çizgisi kopar · kâğıt üzerinde yanma dokusu (gerçek kâğıt yakılıp çekilmiş plaka — CGI ateş yok) · kibrit/alev **gerçek ses kaydı** |
-| `[ANLATICI]` | Esir düşüyor. Götürüldüğü yer, Hazar Denizi'nde, Bakü açıklarında küçük bir ada: Nargin. Etrafı su. Kaçacak yer yok. | Gerçek harita: Bakü + Nargin Adası (OSM / tarihî harita) · ada yakın plan, yavaş yatay kayma |
-| `[ANLATICI]` | Vecihi kaçıyor. | Harita üstünde ada → kıyı çizgisi çizilir. 1 sn sessizlik. |
-| `[VECİHİ]` | ⟦ALINTI-1: Esaret / Nargin'den kaçış anı — kitaptan birebir, sayfa no.⟧ | Vecihi'nin yaşlı dönem portresi, sabit kadraj · alt köşede küçük künye: *Bir Tayyarecinin Anıları, s. __* |
-| `[ANLATICI]` | Bin dokuz yüz on sekizde yeniden İstanbul'daydı. | İstanbul arşiv fotoğrafı (1918) |
+| `[ANLATICI]` | Hikâye, bin sekiz yüz doksan altıda İstanbul'da başlıyor. Birinci Dünya Savaşı patlak verdiğinde henüz on sekiz yaşında olan Vecihi, havacılığa pilot olarak değil, uçakların motorlarıyla uğraşan bir makinist olarak adım atıyor. | Genç Vecihi fotoğrafı · Osmanlı tayyare mektebi arşiv fotoğrafları |
+| `[ANLATICI]` | Bin dokuz yüz on altıda Irak cephesinde geçirdiği bir kazada yaralanınca İstanbul'a geri gönderiliyor. Ama iyileşir iyileşmez aklında tek bir hedef kalıyor: uçağı tamir eden değil, uçuran adam olmak. | Basit çizgi harita: İstanbul → Irak cephesi · pilot kıyafetli Vecihi fotoğrafı |
+| `[ANLATICI]` | Bin dokuz yüz on yedide, Kafkas Cephesi'nin üzerinde, Vecihi ile Şükrü Koçak bir Rus uçağıyla karşı karşıya geliyor. Kısa süren çatışmanın sonunda yere çakılan o Rus uçağı, bugün Türk havacılık tarihinin ilk hava zaferi olarak anılıyor. | Kafkas Cephesi haritası (düz çizgi, tek renk vurgu) |
+| `[ANLATICI]` | Ancak talih uzun sürmüyor. Sekiz Ekim bin dokuz yüz on yedide bu kez vurulan, Vecihi'nin uçağı oluyor ve Rus hatlarının gerisine inmek zorunda kalıyor. Kaçacak zaman yok, geriye tek bir seçenek kalmış. Vecihi, düşman kullanamasın diye kendi uçağını ateşe veriyor. | Harita üzerinde uçuş çizgisi kopar · kâğıt üzerinde yanma dokusu (gerçek kâğıt yakılıp çekilmiş plaka — CGI ateş yok) · gerçek kibrit/alev kaydı |
+| `[ANLATICI]` | Esir düşen genç pilotu götürdükleri yer, Bakü açıklarında, Hazar Denizi'nin ortasındaki küçük bir ada: Nargin. Dört bir yanı suyla çevrili, kaçmanın neredeyse imkânsız olduğu bir esir kampı. | Gerçek harita: Bakü + Nargin Adası · ada yakın plan, yavaş yatay kayma |
+| `[ANLATICI]` | Neredeyse. | Harita üstünde ada → kıyı çizgisi çizilir. 1 sn sessizlik. |
+| `[VECİHİ]` | ⟦ALINTI-1: Esaret / Nargin'den kaçış anı — kitaptan birebir, sayfa no.⟧ | Vecihi'nin yaşlı dönem portresi, sabit kadraj · alt köşede künye: *Bir Tayyarecinin Anıları, s. __* |
+| `[ANLATICI]` | Bin dokuz yüz on sekize gelindiğinde Vecihi, yeniden İstanbul'daydı. | İstanbul arşiv fotoğrafı (1918) |
 
 ## BÖLÜM 2 — "İSMET" ADLI UÇAK · 2:20–4:00
 
 | Ses | Metin | Görsel / Ses tasarımı |
 |---|---|---|
 | — | | Kart: **2 · İSMET ADLI UÇAK** |
-| `[ANLATICI]` | Bin dokuz yüz yirmi. İstanbul işgal altında. Uçaklar işgal kuvvetlerinin denetiminde. Anadolu'da ise bir ordu kuruluyor ve o ordunun neredeyse hiç uçağı yok. | İşgal İstanbul'u arşiv fotoğrafları (SALT Araştırma / Wikimedia) |
-| `[ANLATICI]` | Yedi Haziran. Vecihi ve birkaç pilot arkadaşı, Maltepe'deki meydandan uçakları alıp Anadolu'ya uçmaya karar veriyor. Plan basit: kalkmak, ve geri dönmemek. | Maltepe tayyare meydanı arşiv fotoğrafı (yoksa dönemin harita kesiti) |
-| `[ANLATICI]` | Ama uçaklar aylardır bakımsız. Kalkışta kaza oluyor. Kaçış, daha başlamadan bitiyor. | Ses: motor öksürür, durur. Görüntü siyaha kesilir (½ sn). |
-| `[ANLATICI]` | Vecihi vazgeçmiyor. Anadolu'ya geçmenin bir yolunu buluyor. Ağustos bin dokuz yüz yirmide Batı Cephesi'nde, Kurtuluş Savaşı'nın ilk keşif uçuşlarından birini yapıyor. | Batı Cephesi haritası: Kula – Alaşehir hattı |
-| `[ANLATICI]` | Birinci İnönü'de, İsmet Paşa'nın isteğiyle düşman hatlarının üzerinde uçuyor. | İsmet Paşa arşiv fotoğrafı · cephe haritası |
-| `[ANLATICI]` | Ağustos bin dokuz yüz yirmi bir. Kuşadası'na bir Yunan uçağı zorunlu iniş yapıyor. Bir De Havilland DH-9. Vecihi uçağı inceliyor, uçuruyor, sağlam buluyor. Ve ona bir isim veriyor: İsmet. | DH.9 arşiv fotoğrafı · "İSMET" kelimesi ekranda tek başına, daktilo harfleriyle |
-| `[ANLATICI]` | Sakarya'dan önce yirmi dört keşif uçuşu. Savaş bittiğinde, Büyük Millet Meclisi'nden üç takdirname. Bir pilot için bundan iyi bir sicil düşünmek zor. Birkaç yıl sonra, bu sicilin hiçbir işe yaramadığını görecekti. | Sayaç gibi: "24" → "3 takdirname" (sade tipografi) · son cümlede müzik çekilir |
+| `[ANLATICI]` | Bin dokuz yüz yirmide İstanbul işgal altındayken, şehirdeki uçaklar da işgal kuvvetlerinin denetimindeydi. Oysa Anadolu'da kurulmakta olan ordunun, gökyüzünü gözetleyecek neredeyse hiç uçağı yoktu. | İşgal İstanbul'u arşiv fotoğrafları (SALT Araştırma / Wikimedia) |
+| `[ANLATICI]` | Yedi Haziran'da Vecihi ve birkaç pilot arkadaşı, Maltepe'deki meydandan uçakları alıp Anadolu'ya uçmayı göze alıyor. Plan, basit olduğu kadar da cüretkâr: havalanmak ve bir daha geri dönmemek. | Maltepe tayyare meydanı arşiv fotoğrafı (yoksa dönemin harita kesiti) |
+| `[ANLATICI]` | Ne var ki aylardır bakım görmeyen uçaklar daha kalkışta kazaya karışıyor ve kaçış, başlamadan sona eriyor. | Ses: motor öksürür, durur. Görüntü siyaha kesilir (½ sn). |
+| `[ANLATICI]` | Bu başarısızlık Vecihi'yi durdurmaya yetmiyor. Anadolu'ya geçmenin bir yolunu bulan genç pilot, Ağustos bin dokuz yüz yirmide Batı Cephesi'nde, Kurtuluş Savaşı'nın ilk keşif uçuşlarından birine çıkıyor. Birinci İnönü'de ise İsmet Paşa'nın isteğiyle düşman hatlarının üzerinde uçarak orduya gözcülük ediyor. | Batı Cephesi haritası: Kula – Alaşehir hattı · İsmet Paşa arşiv fotoğrafı |
+| `[ANLATICI]` | Ağustos bin dokuz yüz yirmi birde Kuşadası'na zorunlu iniş yapan bir Yunan uçağı, bir De Havilland DH-9, Türk tarafının eline geçiyor. Uçağı inceleyip bizzat uçuran Vecihi, sağlam olduğunu görünce ona yeni bir isim veriyor: İsmet. | DH.9 arşiv fotoğrafı · "İSMET" kelimesi ekranda tek başına, daktilo harfleriyle |
+| `[ANLATICI]` | Sakarya'dan önce yaptığı yirmi dört keşif uçuşu ve savaşın sonunda Büyük Millet Meclisi'nden aldığı üç takdirnameyle Vecihi, bir pilotun sahip olabileceği en parlak sicillerden birine sahipti. Birkaç yıl sonra, bu sicilin hiçbir kapıyı açmadığını acı bir şekilde öğrenecekti. | Sade tipografi: "24 keşif uçuşu" → "3 takdirname" · son cümlede müzik çekilir |
 
 ## BÖLÜM 3 — ON BEŞ DAKİKA · 4:00–5:30
 
 | Ses | Metin | Görsel / Ses tasarımı |
 |---|---|---|
 | — | | Kart: **3 · ON BEŞ DAKİKA** |
-| `[ANLATICI]` | Savaş bitmişti. Türkiye'nin elinde dağınık, eski, çoğu yabancı yapımı birkaç uçak vardı. Vecihi'nin aklında tek bir soru: Bu ülke kendi uçağını neden yapmasın? | Dönemin hangar fotoğrafları |
-| `[ANLATICI]` | İzmir'de, eldeki imkânlarla bir uçak tasarlıyor. Tasarım onun. Yapım onun. Vecihi K-6. | K-VI fotoğrafı → üzerine çizilen **teknik çizim (blueprint) katmanı** (fotoğraftan elle çizilmiş vektör) |
-| `[ANLATICI]` | Uçak bitince bir komite kuruluyor. Uçağı inceleyip uçuşa izin verecekler. Sorun şu: Komitede, bir uçağın uçup uçamayacağına karar verecek bilgiye sahip kimse yok. Kimse evet demiyor. Kimse hayır da demiyor. İzin çıkmıyor. | Boş bir masa ve sandalyeler (gerçek dönem fotoğrafı ya da sade illüstrasyon değil — **sadece tipografi**: "İZİN: —") |
-| `[ANLATICI]` | Vecihi bekliyor. Sonra, beklemeyi bırakıyor. | 1 sn sessizlik |
-| `[ANLATICI]` | Yirmi sekiz Ocak bin dokuz yüz yirmi beş. Kimseye haber vermeden, meydan komutanlığına bile söylemeden, K-6'yı çıkarıyor ve havalanıyor. Türkiye'de tasarlanıp yapılmış bir uçak, ilk kez gökyüzünde. On beş dakika. | Açılıştaki K-VI fotoğrafına geri dönüş (döngü) · gerçek pervane sesi · **15:00 kronometre** sade tipografiyle akar |
-| `[ANLATICI]` | İndiğinde onu bir disiplin soruşturması bekliyor. | Pervane sesi aniden kesilir |
+| `[ANLATICI]` | Savaş sona erdiğinde Türkiye'nin elinde, çoğu yabancı yapımı birkaç yorgun uçaktan başka bir şey kalmamıştı. Vecihi'nin zihnini kurcalayan soru ise son derece basitti: Bu ülke, kendi uçağını neden kendisi yapmasın? | Dönemin hangar fotoğrafları |
+| `[ANLATICI]` | Bu sorunun cevabını İzmir'de, eldeki kısıtlı imkânlarla aramaya koyuluyor. Ortaya çıkan uçağın tasarımı da yapımı da ona ait: Vecihi K-6. | K-VI fotoğrafı → üzerine çizilen **teknik çizim (blueprint) katmanı** (fotoğraftan elle çizilmiş vektör) |
+| `[ANLATICI]` | Uçak tamamlandığında, uçuşa izin verilip verilmeyeceğine karar vermek üzere bir komite kuruluyor. Sorun şu ki komitede, bir uçağın uçup uçamayacağını değerlendirecek bilgiye sahip tek bir kişi bile yok. Kimse evet demiyor, kimse hayır da demiyor; izin ise bir türlü çıkmıyor. | Yalnızca tipografi: "İZİN: —" |
+| `[ANLATICI]` | Vecihi bir süre bekliyor. Sonra, beklemekten vazgeçiyor. | 1 sn sessizlik |
+| `[ANLATICI]` | Yirmi sekiz Ocak bin dokuz yüz yirmi beşte, kimseye haber vermeden, meydan komutanlığına bile tek kelime etmeden K-6'yı piste çıkarıp havalanıyor. Türkiye'de tasarlanıp üretilen bir uçak, ilk kez gökyüzünde. Tam on beş dakika. | Açılıştaki K-VI fotoğrafına dönüş (döngü) · gerçek pervane sesi · **15:00 kronometre** sade tipografiyle akar |
+| `[ANLATICI]` | Ama yere indiğinde onu bekleyen bir tebrik değil, bir disiplin soruşturması oluyor. | Pervane sesi aniden kesilir |
 | `[MAKAM]` | Emir komuta zincirinin ihlali. Uçuş disiplinine aykırılık. Maaşının yarısı kesilecek. On gün ev hapsi. | Açılıştaki belge geri gelir, bu kez tam. Damga. *(Ekranda: "karar özeti")* |
-| `[ANLATICI]` | Ya uçak? Vecihi onu kapalı bir yerde korumak için izin istiyor. Hava Kuvvetleri reddediyor. Türkiye'nin ilk yerli uçağı açıkta bırakılıyor. Sonra bir gün ortadan kalkıyor. Nasıl yok olduğunu bugün bile kimse bilmiyor. | K-VI fotoğrafı yavaşça soluklaşıp boş kadraja döner (fade değil, **grenli pozlama kaybı** — gerçek film tarama dokusu) |
+| `[ANLATICI]` | Peki ya uçak? Vecihi, K-6'yı kapalı bir yerde korumak için izin istese de Hava Kuvvetleri bu talebi geri çeviriyor. Türkiye'nin ilk yerli uçağı açıkta, kaderine terk ediliyor ve bir gün ortadan kayboluyor. Nasıl yok olduğu, bugün hâlâ bilinmiyor. | K-VI fotoğrafı soluklaşıp boş kadraja döner (fade değil, **grenli pozlama kaybı** — gerçek film tarama dokusu) |
 
 ## BÖLÜM 4 — KERESTECİ DÜKKÂNINDAN PRAG'A · 5:30–6:50
 
 | Ses | Metin | Görsel / Ses tasarımı |
 |---|---|---|
 | — | | Kart: **4 · KERESTECİ DÜKKÂNINDAN PRAG'A** |
-| `[ANLATICI]` | Vecihi bu kez yeniden başlıyor. Bir atölyesi yok. Uçağını bir keresteci dükkânında yapıyor. | Vecihi XIV yapım aşaması arşiv fotoğrafı (varsa) · ses: testere, rende, çekiç (gerçek kayıt) |
-| `[ANLATICI]` | Eylül bin dokuz yüz otuz. Yeni uçağı havalanıyor: Vecihi 14. Türkiye'nin ilk sivil uçağı. | Vecihi XIV fotoğrafı + teknik çizim katmanı |
-| `[ANLATICI]` | Uçuyor. Ama Türkiye'de ona uçuş belgesi verecek kimse yok. Vecihi bir karar veriyor. Uçağı söküyor, trene yüklüyor ve Çekoslovakya'ya, Prag'a gönderiyor. | Animasyonlu çizgi harita: İstanbul → Prag demiryolu güzergâhı · tren sesi |
-| `[ANLATICI]` | Yirmi üç Nisan bin dokuz yüz otuz bir. Prag'da uçak inceleniyor ve onaylanıyor. Türkiye'de yapılmış bir uçağın uçabildiğini kanıtlamak için, onu başka bir ülkeye göndermek gerekmişti. | Belge dokusu üstünde onay damgası (gerçek sertifika görseli bulunursa o) |
-| `[ANLATICI]` | Ve memlekete döndüğünde, uçağı uçuştan men ediliyor. Uçuş tazminatı kesiliyor. | Damga sesi. Kısa sessizlik. |
-| `[ANLATICI]` | Bu sahne size tanıdık geliyorsa, nedeni şu: Otuz yıl sonra, bin dokuz yüz altmış birde, Türkiye aynı hikâyeyi bir kez daha yaşayacaktı. Bu kez yerde, dört tekerlek üstünde. | Devrim arabası arşiv fotoğrafı · köşede küçük not: **"Devrim Arabaları · Shorts"** (kanaldaki Shorts'a atıf) |
+| `[ANLATICI]` | Vecihi her şeye yeniden, bu kez sıfırdan başlıyor. Bir atölyesi bile olmadığı için yeni uçağını bir keresteci dükkânında inşa ediyor. Eylül bin dokuz yüz otuzda havalanan Vecihi 14, Türkiye'nin ilk sivil uçağı olarak tarihe geçiyor. | Vecihi XIV yapım aşaması arşiv fotoğrafı (varsa) · gerçek testere, rende, çekiç kaydı · Vecihi XIV fotoğrafı + teknik çizim katmanı |
+| `[ANLATICI]` | Uçak uçmasına uçuyor; ama Türkiye'de ona uçuş belgesi verebilecek bir merci yok. Bunun üzerine Vecihi alışılmadık bir yol seçiyor: Uçağı söküp trene yüklüyor ve Çekoslovakya'ya, Prag'a gönderiyor. | Animasyonlu çizgi harita: İstanbul → Prag demiryolu güzergâhı · tren sesi |
+| `[ANLATICI]` | Yirmi üç Nisan bin dokuz yüz otuz birde Prag'da incelenen uçak, onayı alıyor. Türkiye'de yapılmış bir uçağın uçabildiğini kanıtlamak için, onu başka bir ülkeye götürmek gerekmişti. | Belge dokusu üstünde onay damgası (gerçek sertifika görseli bulunursa o) |
+| `[ANLATICI]` | Üstelik bu onay bile yetmeyecekti. Memlekete döndüğünde uçağı uçuştan men ediliyor, uçuş tazminatı da kesiliyor. | Damga sesi. Kısa sessizlik. |
+| `[ANLATICI]` | Bu sahne size tanıdık geldiyse sebebi şu: Otuz yıl sonra, bin dokuz yüz altmış birde, Türkiye benzer bir hikâyeyi bu kez yerde, dört tekerlek üzerinde yeniden yaşayacaktı. | Devrim arabası arşiv fotoğrafı · köşede küçük not: **"Devrim Arabaları · Shorts"** (kanaldaki Shorts'a atıf) |
 
 ## BÖLÜM 5 — KAPANAN KAPILAR · 6:50–8:20
 
@@ -91,11 +93,10 @@ Shorts tarzı zıplayan altyazı yok (YouTube CC dosyası ayrı yüklenecek).
 | Ses | Metin | Görsel / Ses tasarımı |
 |---|---|---|
 | — | | Kart: **5 · KAPANAN KAPILAR** |
-| `[ANLATICI]` | Bin dokuz yüz otuz iki. İstanbul, Kadıköy. Vecihi, Türkiye'nin ilk sivil havacılık okulunu açıyor: Vecihi Sivil Tayyare Mektebi. Dersler on iki öğrenciyle başlıyor. | Okul arşiv fotoğrafları · gazete ilanı (Gastearşivi / Milli Kütüphane) |
-| `[ANLATICI]` | Öğrencilerinden biri Bedriye Tahir. Pek çok kaynağa göre, Türkiye'nin ilk kadın pilotu. | Bedriye Tahir arşiv fotoğrafı — 4–5 sn bekleme |
-| `[ANLATICI]` | Bin dokuz yüz otuz dört sonunda okul kapatılıyor. Kararı Genelkurmay veriyor. | **Kapı sesi** |
-| `[ANLATICI]` | Vecihi kırkını geçmiş. Mühendislik diploması olmadan ciddiye alınmayacağını anlıyor. Almanya'ya gidiyor. Yirmi yedi Şubat bin dokuz yüz otuz dokuzda, Weimar'dan uçak mühendisi diplomasıyla dönüyor. | Weimar 1930'lar arşiv fotoğrafı · diploma (gerçek görsel bulunursa) |
-| `[ANLATICI]` | Bin dokuz yüz elli dört. Son büyük hamlesi: Hürkuş Hava Yolları. Bankadan kredi çekiyor, sekiz uçak alıyor. Uçuş izni alamıyor. Kazalar, borçlar, bürokrasi. Şirket ayakta kalamıyor. | Şirket evrakı / gazete haberi · **Kapı sesi** |
+| `[ANLATICI]` | Bin dokuz yüz otuz ikide Kadıköy'de açtığı Vecihi Sivil Tayyare Mektebi, Türkiye'nin ilk sivil havacılık okuluydu. On iki öğrenciyle başlayan derslere katılanlardan biri olan Bedriye Tahir, pek çok kaynağa göre Türkiye'nin ilk kadın pilotu olacaktı. | Okul arşiv fotoğrafları · gazete ilanı (Gastearşivi / Milli Kütüphane) · Bedriye Tahir fotoğrafı, 4–5 sn bekleme |
+| `[ANLATICI]` | Ne var ki okulun ömrü uzun olmuyor. Bin dokuz yüz otuz dört sonunda, Genelkurmay'ın kararıyla kapıları kapanıyor. | **Kapı sesi** |
+| `[ANLATICI]` | Kırkını geçmiş olan Vecihi, diploması olmadan ciddiye alınmayacağını anlayınca bu kez öğrenci sıralarına dönüyor. Almanya'ya giden usta pilot, yirmi yedi Şubat bin dokuz yüz otuz dokuzda Weimar'dan, uçak mühendisi unvanıyla dönüyor. | Weimar 1930'lar arşiv fotoğrafı · diploma (gerçek görsel bulunursa) |
+| `[ANLATICI]` | Bin dokuz yüz elli dörtte son büyük hamlesini yapıp Hürkuş Hava Yolları'nı kuruyor. Bankadan çektiği krediyle sekiz uçak alıyor, ancak uçuş izni bir türlü gelmiyor. Peş peşe gelen kazalar, büyüyen borçlar ve bitmek bilmeyen bürokrasi karşısında şirket ayakta kalamıyor. | Şirket evrakı / gazete haberi · **Kapı sesi** |
 | `[VECİHİ]` | ⟦ALINTI-2: Başarılı girişimlerin bu memlekette yıkılması üzerine — kitaptan birebir, sayfa no.⟧ | Yaşlı Vecihi portresi, sabit · künye notu |
 
 ## BÖLÜM 6 — SON İNİŞ · 8:20–9:15
@@ -103,20 +104,38 @@ Shorts tarzı zıplayan altyazı yok (YouTube CC dosyası ayrı yüklenecek).
 | Ses | Metin | Görsel / Ses tasarımı |
 |---|---|---|
 | — | | Kart: **6 · SON İNİŞ** |
-| `[ANLATICI]` | Son yıllarında elinde tek bir uçak kalıyor. Onu da Maden Tetkik Arama Enstitüsü'nün emrine veriyor; uçak, Güneydoğu Anadolu'da maden aramalarında kullanılıyor. Bir yandan da anılarını yazıyor. Ağır bir maddi sıkıntının içinde. | TC-ERK tescilli uçak fotoğrafı (bulunursa) · anı kitabının kapağı / el yazısı sayfa (gerçek) |
-| `[ANLATICI]` | On altı Temmuz bin dokuz yüz altmış dokuz. Ankara. Beyin kanaması. Yetmiş üç yaşında. | Siyah zemin, sadece tarih yazısı |
-| `[ANLATICI]` | Cebeci Asri Mezarlığı'na defnediliyor. Cenazesine kaç kişinin geldiği konusunda kaynaklar anlaşamıyor. Kimi dokuz diyor, kimi on iki. Ama hepsi aynı yerde birleşiyor. Türkiye'nin ilk uçağını yapan adamı son yolculuğuna, iki elin parmaklarını geçmeyen sayıda insan uğurladı. | Mezar taşının gerçek fotoğrafı (Cebeci) · çok yavaş geri çekilme |
+| `[ANLATICI]` | Ömrünün son yıllarında elinde tek bir uçak kalan Vecihi, onu Maden Tetkik Arama Enstitüsü'nün emrine veriyor ve uçak, Güneydoğu Anadolu'daki maden aramalarında kullanılıyor. Ağır bir maddi sıkıntının ortasında, bir yandan da anılarını kaleme alıyor. | TC-ERK tescilli uçak fotoğrafı (bulunursa) · anı kitabının kapağı / gerçek el yazısı sayfa |
+| `[ANLATICI]` | On altı Temmuz bin dokuz yüz altmış dokuzda Ankara'da, geçirdiği beyin kanaması sonucu, yetmiş üç yaşında hayata gözlerini yumuyor. | Siyah zemin, yalnızca tarih yazısı |
+| `[ANLATICI]` | Cebeci Asri Mezarlığı'na defnedilen Vecihi'nin cenazesine kaç kişinin katıldığı konusunda kaynaklar hemfikir değil; kimi dokuz diyor, kimi on iki. Ama hepsinin birleştiği nokta aynı: Türkiye'nin ilk uçağını yapan adamı son yolculuğuna, iki elin parmaklarını geçmeyen bir kalabalık uğurladı. | Mezar taşının gerçek fotoğrafı (Cebeci) · çok yavaş geri çekilme |
 | — | *(3 sn tam sessizlik — müzik yok, ambiyans yok)* | Siyah |
 
 ## FİNAL · 9:15–10:00
 
 | Ses | Metin | Görsel / Ses tasarımı |
 |---|---|---|
-| `[ANLATICI]` | Yirmi dokuz Ağustos iki bin on üç. Ankara. Türk Havacılık ve Uzay Sanayii'nin tasarladığı yerli eğitim uçağı, ilk uçuşuna çıkıyor. Otuz üç dakika havada kalıyor. İndiğinde onu alkışlar karşılıyor. | **Videoda ilk kez tam renk.** HÜRKUŞ ilk uçuş görüntüsü (TUSAŞ/AA — kullanım izni alınacak; alınamazsa Wikimedia CC fotoğrafları) · gerçek alkış/motor sesi |
-| `[ANLATICI]` | Uçağın adı: HÜRKUŞ. | Kuyruk/gövdedeki isim yakın plan |
-| `[ANLATICI]` | Bin dokuz yüz yirmi beşte on beş dakika uçtuğu için cezalandırılmıştı. Seksen sekiz yıl sonra, adını taşıyan uçak otuz üç dakika uçtu. Bu sefer, kimse ceza yazmadı. | Bölünmüş ekran: solda 1925 K-VI (sepya) · sağda 2013 HÜRKUŞ (renkli) · altında "15 dk" / "33 dk" |
+| `[ANLATICI]` | Yirmi dokuz Ağustos iki bin on üçte Ankara'da, Türk Havacılık ve Uzay Sanayii'nin tasarladığı yerli eğitim uçağı ilk kez havalanıyor. Otuz üç dakikalık uçuşun ardından piste indiğinde, onu alkışlar karşılıyor. Uçağın adı ise: HÜRKUŞ. | **Videoda ilk kez tam renk.** HÜRKUŞ ilk uçuş görüntüsü (TUSAŞ/AA — kullanım izni alınacak; alınamazsa Wikimedia CC fotoğrafları) · gerçek alkış/motor sesi |
+| `[ANLATICI]` | Bin dokuz yüz yirmi beşte on beş dakika uçtuğu için cezalandırılan adamın adını taşıyan uçak, seksen sekiz yıl sonra otuz üç dakika havada kaldı. Ve bu kez, kimse ceza yazmadı. | Bölünmüş ekran: solda 1925 K-VI (sepya) · sağda 2013 HÜRKUŞ (renkli) · altında "15 dk" / "33 dk" |
 | `[VECİHİ]` | ⟦ALINTI-3: Havacılığa bağlılığı / bir kez başlayınca bırakılamayan yol — kitaptan birebir, sayfa no.⟧ | Genç Vecihi portresi (açılıştaki fotoğraf — döngü kapanır) |
-| `[ANLATICI]` | Sizce Vecihi'yi yere indiren neydi? Dönemin şartları mı, insanlar mı? Yorumlarda konuşalım. Bir Garip Tarih'te, bir sonraki hikâyede görüşmek üzere. | Kanal logosu + bitiş ekranı (2 öğe: abone ol + Shorts oynatma listesi) |
+| `[ANLATICI]` | Sizce Vecihi'yi yere indiren dönemin şartları mıydı, yoksa insanlar mı? Düşüncelerinizi yorumlarda bekliyoruz. Bir sonraki hikâyede, Bir Garip Tarih'te görüşmek üzere. | Kanal logosu + bitiş ekranı (2 öğe: abone ol + Shorts oynatma listesi) |
+
+---
+
+## Anlatım dili rehberi (sonraki senaryolar için de geçerli)
+
+1. **Yüklem çeşitliliği:** Art arda iki cümle aynı kalıpla (-dı / -yor) bitmez. Biri fiille, biri isimle
+   ("…ilk kez gökyüzünde."), biri yan cümleyle kurulur.
+2. **Bağlaçlar akışı taşır:** *ne var ki, oysa, üstelik, bunun üzerine, ancak, derken*. Ama her cümlede değil;
+   paragraf başına en fazla bir tane.
+3. **Ritim:** İki uzun cümleden sonra kısa bir cümle ("Neredeyse." / "Tam on beş dakika."). Kısa cümle
+   vurgu içindir, sıradan bilgi kısa cümleyle verilmez.
+4. **Zaman:** Sahne anları şimdiki zamanla (izleyici olayın içinde), arka plan ve sonuçlar
+   -dı / -mıştı / -acaktı ile (geleceğe kanca: "…acı bir şekilde öğrenecekti").
+5. **Yan cümleyle birleştirme:** "Yaralandı. İstanbul'a gönderildi." yerine
+   "Yaralanınca İstanbul'a geri gönderiliyor."
+6. **TTS uyumu:** Cümleler ~30 kelimeyi geçmez; nefes yerleri virgülle işaretlenir, EMA ancak
+   noktalama kadar akıcı okur.
+7. **Uydurma duygu yok:** "herkes umudunu kesmişti", "gözyaşlarını tutamadı" gibi kaynaksız
+   duygu cümleleri yazılmaz; dramı olgunun kendisi taşır.
 
 ---
 
@@ -151,7 +170,9 @@ Shorts tarzı zıplayan altyazı yok (YouTube CC dosyası ayrı yüklenecek).
 
 ## Üretim notları
 
-- **Süre kontrolü:** Anlatım ~1.150 kelime + 3 alıntı. EMA hız 0.93 ile ilk kayıt alınıp toplam süre ölçülecek; 10:30'u aşarsa ilk kesilecek yer Bölüm 1'deki 1916 kazası.
+- **Süre kontrolü:** v2 anlatımı ~1.300 kelime + 3 alıntı (bağlaçlarla uzadı). EMA hız 0.93 ile ilk kayıt
+  alınıp toplam süre ölçülecek; 10:30'u aşarsa sırayla kısaltılacak yerler: (1) 1916 kazası cümlesi,
+  (2) İnönü cümlesi, (3) MTA cümlesi.
 - **Sayılar** metinde yazıyla yazıldı (TTS doğru okusun diye). "K-VI" → "K-6", "Vecihi XIV" → "Vecihi 14" okunur; ekranda Roma rakamıyla yazılır.
 - **`[MAKAM]` satırları** belge metni değil, karar özeti — ekranda küçük "karar özeti" notu kalacak.
 - **Görsel arşiv listesi:** Wikimedia Commons (Vecihi, K-VI, Vecihi XIV, DH.9, TAI Hürkuş), SALT Araştırma, Milli Kütüphane süreli yayınlar, Gastearşivi, THK arşivi, Tayyareci Vecihi Hürkuş Müzesi Derneği.
