@@ -176,6 +176,15 @@ Shorts tarzı zıplayan altyazı yok (YouTube CC dosyası ayrı yüklenecek).
 - **`[VECİHİ]` alıntıları bu videoda yok:** Fish Audio bu ortamdan erişilemiyor ve alıntılar kitaptan
   henüz birebir doğrulanmadı. Kitaptan alıntılar gelince `film.json`'a `"voice": "vecihi"` satırları eklenir.
 - **MTA cümlesi çıkarıldı** (ikinci kaynak bulunamadı); Bölüm 6 yalnızca maddi sıkıntı ve anılarla açılır.
+- **Makam sesi:** Fish Audio "TÜRKÇE ERKEK SES" (genel, kişiye ait olmayan ses), GitHub Actions'ta
+  `fish-tts.yml` ile üretilip `fish/` klasöründen okunur; bulunamazsa Piper'a düşer. Gerçek kişi
+  ses klonları (ör. siyasetçi taklitleri) kesinlikle kullanılmaz.
+- **10 dakikayı geçmek için eklenen doğrulanmış bilgiler:** Nargin'in Osmanlı esir kampı oluşu;
+  Kula–Alaşehir hattındaki ilk keşif uçuşları ve Simav–Demirci bombalama uçuşları (ATAM Dergisi);
+  Türk Tayyare Cemiyeti'nin K-VI'yı bağış uçuşlarında kullanmak istemesi (Wikipedia, K-VI);
+  1931 "Çek fen heyeti takdir etti" haberi (gazete görseli); Sabiha Gökçen'in 1935'te eğitime
+  başlaması; HÜRKUŞ tasarımının 2006'da başlaması; uçuşun 100. yılının Ocak 2025'te anılması
+  (Hürriyet Daily News) ve Vecihi XIV replikasının test uçuşları (Daily Sabah).
 - Görsellerin tamamı Wikimedia Commons'tan; kaynakça `credits.json` → `build_credits.py` ile bitiş
   kartına ve açıklamaya yazılır. Görseli olmayan anlar (Maltepe 1920, Weimar 1939, 16 Temmuz 1969)
   fotoğraf uydurmak yerine tarih kartıyla geçilir.
