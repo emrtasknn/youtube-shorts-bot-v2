@@ -1,0 +1,58 @@
+name: Commons image fetch
+
+# Downloads Wikimedia Commons images listed in a commons_request.json (with licence
+# metadata) and commits them back to the branch. See scripts/commons_fetch.py.
+
+on:
+  push:
+    branches: ["claude/**"]
+    paths: ["docs/longform/**/commons_request.json"]
+  workflow_dispatch:
+    inputs:
+      request:
+        description: "path to commons_request.json"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: commons-fetch-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "httpx>=0.27,<1"
+      - name: Find request files
+        id: req
+        run: |
+          if [ -n "${{ inputs.request }}" ]; then
+            echo "files=${{ inputs.request }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "files=$(git diff --name-only HEAD~1 HEAD -- 'docs/longform/**/commons_request.json' | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Fetch
+        run: |
+          status=0
+          for f in ${{ steps.req.outputs.files }}; do python scripts/commons_fetch.py "$f" || status=1; done
+          echo "status=$status" >> "$GITHUB_ENV"
+      - name: Commit images
+        run: |
+          git config user.name "commons-fetch-bot"
+          git config user.email "commons-fetch-bot@users.noreply.github.com"
+          git add docs/longform
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(longform): Commons images [skip ci]"
+            git push
+          fi
+          exit $status
