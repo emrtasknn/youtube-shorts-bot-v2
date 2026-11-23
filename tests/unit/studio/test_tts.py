@@ -332,3 +332,26 @@ def test_cast_reports_who_spoke() -> None:
     cast = VoiceCast(_NamedTTS("ema"), [VoiceRole("vecihi", _NamedTTS("fish"))])
     assert cast.used == "anlatici: ema · vecihi: fish"
     assert VoiceCast(_NamedTTS("ema")).used == "ema"
+
+
+@pytest.mark.asyncio
+async def test_file_tts_reads_prerendered_lines(tmp_path: Any) -> None:
+    import json as _json
+
+    import soundfile as sf
+
+    from app.studio.tts import FileTTS
+
+    (tmp_path / "v1").mkdir()
+    sf.write(str(tmp_path / "v1" / "a.wav"), _tone(0.5, sr=44100), 44100)
+    key = FileTTS.key("On gün ev hapsi.")
+    (tmp_path / "manifest.json").write_text(
+        _json.dumps({"files": {"v1": {key: "a.wav"}}}), encoding="utf-8"
+    )
+    tts = FileTTS(tmp_path, "v1")
+    audio = await tts.synth("On gün ev hapsi.")
+    assert abs(len(audio) - SAMPLE_RATE // 2) < 200  # resampled to 48 kHz
+    with pytest.raises(TTSError, match="hazır ses yok"):
+        await tts.synth("başka bir cümle")
+    with pytest.raises(TTSError):
+        FileTTS(tmp_path, "yok")

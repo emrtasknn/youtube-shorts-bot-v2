@@ -14,6 +14,7 @@ from app.studio.store_sql import SqlProjectStore
 from app.studio.tts import (
     ChainTTS,
     EmaLightningTTS,
+    FileTTS,
     FishAudioTTS,
     PiperTTS,
     TTSBackend,
@@ -76,6 +77,10 @@ def _backends(
                     base_url=settings.fish_audio_base_url,
                 )
             )
+        elif name == "files":
+            audio_dir = str(o.get("audio_dir", ""))
+            if audio_dir:
+                backends.append(FileTTS(Path(audio_dir), str(o.get("reference_id", ""))))
         elif name == "piper":
             model_dir = str(o.get("piper_model_dir", settings.studio_piper_model_dir))
             if model_dir:
@@ -89,6 +94,7 @@ def build_tts(settings: Settings, override: str = "") -> ChainTTS:
 
 VOICE_KEYS = {
     "tts",
+    "audio_dir",
     "reference_id",
     "fish_model",
     "ema_speed",

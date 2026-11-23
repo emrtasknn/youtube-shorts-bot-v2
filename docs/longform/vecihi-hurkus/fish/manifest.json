@@ -2,27 +2,6 @@
  "model": "s2.1-pro-free",
  "voices": [
   {
-   "id": "b9b93c3896624637aa0fbaa764ba9667",
-   "title": "Recep Tayyip Erdoğan ",
-   "description": "Miting sesi",
-   "languages": [
-    "tr"
-   ],
-   "tags": [
-    "male",
-    "old",
-    "entertainment",
-    "deep",
-    "energetic",
-    "authoritative",
-    "confident",
-    "dramatic",
-    "Turkish"
-   ],
-   "likes": 48,
-   "uses": 45604
-  },
-  {
    "id": "241fac3c0dd14046a1f31816d9cdcc6d",
    "title": "TÜRKÇE ERKEK SES",
    "description": "Açık ve akıcı Türkçesiyle bu erkek sesi, bilgilendirici ve detaylı anlatımlar için idealdir.",
@@ -68,48 +47,14 @@
    ],
    "likes": 9,
    "uses": 6299
-  },
-  {
-   "id": "2a31c6d66c1d495fbdc500e2555cd0bc",
-   "title": "Alper tunçay",
-   "description": "Bu erkek sesi, ilgi çekici bilgiler ve hikayeler anlatmak için idealdir. Net ve bilgilendirici tonuyla dinleyicilerin dikkatini çeker.",
-   "languages": [
-    "tr"
-   ],
-   "tags": [
-    "male",
-    "middle-aged",
-    "narration",
-    "educational",
-    "entertainment",
-    "clear",
-    "crisp",
-    "professional",
-    "storytelling",
-    "measured",
-    "expressive",
-    "confident",
-    "neutral-tone",
-    "calm"
-   ],
-   "likes": 5,
-   "uses": 2761
   }
  ],
  "files": {
-  "b9b93c3896624637aa0fbaa764ba9667": {
-   "11c37bb7ea4066da": "makam_acilis.wav",
-   "c8ee25705ef973b6": "makam_karar.wav"
-  },
   "241fac3c0dd14046a1f31816d9cdcc6d": {
    "11c37bb7ea4066da": "makam_acilis.wav",
    "c8ee25705ef973b6": "makam_karar.wav"
   },
   "67890dc7af8b4d3a98e628bd5bd8a0e3": {
-   "11c37bb7ea4066da": "makam_acilis.wav",
-   "c8ee25705ef973b6": "makam_karar.wav"
-  },
-  "2a31c6d66c1d495fbdc500e2555cd0bc": {
    "11c37bb7ea4066da": "makam_acilis.wav",
    "c8ee25705ef973b6": "makam_karar.wav"
   }

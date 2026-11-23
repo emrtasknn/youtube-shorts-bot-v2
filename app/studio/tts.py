@@ -193,6 +193,45 @@ class FishAudioTTS:
         return await asyncio.to_thread(_decode_to_array, r.content, ".wav")
 
 
+class FileTTS:
+    """Pre-rendered lines (e.g. a Fish Audio batch made on GitHub Actions).
+
+    ``directory`` holds ``manifest.json`` from ``scripts/fish_batch.py``; a line is
+    found by the hash of its exact text. Missing lines raise ``TTSError`` so a chain
+    like ``files,piper`` falls back instead of reading the wrong audio.
+    """
+
+    name = "files"
+
+    def __init__(self, directory: Path, voice: str = "") -> None:
+        import json
+
+        self._dir = directory
+        manifest = directory / "manifest.json"
+        if not manifest.is_file():
+            raise TTSError(f"manifest.json yok: {directory}")
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+        files: dict[str, dict[str, str]] = data.get("files", {})
+        if not voice:
+            voice = next(iter(files), "")
+        if voice not in files:
+            raise TTSError(f"{directory}: '{voice}' sesi için dosya yok")
+        self._voice, self._files = voice, files[voice]
+
+    @staticmethod
+    def key(text: str) -> str:
+        import hashlib
+
+        return hashlib.sha1(text.encode()).hexdigest()[:16]
+
+    async def synth(self, text: str) -> Audio:
+        name = self._files.get(self.key(text))
+        if name is None:
+            raise TTSError(f"hazır ses yok: {text[:40]}…")
+        path = self._dir / self._voice / name
+        return await asyncio.to_thread(_decode_to_array, path.read_bytes(), path.suffix)
+
+
 class PiperTTS:
     """Offline Piper voice via sherpa-onnx (model dir from k2-fsa/sherpa-onnx releases)."""
 

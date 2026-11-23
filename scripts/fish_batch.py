@@ -13,6 +13,10 @@ Request file::
 Every voice reads every line: ``<out>/<voice>/<id>.wav``. ``<out>/manifest.json``
 lists the voices (title, languages, popularity) and the files, so a person can pick
 one and the long-form renderer can use the files directly (``FileTTS``).
+
+``search`` returns community voices as *candidates only*. Many of them are clones of
+real people (politicians, actors); never put such a voice in a film. Pin the chosen
+generic voice in ``voices`` and drop ``search`` before the final batch.
 """
 
 from __future__ import annotations
