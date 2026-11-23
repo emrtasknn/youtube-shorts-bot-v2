@@ -3,50 +3,11 @@
  "voices": [
   {
    "id": "241fac3c0dd14046a1f31816d9cdcc6d",
-   "title": "TÜRKÇE ERKEK SES",
-   "description": "Açık ve akıcı Türkçesiyle bu erkek sesi, bilgilendirici ve detaylı anlatımlar için idealdir.",
-   "languages": [
-    "tr"
-   ],
-   "tags": [
-    "male",
-    "old",
-    "narration",
-    "educational",
-    "medium",
-    "clear",
-    "crisp",
-    "measured",
-    "professional",
-    "authoritative",
-    "narrative",
-    "storytelling",
-    "calm",
-    "confident"
-   ],
-   "likes": 23,
-   "uses": 10329
+   "title": ""
   },
   {
    "id": "67890dc7af8b4d3a98e628bd5bd8a0e3",
-   "title": "TURKCE5",
-   "description": "A middle-aged male voice with a calm and professional tone, speaking Turkish. He has a measured pace and a clear, smooth delivery suitable for narration and informative content.",
-   "languages": [
-    "tr"
-   ],
-   "tags": [
-    "male",
-    "middle-aged",
-    "narration",
-    "professional",
-    "calm",
-    "smooth",
-    "clear",
-    "measured",
-    "Turkish"
-   ],
-   "likes": 9,
-   "uses": 6299
+   "title": ""
   }
  ],
  "files": {
