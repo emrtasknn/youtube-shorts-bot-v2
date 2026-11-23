@@ -168,6 +168,18 @@ Shorts tarzı zıplayan altyazı yok (YouTube CC dosyası ayrı yüklenecek).
 | 29 Ağustos 2013 HÜRKUŞ ilk uçuş, 33 dk | ✅ | Bloomberg HT, T24, NTV |
 | **Simav'da yanlışlıkla kendi kampını bombalama** | ❌ tek kaynak → **senaryoya alınmadı** | — |
 
+## Render notları (v1 video)
+
+- Render `app/longform` ile, `film.json` sahne dosyasından yapılır:
+  `python -m app.longform docs/longform/vecihi-hurkus/film.json <çıktı klasörü>`
+  (`STUDIO_TTS=ema`, `STUDIO_VOICES` ile `makam` → Piper `tr_TR-fahrettin`, efekt `phone`).
+- **`[VECİHİ]` alıntıları bu videoda yok:** Fish Audio bu ortamdan erişilemiyor ve alıntılar kitaptan
+  henüz birebir doğrulanmadı. Kitaptan alıntılar gelince `film.json`'a `"voice": "vecihi"` satırları eklenir.
+- **MTA cümlesi çıkarıldı** (ikinci kaynak bulunamadı); Bölüm 6 yalnızca maddi sıkıntı ve anılarla açılır.
+- Görsellerin tamamı Wikimedia Commons'tan; kaynakça `credits.json` → `build_credits.py` ile bitiş
+  kartına ve açıklamaya yazılır. Görseli olmayan anlar (Maltepe 1920, Weimar 1939, 16 Temmuz 1969)
+  fotoğraf uydurmak yerine tarih kartıyla geçilir.
+
 ## Üretim notları
 
 - **Süre kontrolü:** Hedef **en az 10:00**, üst sınır yok. v2 anlatımı ~1.300 kelime + 3 alıntı; EMA hız 0.93

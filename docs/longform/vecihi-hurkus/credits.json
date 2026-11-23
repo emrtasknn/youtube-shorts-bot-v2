@@ -1,0 +1,155 @@
+{
+ "portrait": {
+  "file": "Vecihi - War of Independence.jpg",
+  "path": "img/portrait.jpg",
+  "license": "Public domain",
+  "artist": "Unknown authorUnknown author",
+  "date": "before 1922date QS:P,+1922-00-00T00:00:0",
+  "page": "https://commons.wikimedia.org/wiki/File:Vecihi_-_War_of_Independence.jpg",
+  "http": "200"
+ },
+ "k6prod": {
+  "file": "Vecihi K-VI production.png",
+  "path": "img/k6prod.jpg",
+  "license": "Public domain",
+  "artist": "Unknown, likely Vecihi Hürkuş himself.",
+  "date": "circa 1924date QS:P,+1924-00-00T00:00:00",
+  "page": "https://commons.wikimedia.org/wiki/File:Vecihi_K-VI_production.png",
+  "http": "200"
+ },
+ "k6": {
+  "file": "Vecihi K-VI.png",
+  "path": "img/k6.jpg",
+  "license": "Public domain",
+  "artist": "Unknown authorUnknown author",
+  "date": "1925-01",
+  "page": "https://commons.wikimedia.org/wiki/File:Vecihi_K-VI.png",
+  "http": "200"
+ },
+ "v14": {
+  "file": "Tayyareci Vecihi Hürkuş - Vecihi XIV.jpg",
+  "path": "img/v14.jpg",
+  "license": "Public domain",
+  "artist": "Unknown authorUnknown author",
+  "date": "1930sdate QS:P,+1930-00-00T00:00:00Z/8",
+  "page": "https://commons.wikimedia.org/wiki/File:Tayyareci_Vecihi_Hürkuş_-_Vecihi_XIV.jpg",
+  "http": "200"
+ },
+ "milliyet_page": {
+  "file": "Milliyet 1930 eylul 29 Vecihi Hurkus.jpg",
+  "path": "img/milliyet_page.jpg",
+  "license": "Public domain",
+  "artist": "Milliyet Gazetesi",
+  "date": "1930-09-29",
+  "page": "https://commons.wikimedia.org/wiki/File:Milliyet_1930_eylul_29_Vecihi_Hurkus.jpg",
+  "http": "200"
+ },
+ "milliyet_v14": {
+  "file": "Milliyet 1930 eylul 29 Vecihi Hurkus (Vecihi XIV).jpg",
+  "path": "img/milliyet_v14.jpg",
+  "license": "Public domain",
+  "artist": "Milliyet Gazetesi",
+  "date": "1930-09-29",
+  "page": "https://commons.wikimedia.org/wiki/File:Milliyet_1930_eylul_29_Vecihi_Hurkus_(Vecihi_XIV).jpg",
+  "http": "200"
+ },
+ "hakimiyet": {
+  "file": "Vecihi XIV Hakimiyet-i Milliye Gazetesi Oct 22, 1930 02.jpg",
+  "path": "img/hakimiyet.jpg",
+  "license": "Public domain",
+  "artist": "Hakimiyet-i Milliye Gazetesi",
+  "date": "1930-10-22",
+  "page": "https://commons.wikimedia.org/wiki/File:Vecihi_XIV_Hakimiyet-i_Milliye_Gazetesi_Oct_22,_1930_02.jpg",
+  "http": "200"
+ },
+ "havacilik": {
+  "file": "1930 10 15 Havacilik ve Spor Vecihi Bey.jpg",
+  "path": "img/havacilik.jpg",
+  "license": "Public domain",
+  "artist": "Havacılık ve Spor Dergisi",
+  "date": "1930-10-15",
+  "page": "https://commons.wikimedia.org/wiki/File:1930_10_15_Havacilik_ve_Spor_Vecihi_Bey.jpg",
+  "http": "200"
+ },
+ "cek": {
+  "file": "Vecihi'nin Tayyaresini Çek Fen Heyeti Takdir Etti.png",
+  "path": "img/cek.jpg",
+  "license": "Public domain",
+  "artist": "Hakimiyet-i Milliye Gazetesi",
+  "date": "1931-08-08",
+  "page": "https://commons.wikimedia.org/wiki/File:Vecihi'nin_Tayyaresini_Çek_Fen_Heyeti_Takdir_Etti.png",
+  "http": "200"
+ },
+ "kadikoy": {
+  "file": "Kadıköydeki Hava İstasyonunun İnşası İlerliyor.png",
+  "path": "img/kadikoy.jpg",
+  "license": "Public domain",
+  "artist": "Son Posta Gazetesi",
+  "date": "1932-03-11",
+  "page": "https://commons.wikimedia.org/wiki/File:Kadıköydeki_Hava_İstasyonunun_İnşası_İlerliyor.png",
+  "http": "200"
+ },
+ "bedriye": {
+  "file": "Bedriye Tahir (news from 1933).jpg",
+  "path": "img/bedriye.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "E4024",
+  "date": "1933-01-02",
+  "page": "https://commons.wikimedia.org/wiki/File:Bedriye_Tahir_(news_from_1933).jpg",
+  "http": "200"
+ },
+ "nargin": {
+  "file": "Island Boyuk Zira (Nargin).jpg",
+  "path": "img/nargin.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "AlixSaz",
+  "date": "2015-07-25 18:25:27",
+  "page": "https://commons.wikimedia.org/wiki/File:Island_Boyuk_Zira_(Nargin).jpg",
+  "http": "200"
+ },
+ "bakumap": {
+  "file": "Map Baku.jpg",
+  "path": "img/bakumap.jpg",
+  "license": "Public domain",
+  "artist": "U.S. Army Map Service",
+  "date": "1954",
+  "page": "https://commons.wikimedia.org/wiki/File:Map_Baku.jpg",
+  "http": "200"
+ },
+ "warmap": {
+  "file": "War Map of the middle east - illustrating the campaigns in Persia, Mesopotamia and the Caucasus - btv1b530634620 (1 of 2).jpg",
+  "path": "img/warmap.jpg",
+  "license": "Public domain",
+  "artist": "",
+  "date": "1910sdate QS:P571,+1910-00-00T00:00:00Z/",
+  "page": "https://commons.wikimedia.org/wiki/File:War_Map_of_the_middle_east_-_illustrating_the_campaigns_in_Persia,_Mesopotamia_and_the_Caucasus_-_btv1b530634620_(1_of_2).jpg",
+  "http": "200"
+ },
+ "ottoman_sq": {
+  "file": "Gallipoli 15th Fighter Flight Squadron.jpg",
+  "path": "img/ottoman_sq.jpg",
+  "license": "Public domain",
+  "artist": "NA",
+  "date": "1915",
+  "page": "https://commons.wikimedia.org/wiki/File:Gallipoli_15th_Fighter_Flight_Squadron.jpg",
+  "http": "200"
+ },
+ "occupation": {
+  "file": "Occupation of Constantinople LCCN2010650577.jpg",
+  "path": "img/occupation.jpg",
+  "license": "Public domain",
+  "artist": "Miscellaneous Items in High Demand, PPOC, Library of Congress",
+  "date": "1920",
+  "page": "https://commons.wikimedia.org/wiki/File:Occupation_of_Constantinople_LCCN2010650577.jpg",
+  "http": "200"
+ },
+ "galata1918": {
+  "file": "Galata. (BildID 15675004).jpg",
+  "path": "img/galata1918.jpg",
+  "license": "Public domain",
+  "artist": "K.u.k. Kriegspressequartier, Lichtbildstelle - Wien",
+  "date": "1918date QS:P571,+1918-00-00T00:00:00Z/9",
+  "page": "https://commons.wikimedia.org/wiki/File:Galata._(BildID_15675004).jpg",
+  "http": "200"
+ }
+}
