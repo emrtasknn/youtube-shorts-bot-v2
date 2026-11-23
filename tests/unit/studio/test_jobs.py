@@ -69,7 +69,7 @@ async def test_preview_is_sent_even_when_youtube_upload_fails(
     monkeypatch.setattr(jobs, "StudioTelegram", make_bot)
     monkeypatch.setattr(jobs, "render_project", fake_render)
     monkeypatch.setattr(jobs, "build_youtube", lambda s: BrokenYouTube())
-    monkeypatch.setattr(jobs, "build_tts", lambda s, o="": object())
+    monkeypatch.setattr(jobs, "build_cast", lambda s, o="": object())
     monkeypatch.setattr(jobs, "build_aligner", lambda m: None)
 
     project = Project(
@@ -119,7 +119,7 @@ async def test_bad_token_is_reported_before_rendering(
     monkeypatch.setattr(jobs, "StudioTelegram", make_bot)
     monkeypatch.setattr(jobs, "render_project", fake_render)
     monkeypatch.setattr(jobs, "build_youtube", lambda s: BadToken())
-    monkeypatch.setattr(jobs, "build_tts", lambda s, o="": object())
+    monkeypatch.setattr(jobs, "build_cast", lambda s, o="": object())
     monkeypatch.setattr(jobs, "build_aligner", lambda m: None)
 
     project = Project(

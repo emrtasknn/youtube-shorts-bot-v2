@@ -37,6 +37,7 @@ jobs:
       YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
       FISH_AUDIO_API_KEY: ${{ secrets.FISH_AUDIO_API_KEY }}
       STUDIO_TTS: ${{ vars.STUDIO_TTS || 'ema,fish' }}
+      STUDIO_VOICES: ${{ vars.STUDIO_VOICES || '' }}
       STUDIO_DIR: ${{ github.workspace }}/storage/studio
       PROJECT_PAYLOAD: ${{ inputs.project }}
       TTS_OVERRIDE: ${{ inputs.tts }}

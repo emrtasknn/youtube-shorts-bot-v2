@@ -53,6 +53,7 @@ Telegram'a önizleme + başlık/açıklama/etiket/yorum
 | `STUDIO_GITHUB_REF` | `main` | Workflow'un çalışacağı branch |
 | `STUDIO_TTS` | `ema,fish` | Sırayla denenecek TTS'ler: `ema`, `fish`, `piper` |
 | `STUDIO_PIPER_MODEL_DIR` | | Piper (sherpa-onnx) model klasörü — son çare |
+| `STUDIO_VOICES` | | Çok anlatıcı için ek ses rolleri (JSON). Ana anlatıcı her zaman `STUDIO_TTS`. Bkz. **Çok anlatıcı** |
 | `STUDIO_EMA_SPEED` | `1.0` | EMA konuşma hızı (0.25–4) |
 | `STUDIO_EMA_SEED` | `0` | Aynı seed = yeniden render'da aynı ses; `-1` = her seferinde farklı |
 | `STUDIO_EMA_DEVICE` | `auto` | `auto` · `cpu` · `cuda` |
@@ -178,6 +179,37 @@ app/studio/
   webhook.py        Telegram webhook sunucusu (ücretsiz hostlar için, ek bağımlılık yok)
   store_sql.py      Postgres'te proje + görsel havuzu (STUDIO_STORE=db)
 ```
+
+## Çok anlatıcı (uzun video)
+
+Ana anlatıcı her zaman `STUDIO_TTS` zinciridir (varsayılan EMA Lightning). Başka konuşmacılar
+`STUDIO_VOICES` ile tanımlanır; proje JSON'unda bir satır `"voice": "<rol>"` ile o role geçer
+(boş ya da `anlatici` = ana anlatıcı). Rol adları büyük/küçük harf ve Türkçe İ/ı farkı gözetmez.
+
+~~~bash
+STUDIO_VOICES='{
+  "vecihi": {"tts": "fish", "reference_id": "<fish ses id>", "effect": "room", "gain_db": -1},
+  "makam":  {"tts": "piper", "piper_model_dir": "models/piper-tr-fahrettin", "piper_speed": 1.0, "effect": "phone"}
+}'
+~~~
+
+| Alan | Açıklama |
+| --- | --- |
+| `tts` | **Zorunlu.** Bu rolün yedekli zinciri: `fish`, `piper`, `ema` (ör. `"fish,piper"`) |
+| `reference_id`, `fish_model` | Fish Audio ses modeli (rol başına farklı ses) |
+| `piper_model_dir`, `piper_speed` | Piper model klasörü ve hızı |
+| `ema_speed`, `ema_seed` | Rol EMA ile okunacaksa tempo / seed |
+| `effect` | `""` · `phone` (300–3400 Hz telefon hattı) · `room` (kısa oda yankısı) |
+| `gain_db` | Rolün ana anlatıcıya göre ses seviyesi farkı (dB) |
+
+* Birden fazla rol varsa her satır tepe değerine göre değil **ses yüksekliğine (RMS, −20 dBFS)** göre
+  eşitlenir; konuşmacılar aynı algılanan seviyede durur, `gain_db` bunun üstüne uygulanır.
+* Konuşmacı değiştiğinde satırlar arasına 0,25 sn nefes payı eklenir.
+* Kelime zamanları: EMA satırları EMA'nın kendi zamanlarını kullanır; diğer roller faster-whisper
+  ile (`ema+whisper`), o yoksa hece tahminiyle (`ema+hece`) hizalanır.
+* Tanımsız bir rol adı ya da kullanılabilir TTS'i olmayan bir rol (ör. Fish anahtarı yok) render
+  başlamadan hata verir; ses yanlışlıkla ana anlatıcıya düşmez.
+* `--tts` / `tts_override` yalnızca ana anlatıcının zincirini değiştirir.
 
 ## Bilinen sınırlar
 

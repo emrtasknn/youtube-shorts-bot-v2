@@ -84,6 +84,8 @@ class Line:
     written phonetically. ``caption`` is what is shown on screen.
     ``visual`` indexes ``Project.visuals``; ``card`` replaces the picture with a
     big animated title card (the "X" moment).
+    ``voice`` names the speaker role that reads the line (see ``VoiceCast``);
+    empty means the main narrator.
     """
 
     narration: str
@@ -92,6 +94,7 @@ class Line:
     kicker: str = ""
     era: Era = Era.OLD
     card: str = ""
+    voice: str = ""
 
     @property
     def shown(self) -> str:
@@ -173,6 +176,7 @@ class Project:
                 kicker=str(ln.get("kicker", "")),
                 era=_era(ln.get("era")),
                 card=str(ln.get("card", "")),
+                voice=voice_key(str(ln.get("voice", ""))),
             )
             for ln in data.get("lines", [])
         ]
@@ -198,6 +202,11 @@ class Project:
     @classmethod
     def from_json(cls, text: str) -> Project:
         return cls.from_dict(json.loads(text))
+
+
+def voice_key(name: str) -> str:
+    """Canonical role name: trimmed, Turkish-aware lower case ("VECİHİ" -> "vecihi")."""
+    return name.strip().replace("I", "ı").replace("İ", "i").lower()
 
 
 def _era(value: object) -> Era:

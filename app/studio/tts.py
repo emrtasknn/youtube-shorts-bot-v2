@@ -9,6 +9,9 @@
 Each line is synthesized separately so line-level timing is exact. Words inside a
 line take their timing from the backend when it reports them (EMA), otherwise from
 faster-whisper (``align.py``) or Turkish syllable weight (``text.distribute_words``).
+
+Long-form videos can use several speakers: a ``VoiceCast`` maps the role named in
+``Line.voice`` (empty = main narrator) to its own backend chain, gain and effect.
 """
 
 from __future__ import annotations
@@ -26,7 +29,7 @@ import numpy as np
 import numpy.typing as npt
 
 from app.studio.align import Aligner, RecognizedWord, align_line_words, matched_ratio
-from app.studio.models import Line
+from app.studio.models import Line, voice_key
 from app.studio.text import WordTiming, distribute_words
 
 Audio = npt.NDArray[np.float32]
@@ -258,6 +261,124 @@ class ChainTTS:
         return (await self.synth_detailed(text)).audio
 
 
+# ------------------------------------------------------------------ voice cast
+NARRATOR = "anlatici"
+EFFECTS = ("", "phone", "room")
+
+
+@dataclass(slots=True)
+class VoiceRole:
+    """One speaker: which TTS reads its lines and how they are processed."""
+
+    name: str
+    tts: TTSBackend
+    gain_db: float = 0.0
+    effect: str = ""  # "" | "phone" (band-limited line) | "room" (short reverb)
+
+    def __post_init__(self) -> None:
+        if self.effect not in EFFECTS:
+            raise TTSError(f"{self.name}: bilinmeyen efekt '{self.effect}' ({', '.join(EFFECTS)})")
+
+
+class VoiceCast:
+    """Routes each line to the role named in ``Line.voice``.
+
+    Behaves like a ``TTSBackend`` (it speaks with the narrator) so callers that only
+    need one voice keep working. With more than one role the clips are levelled by
+    loudness instead of peak, so the speakers sit at the same perceived volume.
+    """
+
+    def __init__(self, narrator: TTSBackend, roles: list[VoiceRole] | None = None) -> None:
+        self.roles: dict[str, VoiceRole] = {NARRATOR: VoiceRole(NARRATOR, narrator)}
+        for role in roles or []:
+            key = voice_key(role.name)
+            if not key or key == NARRATOR:
+                raise TTSError(f"Ses rolü adı kullanılamaz: '{role.name}'")
+            role.name = key
+            self.roles[key] = role
+        self.name = " · ".join(f"{r.name}: {r.tts.name}" for r in self.roles.values())
+
+    @property
+    def multi(self) -> bool:
+        return len(self.roles) > 1
+
+    @property
+    def used(self) -> str:
+        def spoke(r: VoiceRole) -> str:
+            return str(getattr(r.tts, "used", "") or r.tts.name)
+
+        if not self.multi:
+            return spoke(self.roles[NARRATOR])
+        return " · ".join(f"{r.name}: {spoke(r)}" for r in self.roles.values())
+
+    def role_for(self, line: Line) -> VoiceRole:
+        key = voice_key(line.voice) or NARRATOR
+        try:
+            return self.roles[key]
+        except KeyError:
+            raise TTSError(f"'{line.voice}' sesi tanımlı değil (STUDIO_VOICES)") from None
+
+    def check(self, lines: list[Line]) -> None:
+        """Fail before any audio is made if a line names a role nobody plays."""
+        unknown = sorted({voice_key(ln.voice) for ln in lines} - set(self.roles) - {""})
+        if unknown:
+            known = ", ".join(sorted(self.roles))
+            raise TTSError(
+                f"Tanımsız ses rolü: {', '.join(unknown)}. Tanımlı roller: {known} (STUDIO_VOICES)"
+            )
+
+    async def synth_detailed(self, text: str) -> Synthesis:
+        return await synthesize(self.roles[NARRATOR].tts, text)
+
+    async def synth(self, text: str) -> Audio:
+        return (await self.synth_detailed(text)).audio
+
+
+def as_cast(tts: TTSBackend | VoiceCast) -> VoiceCast:
+    return tts if isinstance(tts, VoiceCast) else VoiceCast(tts)
+
+
+TARGET_RMS = 0.1  # -20 dBFS speech level when several voices are mixed
+PEAK_CEILING = 0.95
+
+
+def level_clip(x: Audio, *, gain_db: float = 0.0) -> Audio:
+    """Bring speech to ``TARGET_RMS`` (+ ``gain_db``) without letting peaks pass the ceiling."""
+    if len(x) == 0:
+        return x
+    rms = float(np.sqrt(np.mean(np.square(x, dtype=np.float64))))
+    if rms <= 1e-6:
+        return x
+    y = x * (TARGET_RMS * 10 ** (gain_db / 20) / rms)
+    peak = float(np.max(np.abs(y)))
+    if peak > PEAK_CEILING:
+        y = y * (PEAK_CEILING / peak)
+    return y.astype(np.float32)
+
+
+def apply_effect(x: Audio, effect: str) -> Audio:
+    """``phone``: 300-3400 Hz band, light saturation. ``room``: short, dry-dominant reverb."""
+    if not effect or len(x) == 0:
+        return x
+    from scipy import signal
+
+    if effect == "phone":
+        sos = signal.butter(4, [300, 3400], btype="bandpass", fs=SAMPLE_RATE, output="sos")
+        y = signal.sosfilt(sos, x)
+        y = np.tanh(2.0 * y) / 2.0
+        return np.asarray(y, dtype=np.float32)
+    if effect == "room":
+        n = int(0.35 * SAMPLE_RATE)
+        rng = np.random.default_rng(7)  # same room on every render
+        ir = rng.standard_normal(n) * np.exp(-np.linspace(0, 7, n))
+        ir /= float(np.sqrt(np.sum(ir**2)))
+        tail = int(0.2 * SAMPLE_RATE)
+        wet = signal.fftconvolve(np.concatenate([x, np.zeros(tail, np.float32)]), ir)
+        dry = np.concatenate([x, np.zeros(tail, np.float32)])
+        return np.asarray(dry + 0.18 * wet[: len(dry)], dtype=np.float32)
+    raise TTSError(f"bilinmeyen efekt: {effect}")
+
+
 # ------------------------------------------------------------------ voice track
 def silence_bounds(x: Audio, *, threshold: float = 0.012) -> tuple[int, int]:
     """Sample range ``[a, b)`` of ``x`` without leading/trailing silence."""
@@ -299,29 +420,38 @@ class VoiceTrack:
 
 async def build_voice_track(
     lines: list[Line],
-    tts: TTSBackend,
+    tts: TTSBackend | VoiceCast,
     *,
     lead_in: float = 0.25,
     aligner: Aligner | None = None,
 ) -> VoiceTrack:
+    cast = as_cast(tts)
+    cast.check(lines)
     pieces: list[Audio] = [np.zeros(int(lead_in * SAMPLE_RATE), np.float32)]
     t = lead_in
     timings: list[LineTiming] = []
     words: list[WordTiming] = []
     native: list[RecognizedWord] = []  # backend word timings, on the track's clock
-    native_complete = True
+    native_lines: set[int] = set()  # lines whose words the backend timed itself
     for i, line in enumerate(lines):
-        syn = await synthesize(tts, line.narration)
+        role = cast.role_for(line)
+        syn = await synthesize(role.tts, line.narration)
         a, b = silence_bounds(syn.audio)
-        clip = syn.audio[a:b]
-        peak = float(np.max(np.abs(clip))) if len(clip) else 0.0
-        if peak > 0:
-            clip = clip / peak * 0.9
+        clip = apply_effect(syn.audio[a:b], role.effect)
+        if cast.multi:
+            clip = level_clip(clip, gain_db=role.gain_db)
+        else:
+            peak = float(np.max(np.abs(clip))) if len(clip) else 0.0
+            if peak > 0:
+                clip = clip / peak * 0.9
+            if role.gain_db:
+                clip = clip * 10 ** (role.gain_db / 20)
         dur = len(clip) / SAMPLE_RATE
         timings.append(LineTiming(i, round(t, 3), round(t + dur, 3)))
         if not line.card:
             words.extend(distribute_words(line.shown, t, t + dur, i))
             if syn.words:
+                native_lines.add(i)
                 offset = t - a / SAMPLE_RATE
                 native.extend(
                     RecognizedWord(
@@ -331,8 +461,6 @@ async def build_voice_track(
                     )
                     for w in syn.words
                 )
-            else:
-                native_complete = False
         pieces.append(clip.astype(np.float32))
         t += dur
         gap = 0.14
@@ -341,17 +469,23 @@ async def build_voice_track(
             gap = 0.38
         if line.narration.rstrip().endswith((".", "!", "?")):
             gap += 0.06
+        if nxt is not None and voice_key(nxt.voice) != voice_key(line.voice):
+            gap += 0.25  # a breath between speakers
         if nxt is None:
             gap = 0.15
         pieces.append(np.zeros(int(gap * SAMPLE_RATE), np.float32))
         t += gap
     audio = np.concatenate(pieces)
     track = VoiceTrack(audio, timings, words)
-    if native and native_complete:
+    spoken = {i for i, ln in enumerate(lines) if not ln.card}
+    if native and spoken <= native_lines:
         # The TTS told us when every word is spoken: exact, no recognizer needed.
         _align_to(track, lines, native, "ema")
     elif aligner is not None:
-        await _apply_alignment(track, lines, aligner)
+        await _apply_alignment(track, lines, aligner, native=native, native_lines=native_lines)
+    elif native:
+        # Lines without backend timings keep the syllable estimate.
+        _align_to(track, lines, native, "ema+hece")
     return track
 
 
@@ -372,11 +506,35 @@ def _align_to(
     track.alignment = f"{source} ({pct}%)"
 
 
-async def _apply_alignment(track: VoiceTrack, lines: list[Line], aligner: Aligner) -> None:
-    """Replace syllable estimates with real word timings; keep estimates on failure."""
+async def _apply_alignment(
+    track: VoiceTrack,
+    lines: list[Line],
+    aligner: Aligner,
+    *,
+    native: list[RecognizedWord] | None = None,
+    native_lines: set[int] | None = None,
+) -> None:
+    """Replace syllable estimates with real word timings; keep estimates on failure.
+
+    Lines the backend already timed (``native_lines``) keep those exact timings;
+    whisper only fills in the other lines.
+    """
+    native = native or []
+    owned = [lt for lt in track.lines if lt.index in (native_lines or set())]
     try:
         recognized = await asyncio.to_thread(aligner.transcribe, track.audio, SAMPLE_RATE)
     except Exception as exc:  # optional feature: never fail the render
-        track.alignment = f"syllable (whisper hata: {type(exc).__name__})"
+        if native:
+            _align_to(track, lines, native, "ema+hece")
+            track.alignment += f" (whisper hata: {type(exc).__name__})"
+        else:
+            track.alignment = f"syllable (whisper hata: {type(exc).__name__})"
         return
-    _align_to(track, lines, recognized, "whisper")
+
+    def in_owned(w: RecognizedWord) -> bool:
+        mid = (w.start + w.end) / 2
+        return any(lt.start - 0.15 <= mid <= lt.end + 0.15 for lt in owned)
+
+    merged = native + [w for w in recognized if not in_owned(w)]
+    merged.sort(key=lambda w: w.start)
+    _align_to(track, lines, merged, "ema+whisper" if native else "whisper")

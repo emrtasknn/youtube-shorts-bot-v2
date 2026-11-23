@@ -14,7 +14,11 @@ from app.studio.tts import (
     EmaLightningTTS,
     Synthesis,
     TTSError,
+    VoiceCast,
+    VoiceRole,
+    apply_effect,
     build_voice_track,
+    level_clip,
 )
 
 
@@ -178,3 +182,153 @@ async def test_chain_reports_backend_that_spoke(fake_ema: type[_FakeEMA]) -> Non
     syn = await chain.synth_detailed("merhaba dünya")
     assert chain.used == "ema"
     assert syn.words is not None
+
+
+# ------------------------------------------------------------------ voice cast
+class _NamedTTS:
+    """Plain tone whose loudness differs per voice; records what it was asked to read."""
+
+    def __init__(self, name: str, amp: float = 0.5) -> None:
+        self.name, self.amp, self.read = name, amp, []  # type: ignore[var-annotated]
+
+    async def synth(self, text: str) -> Any:
+        self.read.append(text)
+        return _tone(0.3 * len(text.split())) * (self.amp / 0.5)
+
+
+def _rms(x: Any) -> float:
+    return float(np.sqrt(np.mean(np.square(x))))
+
+
+@pytest.mark.asyncio
+async def test_cast_routes_each_line_to_its_role() -> None:
+    narrator, vecihi, makam = _NamedTTS("ema"), _NamedTTS("fish"), _NamedTTS("piper")
+    cast = VoiceCast(narrator, [VoiceRole("vecihi", vecihi), VoiceRole("MAKAM", makam)])
+    lines = [
+        Line(narration="anlatıcı konuşur"),
+        Line(narration="ben uçtum", voice="vecihi"),
+        Line(narration="on gün ev hapsi", voice="Makam"),
+        Line(narration="hikâye sürer", voice="anlatici"),
+    ]
+    await build_voice_track(lines, cast)
+    assert narrator.read == ["anlatıcı konuşur", "hikâye sürer"]
+    assert vecihi.read == ["ben uçtum"]
+    assert makam.read == ["on gün ev hapsi"]
+
+
+@pytest.mark.asyncio
+async def test_unknown_role_fails_before_any_audio() -> None:
+    narrator = _NamedTTS("ema")
+    cast = VoiceCast(narrator, [VoiceRole("vecihi", _NamedTTS("fish"))])
+    lines = [Line(narration="bir"), Line(narration="iki", voice="spiker")]
+    with pytest.raises(TTSError, match="spiker"):
+        await build_voice_track(lines, cast)
+    assert narrator.read == []
+
+
+def test_turkish_role_names_match() -> None:
+    cast = VoiceCast(_NamedTTS("ema"), [VoiceRole("VECİHİ", _NamedTTS("fish"))])
+    assert cast.role_for(Line(narration="x", voice="Vecihi")).name == "vecihi"
+
+
+def test_narrator_role_name_is_reserved() -> None:
+    with pytest.raises(TTSError):
+        VoiceCast(_NamedTTS("ema"), [VoiceRole("anlatici", _NamedTTS("fish"))])
+
+
+def test_unknown_effect_is_rejected() -> None:
+    with pytest.raises(TTSError, match="efekt"):
+        VoiceRole("makam", _NamedTTS("piper"), effect="echo")
+
+
+@pytest.mark.asyncio
+async def test_multi_voice_levels_speakers_to_same_loudness() -> None:
+    cast = VoiceCast(_NamedTTS("ema", amp=0.9), [VoiceRole("vecihi", _NamedTTS("fish", 0.05))])
+    lines = [
+        Line(narration="bir iki üç dört"),
+        Line(narration="beş altı yedi sekiz", voice="vecihi"),
+    ]
+    track = await build_voice_track(lines, cast)
+    a, b = track.lines
+    sr = SAMPLE_RATE
+    loud = _rms(track.audio[int(a.start * sr) : int(a.end * sr)])
+    quiet = _rms(track.audio[int(b.start * sr) : int(b.end * sr)])
+    assert loud == pytest.approx(quiet, rel=0.05)
+
+
+@pytest.mark.asyncio
+async def test_gain_db_shifts_a_role() -> None:
+    cast = VoiceCast(_NamedTTS("ema"), [VoiceRole("vecihi", _NamedTTS("fish"), gain_db=-6)])
+    lines = [Line(narration="bir iki üç"), Line(narration="dört beş altı", voice="vecihi")]
+    track = await build_voice_track(lines, cast)
+    a, b = track.lines
+    sr = SAMPLE_RATE
+    ratio = _rms(track.audio[int(b.start * sr) : int(b.end * sr)]) / _rms(
+        track.audio[int(a.start * sr) : int(a.end * sr)]
+    )
+    assert ratio == pytest.approx(10 ** (-6 / 20), rel=0.05)
+
+
+@pytest.mark.asyncio
+async def test_speaker_change_adds_a_breath() -> None:
+    same = VoiceCast(_NamedTTS("ema"), [VoiceRole("vecihi", _NamedTTS("fish"))])
+    one = [Line(narration="bir iki"), Line(narration="üç dört")]
+    two = [Line(narration="bir iki"), Line(narration="üç dört", voice="vecihi")]
+    t1 = await build_voice_track(one, same)
+    t2 = await build_voice_track(two, same)
+    gap1 = t1.lines[1].start - t1.lines[0].end
+    gap2 = t2.lines[1].start - t2.lines[0].end
+    assert gap2 - gap1 == pytest.approx(0.25, abs=0.01)
+
+
+def test_phone_effect_cuts_low_frequencies() -> None:
+    t = np.arange(SAMPLE_RATE) / SAMPLE_RATE
+    bass = (0.5 * np.sin(2 * np.pi * 80 * t)).astype(np.float32)
+    mid = (0.5 * np.sin(2 * np.pi * 1000 * t)).astype(np.float32)
+    assert _rms(apply_effect(bass, "phone")) < 0.1 * _rms(apply_effect(mid, "phone"))
+
+
+def test_room_effect_adds_a_tail() -> None:
+    x = _tone(0.5)
+    y = apply_effect(x, "room")
+    assert len(y) == len(x) + int(0.2 * SAMPLE_RATE)
+    assert _rms(y[len(x) :]) > 0
+
+
+def test_level_clip_never_exceeds_ceiling() -> None:
+    spiky = np.zeros(SAMPLE_RATE, np.float32)
+    spiky[100] = 1.0
+    assert float(np.max(np.abs(level_clip(spiky)))) <= 0.95 + 1e-6
+
+
+@pytest.mark.asyncio
+async def test_mixed_cast_keeps_ema_timings_and_estimates_the_rest(
+    fake_ema: type[_FakeEMA],
+) -> None:
+    cast = VoiceCast(ChainTTS([EmaLightningTTS()]), [VoiceRole("vecihi", _NamedTTS("fish"))])
+    lines = [Line(narration="Röntgen eli gördü"), Line(narration="ben uçtum", voice="vecihi")]
+    track = await build_voice_track(lines, cast)
+    assert track.alignment.startswith("ema+hece")
+    w0 = [w for w in track.words if w.line == 0]
+    assert w0[1].start - w0[0].start == pytest.approx(0.4, abs=0.05)  # exact EMA timing
+    assert [w.word for w in track.words if w.line == 1] == ["ben", "uçtum"]
+
+
+@pytest.mark.asyncio
+async def test_mixed_cast_uses_whisper_only_for_other_voices(fake_ema: type[_FakeEMA]) -> None:
+    class Whisper:
+        def transcribe(self, audio: Any, sample_rate: int) -> list[RecognizedWord]:
+            # pretends to hear every line; words inside the EMA line must be ignored
+            return [RecognizedWord("yanlış", 0.3, 0.5), RecognizedWord("ben", 99.0, 99.2)]
+
+    cast = VoiceCast(ChainTTS([EmaLightningTTS()]), [VoiceRole("vecihi", _NamedTTS("fish"))])
+    lines = [Line(narration="Röntgen eli gördü"), Line(narration="ben uçtum", voice="vecihi")]
+    track = await build_voice_track(lines, cast, aligner=Whisper())
+    assert track.alignment.startswith("ema+whisper")
+    assert [w.word for w in track.words if w.line == 0] == ["Röntgen", "eli", "gördü"]
+
+
+def test_cast_reports_who_spoke() -> None:
+    cast = VoiceCast(_NamedTTS("ema"), [VoiceRole("vecihi", _NamedTTS("fish"))])
+    assert cast.used == "anlatici: ema · vecihi: fish"
+    assert VoiceCast(_NamedTTS("ema")).used == "ema"

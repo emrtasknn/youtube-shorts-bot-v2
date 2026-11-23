@@ -13,7 +13,7 @@ import httpx
 from app.config.settings import Settings
 from app.infrastructure.providers.youtube import YouTubePublishError
 from app.studio.align import build_aligner
-from app.studio.factory import build_tts, build_youtube
+from app.studio.factory import build_cast, build_youtube
 from app.studio.models import Project, ProjectStatus, ProjectStore
 from app.studio.render.pipeline import VisualFetchError, render_project
 from app.studio.telegram import StudioTelegram, keyboard
@@ -89,7 +89,7 @@ async def run_render_job(
         out = await render_project(
             project,
             store.workdir(project.id),
-            build_tts(settings, tts_override),
+            build_cast(settings, tts_override),
             telegram=(lambda fid, dest: bot.download_file(fid, dest)) if bot else None,
             width=width,
             height=width * 16 // 9,

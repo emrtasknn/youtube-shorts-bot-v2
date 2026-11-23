@@ -39,3 +39,15 @@ def test_store_latest_for_chat(tmp_path: Path) -> None:
     store.save(b)
     latest = store.latest_for_chat(5)
     assert latest is not None and latest.id == a.id
+
+
+def test_line_voice_roundtrip_and_normalization() -> None:
+    p = Project(
+        topic="Vecihi", lines=[Line("on gün ev hapsi", voice="makam")], visuals=[Visual("b")]
+    )
+    assert Project.from_json(p.to_json()).lines[0].voice == "makam"
+    raw = p.to_dict()
+    raw["lines"][0]["voice"] = " VECİHİ "
+    assert Project.from_dict(raw).lines[0].voice == "vecihi"
+    del raw["lines"][0]["voice"]
+    assert Project.from_dict(raw).lines[0].voice == ""  # old projects: main narrator

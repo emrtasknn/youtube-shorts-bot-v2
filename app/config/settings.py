@@ -59,6 +59,11 @@ class Settings(BaseSettings):
     studio_timezone: str = "Europe/Istanbul"  # times for "Planla" are entered in this zone  # webhook base URL; on Render RENDER_EXTERNAL_URL is used
     studio_tts: str = "ema,fish"  # comma separated fallback chain: ema | fish | piper
     studio_piper_model_dir: str = ""
+    # Extra speaker roles for multi-voice (long-form) scripts, JSON object:
+    # {"vecihi": {"tts": "fish", "reference_id": "...", "effect": "room"},
+    #  "makam": {"tts": "piper", "piper_model_dir": "models/piper-fahrettin", "effect": "phone"}}
+    # Lines pick a role with Line.voice; the main narrator is always STUDIO_TTS.
+    studio_voices: str = ""
     studio_ema_speed: float = 1.0  # EMA Lightning tempo, 0.25-4
     studio_ema_seed: int = 0  # same seed = same voice take on re-render; -1 = random
     studio_ema_device: str = "auto"  # auto | cpu | cuda
