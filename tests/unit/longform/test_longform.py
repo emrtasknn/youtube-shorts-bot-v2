@@ -108,7 +108,7 @@ def test_srt_splits_long_lines_and_keeps_order() -> None:
 
 
 @pytest.mark.asyncio
-async def test_still_and_full_render(tmp_path: Path) -> None:
+async def test_still_and_full_render(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     film = load_film(_spec(tmp_path, SCENES))
     cast, _, _ = _cast()
     tl = await build_timeline(film, cast)
@@ -119,7 +119,8 @@ async def test_still_and_full_render(tmp_path: Path) -> None:
     assert "1925" in srt and "-->" in srt
     assert "0:00 Giriş" in description(film, tl, ["a.jpg (PD)"])
 
-    out = render_film(film, tl, tmp_path / "out", workers=2, credits=["a"])
+    monkeypatch.chdir(tmp_path)  # a relative output dir, as on GitHub Actions
+    out = render_film(film, tl, Path("out"), workers=2, credits=["a"])
     assert out.video.is_file() and out.srt.is_file()
     dur = subprocess.run(
         [

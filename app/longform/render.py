@@ -146,7 +146,7 @@ def render_film(
             print(f"  video {done}/{len(jobs)}", flush=True)
 
     concat = out / "segments.txt"
-    concat.write_text("".join(f"file '{j[3]}'\n" for j in jobs), encoding="utf-8")
+    concat.write_text("".join(f"file '{Path(j[3]).resolve()}'\n" for j in jobs), encoding="utf-8")
     video = out / f"{name}.mp4"
     subprocess.run(
         [
