@@ -1,0 +1,56 @@
+name: Long-form publish (private)
+
+# Uploads an already rendered film (the artifact of a "Long-form render" run) to
+# YouTube as PRIVATE, without rendering again. Push a publish_request.json:
+#   {"request": "docs/longform/<slug>/render_request.json", "run_id": 123, "artifact": "<name>-1080p"}
+
+on:
+  push:
+    branches: ["claude/**"]
+    paths: ["docs/longform/**/publish_request.json"]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install .
+      - name: Read request
+        id: req
+        run: |
+          f=$(git ls-files 'docs/longform/**/publish_request.json' | head -n1)
+          echo "dir=$(dirname "$f")" >> "$GITHUB_OUTPUT"
+          echo "request=$(python -c "import json;print(json.load(open('$f'))['request'])")" >> "$GITHUB_OUTPUT"
+          echo "run_id=$(python -c "import json;print(json.load(open('$f'))['run_id'])")" >> "$GITHUB_OUTPUT"
+          echo "artifact=$(python -c "import json;print(json.load(open('$f'))['artifact'])")" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.req.outputs.artifact }}
+          path: out
+          run-id: ${{ steps.req.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload to YouTube as PRIVATE
+        if: hashFiles(format('{0}/published.json', steps.req.outputs.dir)) == ''
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: python scripts/longform_publish.py "${{ steps.req.outputs.request }}" out
+      - name: Record result on the branch
+        if: always()
+        run: |
+          git config user.name "longform-render-bot"
+          git config user.email "longform-render-bot@users.noreply.github.com"
+          echo "{\"publish_run\": \"${{ github.run_id }}\", \"status\": \"${{ job.status }}\"}" > "${{ steps.req.outputs.dir }}/publish_result.json"
+          git add "${{ steps.req.outputs.dir }}"
+          git diff --cached --quiet || { git commit -m "chore(longform): publish result [skip ci]"; git push; }
