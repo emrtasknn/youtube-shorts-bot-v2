@@ -1,0 +1,112 @@
+name: Long-form render
+
+# Renders a long-form film (app.longform) from a render_request.json, keeps the
+# 1080p video as a downloadable artifact and, when the request says
+# "publish": "private", uploads it to YouTube as PRIVATE (never public).
+#
+# render_request.json:
+#   {"film": "docs/longform/<slug>/film.json", "name": "<file name>",
+#    "publish": "private" | "", "thumbnail": "...", "title": "...", "intro": "...",
+#    "tags": [...], "disclosure": "..."}
+
+on:
+  push:
+    branches: ["claude/**"]
+    paths: ["docs/longform/**/render_request.json"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: longform-render-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      HF_HUB_DISABLE_XET: "1"
+      STUDIO_TTS: ema
+      STUDIO_EMA_SPEED: "0.93"
+      STUDIO_EMA_SEED: "0"
+      STUDIO_EMA_DEVICE: cpu
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: System packages
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends ffmpeg fonts-freefont-ttf
+
+      - name: Cache TTS model weights
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+            ~/.cache/ema_lightning
+            ~/.cache/torch
+          key: studio-tts-v1
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install ".[studio,ema]"
+
+      - name: Find request
+        id: req
+        run: |
+          f=$(git diff --name-only ${{ github.event.before }} HEAD -- 'docs/longform/**/render_request.json' | head -n1)
+          [ -n "$f" ] || f=$(git ls-files 'docs/longform/**/render_request.json' | head -n1)
+          dir=$(dirname "$f")
+          echo "file=$f" >> "$GITHUB_OUTPUT"
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+          echo "film=$(python -c "import json;print(json.load(open('$f'))['film'])")" >> "$GITHUB_OUTPUT"
+          echo "name=$(python -c "import json;print(json.load(open('$f')).get('name','film'))")" >> "$GITHUB_OUTPUT"
+          echo "publish=$(python -c "import json;print(json.load(open('$f')).get('publish',''))")" >> "$GITHUB_OUTPUT"
+          echo "voices={\"makam\":{\"tts\":\"files\",\"audio_dir\":\"$dir/fish\",\"reference_id\":\"241fac3c0dd14046a1f31816d9cdcc6d\",\"effect\":\"phone\"}}" >> "$GITHUB_OUTPUT"
+
+      - name: Render
+        env:
+          STUDIO_VOICES: ${{ steps.req.outputs.voices }}
+        run: |
+          credits="${{ steps.req.outputs.dir }}/credits_description.json"
+          extra=""; [ -f "$credits" ] && extra="--credits $credits"
+          python -m app.longform "${{ steps.req.outputs.film }}" out --name "${{ steps.req.outputs.name }}" $extra
+          cp "${{ steps.req.outputs.dir }}/thumbnail.jpg" out/ 2>/dev/null || true
+
+      - name: Keep the 1080p video
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.req.outputs.name }}-1080p
+          path: |
+            out/${{ steps.req.outputs.name }}.mp4
+            out/${{ steps.req.outputs.name }}.tr.srt
+            out/description.txt
+            out/thumbnail.jpg
+          retention-days: 30
+          compression-level: 0
+
+      - name: Upload to YouTube as PRIVATE
+        if: steps.req.outputs.publish == 'private' && hashFiles(format('{0}/published.json', steps.req.outputs.dir)) == ''
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: python scripts/longform_publish.py "${{ steps.req.outputs.file }}" out
+
+      - name: Record result on the branch
+        if: always()
+        run: |
+          git config user.name "longform-render-bot"
+          git config user.email "longform-render-bot@users.noreply.github.com"
+          echo "{\"run\": \"${{ github.run_id }}\", \"artifact\": \"${{ steps.req.outputs.name }}-1080p\", \"status\": \"${{ job.status }}\"}" > "${{ steps.req.outputs.dir }}/render_result.json"
+          git add "${{ steps.req.outputs.dir }}"
+          git diff --cached --quiet || { git commit -m "chore(longform): render result [skip ci]"; git push; }
