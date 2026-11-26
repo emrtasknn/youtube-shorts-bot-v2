@@ -1,0 +1,51 @@
+name: Channel analytics report
+
+# Pulls a full channel analytics snapshot and commits it ENCRYPTED (the repository is
+# public). Only the holder of the private key matching docs/analytics/report_key.pub.pem
+# can read it. Trigger: push a change to docs/analytics/request.json.
+
+on:
+  push:
+    branches: ["claude/**"]
+    paths: ["docs/analytics/request.json"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: channel-analytics-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install .
+      - name: Build report
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: |
+          days=$(python -c "import json;print(json.load(open('docs/analytics/request.json')).get('days',90))")
+          n=$(python -c "import json;print(json.load(open('docs/analytics/request.json')).get('retention',40))")
+          python scripts/channel_report.py "$RUNNER_TEMP/report.json" --days "$days" --retention "$n"
+      - name: Encrypt and commit
+        run: |
+          stamp=$(date -u +%Y%m%dT%H%M%SZ)
+          dir="docs/analytics/reports/$stamp"
+          mkdir -p "$dir"
+          openssl rand 32 > "$RUNNER_TEMP/k"
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in "$RUNNER_TEMP/report.json" -out "$dir/report.json.enc" -pass "file:$RUNNER_TEMP/k"
+          openssl pkeyutl -encrypt -pubin -inkey docs/analytics/report_key.pub.pem -pkeyopt rsa_padding_mode:oaep -in "$RUNNER_TEMP/k" -out "$dir/key.enc"
+          rm -f "$RUNNER_TEMP/k" "$RUNNER_TEMP/report.json"
+          git config user.name "channel-analytics-bot"
+          git config user.email "channel-analytics-bot@users.noreply.github.com"
+          git add "$dir"
+          git commit -m "chore(analytics): encrypted channel report $stamp [skip ci]"
+          git push

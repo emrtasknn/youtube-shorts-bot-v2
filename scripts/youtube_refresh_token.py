@@ -30,10 +30,12 @@ import httpx
 
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
-# upload + thumbnails, and videos.update/delete + comments for "Yayınla" / "İptal"
+# upload + thumbnails, videos.update/delete + comments for "Yayınla" / "İptal",
+# and read-only YouTube Analytics (retention, traffic, audience) for reports
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/youtube.force-ssl",
+    "https://www.googleapis.com/auth/yt-analytics.readonly",
 ]
 
 
